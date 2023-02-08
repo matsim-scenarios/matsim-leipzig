@@ -214,7 +214,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 		if(parkingCost) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 		}
-		config.controler().setLastIteration(0);
 
 		return config;
 	}
@@ -244,8 +243,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 		if (tempo30Zone) {
 			SpeedReduction.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())), relativeSpeedChange);
 		}
-
-		NetworkUtils.writeNetwork(scenario.getNetwork(), "test-network.xml");
 	}
 
 	@Override
