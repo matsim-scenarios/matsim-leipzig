@@ -49,6 +49,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.*;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.replanning.choosers.ForceInnovationStrategyChooser;
 import org.matsim.core.replanning.choosers.StrategyChooser;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
@@ -91,7 +92,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
 
-	static final String VERSION = "1.2";
+	static final String VERSION = "1.1";
 
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
@@ -114,8 +115,11 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--emissions", defaultValue = "false", description = "Enable emissions analysis post processing", negatable = true)
 	private boolean emissions;
 
-	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed to 30 km/h")
+	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed")
 	boolean tempo30Zone;
+
+	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
+	Double relativeSpeedChange;
 
 	@CommandLine.Mixin
 	private ShpOptions shp;
@@ -128,7 +132,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	}
 
 	public RunLeipzigScenario() {
-		super(String.format("scenarios/input/leipzig-v%s-25pct.config.xml", VERSION));
+		super(String.format("scenarios/input/leipzig-v%s-25pct.config_with-drt-intermodal.xml", VERSION));
 	}
 
 	public static void main(String[] args) {
@@ -210,6 +214,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		if(parkingCost) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 		}
+		config.controler().setLastIteration(0);
 
 		return config;
 	}
@@ -237,8 +242,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 		network.prepare(scenario.getNetwork());
 
 		if (tempo30Zone) {
-			Tempo30Zone.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())));
+			SpeedReduction.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())), relativeSpeedChange);
 		}
+
+		NetworkUtils.writeNetwork(scenario.getNetwork(), "test-network.xml");
 	}
 
 	@Override
