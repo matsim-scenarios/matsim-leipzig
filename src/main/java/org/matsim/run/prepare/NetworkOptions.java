@@ -1,5 +1,7 @@
 package org.matsim.run.prepare;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
@@ -7,12 +9,13 @@ import picocli.CommandLine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Defines all options and parameters related to network modifications.
  */
 public class NetworkOptions {
+
+	private static final Logger log = LogManager.getLogger(NetworkOptions.class);
 
 	@CommandLine.Option(names = "--drt-area", description = "Path to SHP file specifying where DRT mode is allowed")
 	private Path drtArea;
@@ -60,15 +63,17 @@ public class NetworkOptions {
 			PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
 		}
 
-		if (isDefined(parkingCostArea)) {
-			if (!Files.exists(parkingCostArea))
-				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingArea);
+		if (isDefined(inputParkingCapacities)) {
+			if (parkingArea == null)
+				log.warn("No shp file of parking area was defined. Attributes are added for all network links.");
+			if (!Files.exists(inputParkingCapacities))
+				throw new IllegalArgumentException("Path to parking capacities information not found: " + inputParkingCapacities);
 
 			PrepareNetwork.prepareParking(network,new ShpOptions(parkingCostArea, null, null), new ShpOptions(parkingArea, null, null), inputParkingCapacities);
 		}
 
-		if(isDefined(cityArea)) {
-			if(!Files.exists(cityArea))
+		if (isDefined(cityArea)) {
+			if (!Files.exists(cityArea))
 				throw new IllegalArgumentException("Path to city area not found: " + cityArea);
 
 			PrepareNetwork.prepareCityArea(network, new ShpOptions(cityArea, null, null));

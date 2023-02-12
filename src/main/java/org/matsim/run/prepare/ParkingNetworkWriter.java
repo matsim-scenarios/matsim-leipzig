@@ -22,61 +22,66 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ParkingNetworkWriter {
+/**
+ * Attach parking information to links.
+ */
+public final class ParkingNetworkWriter {
 
-    private static final Logger log = LogManager.getLogger(ParkingNetworkWriter.class);
+	private static final Logger log = LogManager.getLogger(ParkingNetworkWriter.class);
 
-    Network network;
-    private final ShpOptions shp;
-    Path inputParkingCapacities;
-    private static int adaptedLinksCount = 0;
-    private static int networkLinksCount = 0;
-    private static double firstHourParkingCost;
-    private static double extraHourParkingCost;
+	Network network;
+	private final ShpOptions shp;
+	Path inputParkingCapacities;
+	private static int adaptedLinksCount = 0;
+	private static int networkLinksCount = 0;
+	private static double firstHourParkingCost;
+	private static double extraHourParkingCost;
 
-    ParkingNetworkWriter(Network network, ShpOptions shp, Path inputParkingCapacities) {
-        this.network = network;
-        this.shp = shp;
-        this.inputParkingCapacities = inputParkingCapacities;
-    }
+	ParkingNetworkWriter(Network network, ShpOptions shp, Path inputParkingCapacities, Double firstHourParkingCost, Double extraHourParkingCost) {
+		this.network = network;
+		this.shp = shp;
+		this.inputParkingCapacities = inputParkingCapacities;
+		ParkingNetworkWriter.firstHourParkingCost = firstHourParkingCost;
+		ParkingNetworkWriter.extraHourParkingCost = extraHourParkingCost;
+	}
 
-    public void addParkingInformationToLinks() {
-        Map<String, String> linkParkingCapacities = getLinkParkingCapacities();
+	public void addParkingInformationToLinks() {
+		Map<String, String> linkParkingCapacities = getLinkParkingCapacities();
 
-        Geometry parkingArea = null;
+		Geometry parkingArea = null;
 
-        if(shp.isDefined()) {
-            parkingArea = shp.getGeometry();
-        }
+		if (shp.isDefined()) {
+			parkingArea = shp.getGeometry();
+		}
 
-        GeometryFactory gf = new GeometryFactory();
+		GeometryFactory gf = new GeometryFactory();
 
-        for(Link link : network.getLinks().values()) {
-            if(link.getId().toString().contains("pt_")) {
-                continue;
-            }
-            networkLinksCount++;
+		for (Link link : network.getLinks().values()) {
+			if (link.getId().toString().contains("pt_")) {
+				continue;
+			}
+			networkLinksCount++;
 
-            LineString line = gf.createLineString(new Coordinate[]{
-                    MGC.coord2Coordinate(link.getFromNode().getCoord()),
-                    MGC.coord2Coordinate(link.getToNode().getCoord())
-            });
+			LineString line = gf.createLineString(new Coordinate[]{
+					MGC.coord2Coordinate(link.getFromNode().getCoord()),
+					MGC.coord2Coordinate(link.getToNode().getCoord())
+			});
 
-            boolean isInsideParkingArea;
+			boolean isInsideParkingArea;
 
-            if(parkingArea!=null) {
-                isInsideParkingArea = line.intersects(parkingArea);
-            } else {
-                isInsideParkingArea = true;
-            }
+			if (parkingArea != null) {
+				isInsideParkingArea = line.intersects(parkingArea);
+			} else {
+				isInsideParkingArea = true;
+			}
 
 
-            if(isInsideParkingArea) {
-                if(linkParkingCapacities.get(link.getId().toString()) != null) {
-                    int parkingCapacity = Integer.parseInt(linkParkingCapacities.get(link.getId().toString()));
+			if (isInsideParkingArea) {
+				if (linkParkingCapacities.get(link.getId().toString()) != null) {
+					int parkingCapacity = Integer.parseInt(linkParkingCapacities.get(link.getId().toString()));
 
-                    Attributes linkAttributes = link.getAttributes();
-                    linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
+					Attributes linkAttributes = link.getAttributes();
+					linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
 
                     //TODO maybe it would be better to have a csv file with parking cost per link here instead of a fixed value -sm0123
                     // Parking cost are now defined by the shp file already, if link is inside our defined parking area, but has no parking cost we set them to zero to increase them later gr 1802
@@ -93,19 +98,19 @@ public class ParkingNetworkWriter {
         log.info(adaptedLinksCount + " / " + networkLinksCount + " were complemented with parking information attribute.");
     }
 
-    private Map<String, String> getLinkParkingCapacities() {
-        Map<String, String> linkParkingCapacities = new HashMap<>();
+	private Map<String, String> getLinkParkingCapacities() {
+		Map<String, String> linkParkingCapacities = new HashMap<>();
 
-        try(BufferedReader reader = new BufferedReader(new FileReader(inputParkingCapacities.toString()))) {
-            String lineEntry;
-            while((lineEntry = reader.readLine()) != null) {
+		try (BufferedReader reader = new BufferedReader(new FileReader(inputParkingCapacities.toString()))) {
+			String lineEntry;
+			while ((lineEntry = reader.readLine()) != null) {
 
-                linkParkingCapacities.putIfAbsent(lineEntry.split("\t")[0], lineEntry.split("\t")[1]);
-            }
+				linkParkingCapacities.putIfAbsent(lineEntry.split("\t")[0], lineEntry.split("\t")[1]);
+			}
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return linkParkingCapacities;
-    }
+		} catch (IOException e) {
+			log.error(e);
+		}
+		return linkParkingCapacities;
+	}
 }
