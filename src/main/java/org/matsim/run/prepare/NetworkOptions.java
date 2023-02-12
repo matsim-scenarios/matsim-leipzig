@@ -66,8 +66,7 @@ public class NetworkOptions {
 			if (!Files.exists(inputParkingCapacities))
 				throw new IllegalArgumentException("Path to parking capacities information not found: " + inputParkingCapacities);
 
-			PrepareNetwork.prepareParking(network, new ShpOptions(parkingArea, null, null),
-					inputParkingCapacities, Double.parseDouble(firstHourParkingCost), Double.parseDouble(extraHourParkingCost));
+			PrepareNetwork.prepareParking(network, new ShpOptions(parkingArea, null, null), inputParkingCapacities);
 		}
 
 		if(isDefined(cityArea)) {

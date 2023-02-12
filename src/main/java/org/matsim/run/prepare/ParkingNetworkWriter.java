@@ -34,12 +34,10 @@ public class ParkingNetworkWriter {
     private static double firstHourParkingCost;
     private static double extraHourParkingCost;
 
-    ParkingNetworkWriter(Network network, ShpOptions shp, Path inputParkingCapacities, Double firstHourParkingCost, Double extraHourParkingCost) {
+    ParkingNetworkWriter(Network network, ShpOptions shp, Path inputParkingCapacities) {
         this.network = network;
         this.shp = shp;
         this.inputParkingCapacities = inputParkingCapacities;
-        this.firstHourParkingCost = firstHourParkingCost;
-        this.extraHourParkingCost = extraHourParkingCost;
     }
 
     public void addParkingInformationToLinks() {

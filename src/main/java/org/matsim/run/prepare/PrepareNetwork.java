@@ -196,9 +196,9 @@ public class PrepareNetwork implements MATSimAppCommand {
      * Add parking information to network links. Therefore, a shape file of the wished parking area is needed + parking capacities information.
      * To create parking capacities based on matsim runs see @ParkedVehiclesAnalysis.
      */
-    static void prepareParking(Network network, ShpOptions shp, Path inputParkingCapacities, Double firstHourParkingCost, Double extraHourParkingCost) {
+    static void prepareParking(Network network, ShpOptions shp, Path inputParkingCapacities) {
 
-        ParkingNetworkWriter writer = new ParkingNetworkWriter(network, shp, inputParkingCapacities, firstHourParkingCost, extraHourParkingCost);
+        ParkingNetworkWriter writer = new ParkingNetworkWriter(network, shp, inputParkingCapacities);
         writer.addParkingInformationToLinks();
     }
 
