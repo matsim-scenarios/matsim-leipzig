@@ -1,9 +1,7 @@
 package org.matsim.run.prepare;
 
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.*;
+import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -11,14 +9,17 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.options.ShpOptions;
+import org.matsim.core.config.Config;
+import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.utils.geometry.geotools.MGC;
+import org.matsim.core.utils.gis.ShapeFileReader;
 import org.opengis.feature.simple.SimpleFeature;
 import picocli.CommandLine;
+import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
-import java.nio.file.Path;
 import java.util.*;
 
 @CommandLine.Command(
@@ -192,10 +193,9 @@ public class PrepareNetwork implements MATSimAppCommand {
     }
 
     /**
-     * Add parking information to network links. Therefore, a shape file of the wished parking area is needed + parking capacities information.
-     * To create parking capacities based on matsim runs see @ParkedVehiclesAnalysis.
+     * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
      */
-    static void prepareParking(Network network, ShpOptions parkingCostShape, ShpOptions parkingArea, Path inputParkingCapacities) {
+    static void prepareParkingCost(Network network, ShpOptions shp) {
         ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
         Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
         GeometryFactory gf = new GeometryFactory();
@@ -211,17 +211,13 @@ public class PrepareNetwork implements MATSimAppCommand {
 
                 double oneHourPCost = 0.;
                 double extraHourPCost = 0.;
-                double resPFee = 0.;
+
                 for (SimpleFeature feature : features) {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                    boolean linkInShp = line.intersects(geometry);
-                    if (linkInShp==true) {
+                    if (geometry.covers(point)) {
                         if (feature.getAttribute("cost_h") != null) {
                             oneHourPCost = (Double) feature.getAttribute("cost_h");
                             extraHourPCost = (Double) feature.getAttribute("cost_h");
-                        }
-                        if (feature.getAttribute("resPFee") !=null) {
-                            resPFee = (Double) feature.getAttribute("resPFee");
                         }
                         break;
                     }
@@ -229,8 +225,6 @@ public class PrepareNetwork implements MATSimAppCommand {
 
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), oneHourPCost);
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourPCost);
-                link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
-
             }
         }
 
