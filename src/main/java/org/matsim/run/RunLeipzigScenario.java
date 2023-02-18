@@ -237,7 +237,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		network.prepare(scenario.getNetwork());
 
 		if (tempo30Zone) {
-			Tempo30Zone.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())));
+			SlowSpeed.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())));
 		}
 	}
 
