@@ -79,9 +79,13 @@ public class ParkingNetworkWriter {
                     linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
 
                     //TODO maybe it would be better to have a csv file with parking cost per link here instead of a fixed value -sm0123
+                    // Parking cost are now defined by the shp file already, if link is inside our defined parking area, but has no parking cost we set them to zero to increase them later gr 1802
                     ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
-                    linkAttributes.putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), firstHourParkingCost);
-                    linkAttributes.putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourParkingCost);
+                    if (link.getAttributes().getAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName()).equals(null)) {
+                        linkAttributes.putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), 0.0);
+                        linkAttributes.putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), 0.0);
+                    }
+
                     adaptedLinksCount++;
                 }
             }

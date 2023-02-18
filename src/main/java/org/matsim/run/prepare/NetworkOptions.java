@@ -7,7 +7,6 @@ import picocli.CommandLine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Defines all options and parameters related to network modifications.
@@ -24,6 +23,8 @@ public class NetworkOptions {
 	private String carFreeModes;
 	@CommandLine.Option(names = "--parking-area", description = "Path to SHP file specifying parking area")
 	private Path parkingArea;
+	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking area")
+	private Path parkingCostArea;
 	@CommandLine.Option(names = "--parking-capacities", description = "Path to csv file containing parking capacity data per link")
 	private Path inputParkingCapacities;
 	@CommandLine.Option(names = "--city-area", description = "Path to SHP file specifying city area")
@@ -59,9 +60,11 @@ public class NetworkOptions {
 
 		if (isDefined(parkingArea)) {
 			if (!Files.exists(parkingArea))
-				throw new IllegalArgumentException("Path to parking capacities information not found: " + parkingArea);
+				throw new IllegalArgumentException("Path to parking area shape information not found: " + parkingArea);
+			if (!Files.exists(parkingCostArea))
+				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingArea);
 
-			PrepareNetwork.prepareParkingCost(network, new ShpOptions(parkingArea, null, null));
+			PrepareNetwork.prepareParking(network,new ShpOptions(parkingCostArea, null, null), new ShpOptions(parkingArea, null, null), inputParkingCapacities);
 		}
 
 		if(isDefined(cityArea)) {

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Tempo30Zone {
+public class SlowSpeed {
 
     public static void implementPushMeasuresByModifyingNetworkInArea(Network network, List<PreparedGeometry> geometries) {
         Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
