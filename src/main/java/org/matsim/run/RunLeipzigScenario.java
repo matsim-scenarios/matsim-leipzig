@@ -76,6 +76,9 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.*;
 
+/**
+ * Run the Leipzig scenario.  All the upstream stuff (network generation, initial demand generation) is in the Makefile.
+ */
 @CommandLine.Command(header = ":: Open Leipzig Scenario ::", version = RunLeipzigScenario.VERSION)
 @MATSimApplication.Prepare({
 		CreateNetworkFromSumo.class, CreateTransitScheduleFromGtfs.class, TrajectoryToPlans.class, GenerateShortDistanceTrips.class,
@@ -141,12 +144,14 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		for (long ii = 600; ii <= 97200; ii += 600) {
 
+			// activity types without opening/closing times:
 			for (String act : List.of("home", "restaurant", "other", "visit", "errands",
 					"educ_higher", "educ_secondary", "educ_primary", "educ_tertiary", "educ_kiga", "educ_other")) {
 				config.planCalcScore()
 						.addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(act + "_" + ii).setTypicalDuration(ii));
 			}
 
+			// activity types with opening/closing times:
 			config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("work_" + ii).setTypicalDuration(ii)
 					.setOpeningTime(6. * 3600.).setClosingTime(20. * 3600.));
 			config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("business_" + ii).setTypicalDuration(ii)
@@ -160,8 +165,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 					.setOpeningTime(8. * 3600.).setClosingTime(20. * 3600.));
 		}
 
+		// car interaction has a typical duration of 60sec.
 		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("car interaction").setTypicalDuration(60));
+		// (yyyy why give this a non-standard duration?)  (yyyy should use corresponding static method to avoid using "magic" string.)
+
 		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("other").setTypicalDuration(600 * 3));
+		// (yyyy why is this here?)
 
 		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("freight_start").setTypicalDuration(60 * 15));
 		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("freight_end").setTypicalDuration(60 * 15));
@@ -176,7 +185,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 		}
 
 		config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.info);
+		// (yyyy why only "info"?)
+
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
+		// (yyyy what exactly is this doing?)
 
 		if (drt) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
@@ -278,6 +290,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ChangeSingleTripMode, "person", 0.65, 0.85));
 				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ChangeTripMode, "person", 0.65, 0.85));
 				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute, "person", 0.78));
+				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.78));
+
+				// Todos:
+				// * innovation switchoff is somewhere defined as 0.9.  This means, e.g., that ReRoute fades out until 0.9.  --> switch on score MSA at same value as innovation switchoff
+				// * fade out all innovative strategies (i.e. also time mutation)
+				// * time alloc mut strategy weight same as re-route strategy weight.
 
 				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
 			}
