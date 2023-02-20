@@ -13,7 +13,7 @@
         <!-- <matsim.version>12.0</matsim.version> -->
         <!-- TODO: change back to weekly before release -->
 <!--        <matsim.version>15.0-SNAPSHOT</matsim.version>-->
-        <matsim.version>15.0-PR2385</matsim.version>
+        <matsim.version>15.0-PR2426</matsim.version>
         <mainClass>org.matsim.run.RunLeipzigScenario</mainClass>
     </properties>
 
