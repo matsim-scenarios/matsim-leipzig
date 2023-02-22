@@ -200,54 +200,45 @@ public class PrepareNetwork implements MATSimAppCommand {
     static void prepareParking(Network network, ShpOptions parkingCostShape, ShpOptions parkingArea, Path inputParkingCapacities) {
         ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
         Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
+        GeometryFactory gf = new GeometryFactory();
 
         for (var link : network.getLinks().values()) {
 
             if (!link.getAllowedModes().contains("pt")) {
-                // only when both nodes within the zone 1 then 2 EUR
-                // one node within zone 1 and one within zone 2 then 1 EUR
-                // both nodes within zone 2 then 1 EUR
 
-                Coord coordFromNode = link.getFromNode().getCoord();
-                Coord coordToNode = link.getToNode().getCoord();
+                LineString line = gf.createLineString(new Coordinate[]{
+                        MGC.coord2Coordinate(link.getFromNode().getCoord()),
+                        MGC.coord2Coordinate(link.getToNode().getCoord())
+                });
 
-                //Coord coord = link.getCoord();
-                //Point point = MGC.coord2Point(coord);
-                Point pointFromNode = MGC.coord2Point(coordFromNode);
-                Point pointToNode = MGC.coord2Point(coordToNode);
                 double oneHourPCost = 0.;
                 double extraHourPCost = 0.;
-
+                double resPFee = 0.;
                 for (SimpleFeature feature : features) {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                    if (geometry.covers(pointFromNode) && geometry.covers(pointToNode)) {
+                    boolean linkInShp = line.intersects(geometry);
+                    if (linkInShp==true) {
                         if (feature.getAttribute("cost_h") != null) {
                             oneHourPCost = (Double) feature.getAttribute("cost_h");
                             extraHourPCost = (Double) feature.getAttribute("cost_h");
                         }
+                        if (feature.getAttribute("resPFee") !=null) {
+                            resPFee = (Double) feature.getAttribute("resPFee");
+                        }
                         break;
-                    }
-                    if (geometry.covers(pointFromNode)) {
-                        if (feature.getAttribute("cost_h").equals(1.0)) {
-                            oneHourPCost = (Double) feature.getAttribute("cost_h");
-                            extraHourPCost = (Double) feature.getAttribute("cost_h");
-                        }
-                    }
-                    if (geometry.covers(pointToNode)) {
-                        if (feature.getAttribute("cost_h").equals(1.0)) {
-                            oneHourPCost = (Double) feature.getAttribute("cost_h");
-                            extraHourPCost = (Double) feature.getAttribute("cost_h");
-                        }
                     }
                 }
 
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), oneHourPCost);
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourPCost);
+                link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
+
             }
         }
 
         ParkingNetworkWriter writer = new ParkingNetworkWriter(network, parkingArea, inputParkingCapacities);
-        writer.addParkingInformationToLinks();
+        //TODO make it work with simons parking capacity logic
+        //writer.addParkingInformationToLinks();
     }
 
 }

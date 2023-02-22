@@ -58,9 +58,7 @@ public class NetworkOptions {
 			PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
 		}
 
-		if (isDefined(parkingArea)) {
-			if (!Files.exists(parkingArea))
-				throw new IllegalArgumentException("Path to parking area shape information not found: " + parkingArea);
+		if (isDefined(parkingCostArea)) {
 			if (!Files.exists(parkingCostArea))
 				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingArea);
 
