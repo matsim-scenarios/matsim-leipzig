@@ -66,16 +66,18 @@
         <param name="startTime" value="00:00:00"/>
         <param name="storageCapacityFactor" value="0.10"/>
         <param name="stuckTime" value="30.0"/>
-        <param name="trafficDynamics" value="queue"/>
+        <param name="trafficDynamics" value="kinematicWaves"/>
         <param name="linkDynamics" value="PassingQ"/>
         <param name="useLanes" value="false" />
         <param name="simStarttimeInterpretation" value="onlyUseStarttime" />
         <param name="vehiclesSource" value="modeVehicleTypesFromVehiclesData"/>
         <param name="insertingWaitingVehiclesBeforeDrivingVehicles" value="true"/>
+        <param name="simEndtimeInterpretation" value="onlyUseEndtime" />
+        <param name="simStarttimeInterpretation" value="onlyUseStarttime" />
     </module>
 
     <module name="strategy">
-        <param name="fractionOfIterationsToDisableInnovation" value="Infinity"/>
+        <param name="fractionOfIterationsToDisableInnovation" value="0.9" />
         <parameterset type="strategysettings">
             <param name="strategyName" value="ChangeExpBeta"/>
             <param name="subpopulation" value="person"/>
@@ -156,7 +158,7 @@
     </module>
 
     <module name="planCalcScore">
-        <param name="fractionOfIterationsToStartScoreMSA" value="1.0"/>
+        <param name="fractionOfIterationsToStartScoreMSA" value="0.9"/>
         <parameterset type="scoringParameters">
             <parameterset type="modeParams">
                 <param name="constant" value="0.0" />

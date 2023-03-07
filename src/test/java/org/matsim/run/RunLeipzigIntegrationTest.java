@@ -54,7 +54,7 @@ public class RunLeipzigIntegrationTest {
 
 	@Test
 	public final void runDrtExamplePopulationTest() {
-		Config config = ConfigUtils.loadConfig("scenarios/input/leipzig-v1.1-test.with-drt.config.xml");
+		Config config = ConfigUtils.loadConfig("scenarios/input/leipzig-test.with-drt.config.xml");
 
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
@@ -71,7 +71,7 @@ public class RunLeipzigIntegrationTest {
 
 	@Test
 	public final void runOptDrtExamplePopulationTest() {
-		Config config = ConfigUtils.loadConfig("scenarios/input/leipzig-v1.1-test.with-drt.config.xml");
+		Config config = ConfigUtils.loadConfig("scenarios/input/leipzig-test.with-drt.config.xml");
 
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
