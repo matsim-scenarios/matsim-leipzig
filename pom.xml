@@ -11,9 +11,8 @@
 
     <properties>
         <!-- <matsim.version>12.0</matsim.version> -->
-        <!-- TODO: change back to weekly before release -->
 <!--        <matsim.version>15.0-SNAPSHOT</matsim.version>-->
-        <matsim.version>15.0-PR2426</matsim.version>
+        <matsim.version>15.0-PR2438</matsim.version>
         <mainClass>org.matsim.run.RunLeipzigScenario</mainClass>
     </properties>
 
@@ -256,6 +255,7 @@
                                         <Specification-Vendor>org.matsim</Specification-Vendor>
                                         <Implementation-Vendor>org.matsim</Implementation-Vendor>
                                         <Implementation-Version>${project.version}</Implementation-Version>
+                                        <Multi-Release>true</Multi-Release>
                                     </manifestEntries>
                                 </transformer>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>

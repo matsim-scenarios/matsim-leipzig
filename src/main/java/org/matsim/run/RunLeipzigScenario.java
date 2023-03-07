@@ -184,8 +184,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 			config.qsim().setStorageCapFactor(sample.getSize() / 100.0);
 		}
 
-		config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.info);
-		// (yyyy why only "info"?)
+		config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.abort);
 
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		// (yyyy what exactly is this doing?)
@@ -286,16 +285,13 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 				Multibinder<StrategyWeightFadeout.Schedule> schedules = StrategyWeightFadeout.getBinder(binder());
 
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice, "person", 0.65, 0.85));
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ChangeSingleTripMode, "person", 0.65, 0.85));
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ChangeTripMode, "person", 0.65, 0.85));
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute, "person", 0.78));
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.78));
+				// Mode-choice fades out earlier than the other strategies
+				// Given a fixed mode, the "less disruptive" choice dimensions will be weighted higher during the end
+				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice, "person", 0.65, 0.80));
 
-				// Todos:
-				// * innovation switchoff is somewhere defined as 0.9.  This means, e.g., that ReRoute fades out until 0.9.  --> switch on score MSA at same value as innovation switchoff
-				// * fade out all innovative strategies (i.e. also time mutation)
-				// * time alloc mut strategy weight same as re-route strategy weight.
+				// Fades out until 0.9 (innovation switch off)
+				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute, "person", 0.75));
+				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.75));
 
 				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
 			}
