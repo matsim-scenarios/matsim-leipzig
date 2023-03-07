@@ -15,8 +15,6 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class RunLeipzigIntegrationTest {
-	@Rule
-	public MatsimTestUtils utils = new MatsimTestUtils();
 
 	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.1/input/";
 
@@ -25,19 +23,16 @@ public class RunLeipzigIntegrationTest {
 
 		Path output = Path.of("output/it-1pct");
 
-		Config config = ConfigUtils.loadConfig("scenarios/input/leipzig-v1.1-25pct.config.xml");
+		Config config = ConfigUtils.loadConfig("scenarios/input/leipzig-v1.2-25pct.config.xml");
 
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
 
 		// Change input paths
 		config.plans().setInputFile(URL + "leipzig-v1.1-0.1pct.plans.xml.gz");
-		config.transit().setTransitScheduleFile(URL + config.transit().getTransitScheduleFile());
-		config.transit().setVehiclesFile(URL + config.transit().getVehiclesFile());
-		config.network().setInputFile(URL + config.network().getInputFile());
 
 		Controler controler = RunLeipzigScenario.prepare(RunLeipzigScenario.class, config,
-				"run"
+				"--with-drt"
 		);
 
 		config.controler().setLastIteration(1);
