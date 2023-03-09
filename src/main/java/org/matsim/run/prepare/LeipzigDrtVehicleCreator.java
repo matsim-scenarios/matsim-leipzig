@@ -1,6 +1,8 @@
 package org.matsim.run.prepare;
 
 import com.opencsv.CSVWriter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 import org.matsim.api.core.v01.Coord;
@@ -29,145 +31,150 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @CommandLine.Command(
-        name = "create-drt-vehicles",
-        description = "Writes drt vehicles file"
+		name = "create-drt-vehicles",
+		description = "Writes drt vehicles file"
 )
 
 public class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 
-    private final Random random = MatsimRandom.getRandom();
-    private final Vehicles vehicles = VehicleUtils.createVehiclesContainer();
+	private static final Logger log = LogManager.getLogger(LeipzigDrtVehicleCreator.class);
 
-    @CommandLine.Mixin
-    private ShpOptions shp = new ShpOptions();
+	private final Random random = MatsimRandom.getRandom();
+	private final Vehicles vehicles = VehicleUtils.createVehiclesContainer();
 
-    @CommandLine.Option(names = "--network", description = "network file", required = true)
-    private String network;
+	@CommandLine.Mixin
+	private final ShpOptions shp = new ShpOptions();
 
-    @CommandLine.Option(names = "--vehicle-types-file", description = "path to existing vehicle types file. Vehicles will be added to this file. Use / instead of backslash.", required = true)
-    private String vehTypesFile;
+	@CommandLine.Option(names = "--network", description = "network file", required = true)
+	private String network;
 
-    @CommandLine.Option(names = "--drt-mode", description = "network mode for which the vehicle fleet is created", defaultValue = "drt")
-    private String drtMode;
+	@CommandLine.Option(names = "--vehicle-types-file", description = "path to existing vehicle types file. Vehicles will be added to this file. Use / instead of backslash.", required = true)
+	private String vehTypesFile;
 
-    @CommandLine.Option(names = "--no-vehicles", description = "no of vehicles per service area to create", required = true)
-    private int noVehiclesPerArea;
+	@CommandLine.Option(names = "--drt-mode", description = "network mode for which the vehicle fleet is created", defaultValue = "drt")
+	private String drtMode;
 
-    @CommandLine.Option(names = "--service-start-time", description = "start of vehicle service time in seconds", defaultValue = "18000")
-    private double serviceStartTime;
+	@CommandLine.Option(names = "--no-vehicles", description = "no of vehicles per service area to create", required = true)
+	private int noVehiclesPerArea;
 
-    @CommandLine.Option(names = "--service-end-time", description = "end of vehicle service time in seconds", defaultValue = "86400")
-    private double serviceEndTime;
+	@CommandLine.Option(names = "--service-start-time", description = "start of vehicle service time in seconds", defaultValue = "18000")
+	private double serviceStartTime;
 
-    public static void main(String[] args) throws IOException { new LeipzigDrtVehicleCreator().execute(args); }
+	@CommandLine.Option(names = "--service-end-time", description = "end of vehicle service time in seconds", defaultValue = "86400")
+	private double serviceEndTime;
 
-    @Override
-    public Integer call() throws Exception {
+	public static void main(String[] args) throws IOException {
+		new LeipzigDrtVehicleCreator().execute(args);
+	}
 
-        Config config = ConfigUtils.createConfig();
-        config.network().setInputFile(network);
-        Scenario scenario = ScenarioUtils.loadScenario(config);
-        Network network = scenario.getNetwork();
+	@Override
+	public Integer call() throws Exception {
 
-        Network drtNetwork = NetworkUtils.createNetwork();
-        Set<String> modes = new HashSet<>();
-        modes.add(drtMode);
+		Config config = ConfigUtils.createConfig();
+		config.network().setInputFile(network);
+		Scenario scenario = ScenarioUtils.loadScenario(config);
+		Network network = scenario.getNetwork();
 
-        TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
-        filter.filter(drtNetwork, modes);
+		Network drtNetwork = NetworkUtils.createNetwork();
+		Set<String> modes = new HashSet<>();
+		modes.add(drtMode);
 
-        List<SimpleFeature> serviceAreas = shp.readFeatures();
+		TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
+		filter.filter(drtNetwork, modes);
 
-        MatsimVehicleReader reader = new MatsimVehicleReader(vehicles);
-        reader.readFile(vehTypesFile);
+		List<SimpleFeature> serviceAreas = shp.readFeatures();
 
-        VehicleType drtType = null;
+		MatsimVehicleReader reader = new MatsimVehicleReader(vehicles);
+		reader.readFile(vehTypesFile);
 
-        //this is ugly hard coded and should maybe be converted into a run input parameter
-        for(VehicleType type : vehicles.getVehicleTypes().values()) {
-            if(type.getId().toString().contains("conventional")) {
-                drtType = type;
-            }
-        }
+		VehicleType drtType = null;
 
-        for(SimpleFeature serviceArea : serviceAreas) {
-            createVehiclesByRandomPointInShape(serviceArea, drtNetwork, noVehiclesPerArea, serviceStartTime,
-                    serviceEndTime, serviceAreas.indexOf(serviceArea), drtType);
-        }
+		//this is ugly hard coded and should maybe be converted into a run input parameter
+		for (VehicleType type : vehicles.getVehicleTypes().values()) {
+			if (type.getId().toString().contains("conventional")) {
+				drtType = type;
+			}
+		}
 
-        String string = vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() -1) + "-scaledFleet-caseNamav-"
-                + noVehiclesPerArea + "veh.xml";
+		for (SimpleFeature serviceArea : serviceAreas) {
+			createVehiclesByRandomPointInShape(serviceArea, drtNetwork, noVehiclesPerArea, serviceStartTime,
+					serviceEndTime, serviceAreas.indexOf(serviceArea), drtType);
+		}
 
-        //write files
-        new MatsimVehicleWriter(vehicles).writeFile(vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() -1) + "-scaledFleet-caseNamav-"
-                + noVehiclesPerArea + "veh.xml");
-        writeVehStartPositionsCSV(drtNetwork, vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() -1) + "-scaledFleet-caseNamav-"
-                + noVehiclesPerArea + "veh_startPositions.csv");
+		String string = vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() - 1) + "-scaledFleet-caseNamav-"
+				+ noVehiclesPerArea + "veh.xml";
 
-        return 0;
-    }
+		//write files
+		new MatsimVehicleWriter(vehicles).writeFile(vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() - 1) + "-scaledFleet-caseNamav-"
+				+ noVehiclesPerArea + "veh.xml");
+		writeVehStartPositionsCSV(drtNetwork, vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() - 1) + "-scaledFleet-caseNamav-"
+				+ noVehiclesPerArea + "veh_startPositions.csv");
 
-    private void createVehiclesByRandomPointInShape(SimpleFeature feature, Network network, int noVehiclesPerArea,
-                                                    double serviceStartTime, double serviceEndTime, int serviceAreaCount, VehicleType drtType) {
-        Geometry geometry = (Geometry) feature.getDefaultGeometry();
+		return 0;
+	}
 
-        for (int i = 0; i < noVehiclesPerArea; i++) {
-            Link link = null;
+	private void createVehiclesByRandomPointInShape(SimpleFeature feature, Network network, int noVehiclesPerArea,
+													double serviceStartTime, double serviceEndTime, int serviceAreaCount, VehicleType drtType) {
+		Geometry geometry = (Geometry) feature.getDefaultGeometry();
 
-            while(link == null) {
-                Point randomPoint = getRandomPointInFeature(random, geometry);
-                link = NetworkUtils.getNearestLinkExactly(network, MGC.point2Coord(randomPoint));
+		for (int i = 0; i < noVehiclesPerArea; i++) {
+			Link link = null;
 
-                if(MGC.coord2Point(link.getFromNode().getCoord()).within(geometry) &&
-                        MGC.coord2Point(link.getToNode().getCoord()).within(geometry)) {
+			while (link == null) {
+				Point randomPoint = getRandomPointInFeature(random, geometry);
+				link = NetworkUtils.getNearestLinkExactly(network, MGC.point2Coord(randomPoint));
 
-                } else {
-                    link = null;
-                }
-            }
+				if (MGC.coord2Point(link.getFromNode().getCoord()).within(geometry) &&
+						MGC.coord2Point(link.getToNode().getCoord()).within(geometry)) {
 
-            Vehicle vehicle = VehicleUtils.createVehicle(Id.createVehicleId(drtMode + serviceAreaCount + 0 + i), drtType);
-            vehicle.getAttributes().putAttribute("dvrpMode", drtMode);
-            vehicle.getAttributes().putAttribute("startLink", link.getId().toString());
-            vehicle.getAttributes().putAttribute("serviceBeginTime", serviceStartTime);
-            vehicle.getAttributes().putAttribute("serviceEndTime", serviceEndTime);
-            vehicles.addVehicle(vehicle);
-        }
-    }
+				} else {
+					link = null;
+				}
+			}
 
-    //copied from BerlinShpUtils -sm0922
-    private static Point getRandomPointInFeature(Random rnd, Geometry g) {
-        Point p = null;
-        double x, y;
-        do {
-            x = g.getEnvelopeInternal().getMinX() + rnd.nextDouble()
-                    * (g.getEnvelopeInternal().getMaxX() - g.getEnvelopeInternal().getMinX());
-            y = g.getEnvelopeInternal().getMinY() + rnd.nextDouble()
-                    * (g.getEnvelopeInternal().getMaxY() - g.getEnvelopeInternal().getMinY());
-            p = MGC.xy2Point(x, y);
-        }
-        while (!g.contains(p));
-        return p;
-    }
+			Vehicle vehicle = VehicleUtils.createVehicle(Id.createVehicleId(drtMode + serviceAreaCount + 0 + i), drtType);
+			vehicle.getAttributes().putAttribute("dvrpMode", drtMode);
+			vehicle.getAttributes().putAttribute("startLink", link.getId().toString());
+			vehicle.getAttributes().putAttribute("serviceBeginTime", serviceStartTime);
+			vehicle.getAttributes().putAttribute("serviceEndTime", serviceEndTime);
+			vehicles.addVehicle(vehicle);
+		}
+	}
 
-    //copied and adapted from matsim-berlin DrtVehicleCreator -sm0922
-    private void writeVehStartPositionsCSV(Network drtNetwork, String outputFile) {
-        Map<Id<Link>, Long> linkId2NrVeh = vehicles.getVehicles().values().stream().
-                map(veh -> Id.createLinkId(veh.getAttributes().getAttribute("startLink").toString())).
-                collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        try {
-            CSVWriter writer = new CSVWriter(Files.newBufferedWriter(Paths.get(outputFile)), ';', '"', '"', "\n");
-            writer.writeNext(new String[]{"link", "x", "y", "drtVehicles"}, false);
-            linkId2NrVeh.forEach( (linkId, numberVeh) -> {
-                Coord coord = drtNetwork.getLinks().get(linkId).getCoord();
-                double x = coord.getX();
-                double y = coord.getY();
-                writer.writeNext(new String[]{linkId.toString(), "" + x, "" + y, "" + numberVeh}, false);
-            });
+	//copied from BerlinShpUtils -sm0922
+	private static Point getRandomPointInFeature(Random rnd, Geometry g) {
+		Point p = null;
+		double x;
+		double y;
+		do {
+			x = g.getEnvelopeInternal().getMinX() + rnd.nextDouble()
+					* (g.getEnvelopeInternal().getMaxX() - g.getEnvelopeInternal().getMinX());
+			y = g.getEnvelopeInternal().getMinY() + rnd.nextDouble()
+					* (g.getEnvelopeInternal().getMaxY() - g.getEnvelopeInternal().getMinY());
+			p = MGC.xy2Point(x, y);
+		}
+		while (!g.contains(p));
+		return p;
+	}
 
-            writer.close();
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-        }
-    }
+	//copied and adapted from matsim-berlin DrtVehicleCreator -sm0922
+	private void writeVehStartPositionsCSV(Network drtNetwork, String outputFile) {
+		Map<Id<Link>, Long> linkId2NrVeh = vehicles.getVehicles().values().stream().
+				map(veh -> Id.createLinkId(veh.getAttributes().getAttribute("startLink").toString())).
+				collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+		try {
+			CSVWriter writer = new CSVWriter(Files.newBufferedWriter(Paths.get(outputFile)), ';', '"', '"', "\n");
+			writer.writeNext(new String[]{"link", "x", "y", "drtVehicles"}, false);
+			linkId2NrVeh.forEach((linkId, numberVeh) -> {
+				Coord coord = drtNetwork.getLinks().get(linkId).getCoord();
+				double x = coord.getX();
+				double y = coord.getY();
+				writer.writeNext(new String[]{linkId.toString(), "" + x, "" + y, "" + numberVeh}, false);
+			});
+
+			writer.close();
+		} catch (IOException e) {
+			log.error(e);
+		}
+	}
 }

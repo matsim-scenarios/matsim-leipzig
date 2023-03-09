@@ -16,79 +16,81 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @CommandLine.Command(
-        name = "person-money-events",
-        description = "Extract all events which involve payments from events file."
+		name = "person-money-events",
+		description = "Extract all events which involve payments from events file."
 )
 
 public class ExtractPersonMoneyEvents implements MATSimAppCommand, PersonMoneyEventHandler {
 
-    private static final Logger log = LogManager.getLogger(ExtractPersonMoneyEvents.class);
+	private static final Logger log = LogManager.getLogger(ExtractPersonMoneyEvents.class);
 
-    @CommandLine.Option(names = "--events", description = "Input events file")
-    private Path inputEvents;
+	@CommandLine.Option(names = "--events", description = "Input events file")
+	private Path inputEvents;
 
-    @CommandLine.Option(names = "--output", description = "Path to output file")
-    private Path output;
+	@CommandLine.Option(names = "--output", description = "Path to output file")
+	private Path output;
 
-    @CommandLine.Option(names = "--purpose", description = "Optional filter for payment purpose. Use quotation marks if your purpose contains blanks")
-    private String purpose;
+	@CommandLine.Option(names = "--purpose", description = "Optional filter for payment purpose. Use quotation marks if your purpose contains blanks")
+	private String purpose;
 
-    private BufferedWriter writer;
+	private BufferedWriter writer;
 
-    public static void main(String[] args) { new ExtractPersonMoneyEvents().execute(args); }
+	public static void main(String[] args) {
+		new ExtractPersonMoneyEvents().execute(args);
+	}
 
-    @Override
-    public Integer call() throws Exception {
-        if (!Files.exists(inputEvents)) {
-            log.error("File {} does not exists.", inputEvents);
-            return 2;
-        }
+	@Override
+	public Integer call() throws Exception {
+		if (!Files.exists(inputEvents)) {
+			log.error("File {} does not exists.", inputEvents);
+			return 2;
+		}
 
-        if (output == null) {
-            log.error("No output file defined!");
-            return 2;
-        }
+		if (output == null) {
+			log.error("No output file defined!");
+			return 2;
+		}
 
-        writer = Files.newBufferedWriter(output);
+		writer = Files.newBufferedWriter(output);
 
-        EventsManager manager = EventsUtils.createEventsManager();
-        manager.addHandler(this);
+		EventsManager manager = EventsUtils.createEventsManager();
+		manager.addHandler(this);
 
-        manager.initProcessing();
+		manager.initProcessing();
 
-        EventsUtils.readEvents(manager, inputEvents.toString());
+		EventsUtils.readEvents(manager, inputEvents.toString());
 
-        manager.finishProcessing();
+		manager.finishProcessing();
 
-        if (writer != null)
-            writer.close();
+		if (writer != null)
+			writer.close();
 
-        return 0;
-    }
+		return 0;
+	}
 
-    @Override
-    public void handleEvent(PersonMoneyEvent event) {
+	@Override
+	public void handleEvent(PersonMoneyEvent event) {
 
-        boolean relevant = false;
+		boolean relevant = false;
 
-        if(purpose != null) {
-            if(event.getPurpose().contains(purpose)) {
-                relevant = true;
-            }
-        } else {
-            relevant = true;
-        }
+		if (purpose != null) {
+			if (event.getPurpose().contains(purpose)) {
+				relevant = true;
+			}
+		} else {
+			relevant = true;
+		}
 
-        if(relevant) {
-            if (writer != null) {
-                try {
-                    writer.write(event.toString());
-                    writer.newLine();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-        }
+		if (relevant) {
+			if (writer != null) {
+				try {
+					writer.write(event.toString());
+					writer.newLine();
+				} catch (IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			}
+		}
 
-    }
+	}
 }

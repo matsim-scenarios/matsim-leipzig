@@ -124,7 +124,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	private ShpOptions shp;
 
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
-	private NetworkOptions network = new NetworkOptions();
+	private final NetworkOptions network = new NetworkOptions();
 
 	public RunLeipzigScenario(@Nullable Config config) {
 		super(config);

@@ -20,94 +20,96 @@ import picocli.CommandLine;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.matsim.application.ApplicationUtils.globFile;
 
-/**
- * @author Simon Meinhardt (simei94)
- */
-
+@CommandLine.Command(
+		name = "vehicle-road-usage"
+)
 public class VehiclesRoadUsageAnalysis implements MATSimAppCommand {
-    @CommandLine.Option(names = "--directory", description = "path to the directory of the simulation output", required = true)
-    private Path directory;
+	@CommandLine.Option(names = "--directory", description = "path to the directory of the simulation output", required = true)
+	private Path directory;
 
-    public static void main(String[] args) {
-        new VehiclesRoadUsageAnalysis().execute(args);
-    }
+	public static void main(String[] args) {
+		new VehiclesRoadUsageAnalysis().execute(args);
+	}
 
-    static class VehicleLinkUsageCounter implements VehicleEntersTrafficEventHandler, LinkEnterEventHandler {
+	@Override
+	public Integer call() throws Exception {
+		Path networkPath = globFile(directory, "*output_network.*");
+		Path eventsFilePath = globFile(directory, "*output_events.*");
+		Path outputFolder = Path.of(directory.toString() + "/analysis-road-usage");
 
-        private final Network network;
-        private final Map<Id<Link>, Integer> vehicleCount;
+		if (!Files.exists(outputFolder)) {
+			Files.createDirectory(outputFolder);
+		}
 
-        VehicleLinkUsageCounter(Network network, Map<Id<Link>, Integer> vehicleCount) {
-            this.network = network;
-            this.vehicleCount = vehicleCount;
-            reset(0);
-        }
+		Network network = NetworkUtils.readNetwork(networkPath.toString());
+		EventsManager eventsManager = EventsUtils.createEventsManager();
 
-        @Override
-        public void handleEvent(LinkEnterEvent event) {
-            if(!vehicleCount.containsKey(event.getLinkId())) {
-                vehicleCount.put(event.getLinkId(), 1);
-            } else {
-                vehicleCount.replace(event.getLinkId(), vehicleCount.get(event.getLinkId()) + 1);
-            }
-        }
+		Map<Id<Link>, Integer> vehicleCount = new HashMap<>();
 
-        @Override
-        public void handleEvent(VehicleEntersTrafficEvent event) {
-            if(!vehicleCount.containsKey(event.getLinkId())) {
-                vehicleCount.put(event.getLinkId(), 1);
-            } else {
-                vehicleCount.replace(event.getLinkId(), vehicleCount.get(event.getLinkId()) + 1);
-            }
-        }
+		VehicleLinkUsageCounter vehicleLinkUsageCounter = new VehicleLinkUsageCounter(network, vehicleCount);
+		eventsManager.addHandler(vehicleLinkUsageCounter);
 
-        @Override
-        public void reset(int iteration) {
-            vehicleCount.clear();
-        }
-    }
+		MatsimEventsReader reader = new MatsimEventsReader(eventsManager);
+		reader.readFile(eventsFilePath.toString());
 
-    @Override
-    public Integer call() throws Exception {
-        Path networkPath = globFile(directory, "*output_network.*");
-        Path eventsFilePath = globFile(directory, "*output_events.*");
-        Path outputFolder = Path.of(directory.toString() + "/analysis-road-usage");
+		//writeResults
+		String vehicleRoadUsageFile = outputFolder + "/" + "allModes_vehicle_road_usage.tsv";
+		CSVPrinter vehicleRoadUsageWriter = new CSVPrinter(new FileWriter(vehicleRoadUsageFile), CSVFormat.TDF);
+		List<String> header = new ArrayList<>();
+		header.add("link_id");
+		header.add("vehicleCount");
 
-        if (!Files.exists(outputFolder)) {
-            Files.createDirectory(outputFolder);
-        }
+		vehicleRoadUsageWriter.printRecord(header);
 
-        Network network = NetworkUtils.readNetwork(networkPath.toString());
-        EventsManager eventsManager = EventsUtils.createEventsManager();
+		for (Id<Link> linkId : vehicleCount.keySet()) {
+			List<String> vehicleEntry = new ArrayList<>();
+			vehicleEntry.add(linkId.toString());
+			vehicleEntry.add(vehicleCount.get(linkId).toString());
+			vehicleRoadUsageWriter.printRecord(vehicleEntry);
+		}
+		vehicleRoadUsageWriter.close();
+		return 0;
+	}
 
-        Map<Id<Link>, Integer> vehicleCount = new HashMap<>();
+	static class VehicleLinkUsageCounter implements VehicleEntersTrafficEventHandler, LinkEnterEventHandler {
 
-        VehicleLinkUsageCounter vehicleLinkUsageCounter = new VehicleLinkUsageCounter(network, vehicleCount);
-        eventsManager.addHandler(vehicleLinkUsageCounter);
+		private final Network network;
+		private final Map<Id<Link>, Integer> vehicleCount;
 
-        MatsimEventsReader reader = new MatsimEventsReader(eventsManager);
-        reader.readFile(eventsFilePath.toString());
+		VehicleLinkUsageCounter(Network network, Map<Id<Link>, Integer> vehicleCount) {
+			this.network = network;
+			this.vehicleCount = vehicleCount;
+			reset(0);
+		}
 
-        //writeResults
-        String vehicleRoadUsageFile = outputFolder + "/" + "allModes_vehicle_road_usage.tsv";
-        CSVPrinter vehicleRoadUsageWriter = new CSVPrinter(new FileWriter(vehicleRoadUsageFile), CSVFormat.TDF);
-        List<String> header = new ArrayList<>();
-        header.add("link_id");
-        header.add("vehicleCount");
+		@Override
+		public void handleEvent(LinkEnterEvent event) {
+			if (!vehicleCount.containsKey(event.getLinkId())) {
+				vehicleCount.put(event.getLinkId(), 1);
+			} else {
+				vehicleCount.replace(event.getLinkId(), vehicleCount.get(event.getLinkId()) + 1);
+			}
+		}
 
-        vehicleRoadUsageWriter.printRecord(header);
+		@Override
+		public void handleEvent(VehicleEntersTrafficEvent event) {
+			if (!vehicleCount.containsKey(event.getLinkId())) {
+				vehicleCount.put(event.getLinkId(), 1);
+			} else {
+				vehicleCount.replace(event.getLinkId(), vehicleCount.get(event.getLinkId()) + 1);
+			}
+		}
 
-        for(Id<Link> linkId : vehicleCount.keySet()) {
-            List<String> vehicleEntry = new ArrayList<>();
-            vehicleEntry.add(linkId.toString());
-            vehicleEntry.add(vehicleCount.get(linkId).toString());
-            vehicleRoadUsageWriter.printRecord(vehicleEntry);
-        }
-        vehicleRoadUsageWriter.close();
-        return 0;
-    }
+		@Override
+		public void reset(int iteration) {
+			vehicleCount.clear();
+		}
+	}
 }

@@ -7,6 +7,7 @@ import picocli.CommandLine;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Defines all options and parameters related to network modifications.
@@ -23,13 +24,14 @@ public class NetworkOptions {
 	private String carFreeModes;
 	@CommandLine.Option(names = "--parking-area", description = "Path to SHP file specifying parking area")
 	private Path parkingArea;
-	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking area")
-	private Path parkingCostArea;
 	@CommandLine.Option(names = "--parking-capacities", description = "Path to csv file containing parking capacity data per link")
 	private Path inputParkingCapacities;
+	@CommandLine.Option(names = "--parking-cost-first-hour", description = "Parking cost for first hour. Needed for ParkingCostModule", defaultValue = "0.0")
+	private String firstHourParkingCost;
+	@CommandLine.Option(names = "--parking-cost-extra-hour", description = "Parking cost for every extra hour. Needed for ParkingCostModule", defaultValue = "0.0")
+	private String extraHourParkingCost;
 	@CommandLine.Option(names = "--city-area", description = "Path to SHP file specifying city area")
 	private Path cityArea;
-
 
 	/**
 	 * Return whether a car free area is defined.

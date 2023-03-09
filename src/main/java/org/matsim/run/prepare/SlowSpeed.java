@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SlowSpeed {
+/**
+ * Reduce speed of link in certain zone.
+ */
+public final class Tempo30Zone {
 
     public static void implementPushMeasuresByModifyingNetworkInArea(Network network, List<PreparedGeometry> geometries) {
         Set<? extends Link> carLinksInArea = network.getLinks().values().stream()

@@ -50,7 +50,6 @@ import org.matsim.vehicles.VehicleUtils;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
@@ -63,9 +62,9 @@ import static org.matsim.application.ApplicationUtils.globFile;
  * and/or on the server) to access the encrypted files on the public-svn.
  *
  * @author Ruan J. Gräbe (rgraebe)
-*/
-
-public class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAppCommand {
+ */
+@SuppressWarnings({"IllegalCatch", "JavaNCSS"})
+public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAppCommand {
 
 	private static final Logger log = LogManager.getLogger(RunOfflineAirPollutionAnalysisByVehicleCategory.class);
 	private final String runDirectory;
@@ -73,24 +72,25 @@ public class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAp
 	private final String hbefaWarmFile;
 	private final String hbefaColdFile;
 	private final String analysisOutputDirectory;
-	
+
 	public RunOfflineAirPollutionAnalysisByVehicleCategory(String runDirectory, String runId, String hbefaFileWarm, String hbefaFileCold, String analysisOutputDirectory) {
 		this.runDirectory = runDirectory;
 		this.runId = runId;
 		this.hbefaWarmFile = hbefaFileWarm;
 		this.hbefaColdFile = hbefaFileCold;
-		
+
 		if (!analysisOutputDirectory.endsWith("/")) analysisOutputDirectory = analysisOutputDirectory + "/";
 		this.analysisOutputDirectory = analysisOutputDirectory;
 	}
-	
+
 	public static void main(String[] args) {
 
 		if (args.length == 1) {
 			String runDirectory = args[0];
 			if (!runDirectory.endsWith("/")) runDirectory = runDirectory + "/";
 
-			final String runId = "leipzig-25pct"; // based on the simulation output available in this project
+			// based on the simulation output available in this project
+			final String runId = "leipzig-25pct";
 
 			String hbefaFileWarm = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/7eff8f308633df1b8ac4d06d05180dd0c5fdf577.enc";
 			String hbefaFileCold = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/ColdStart_Vehcat_2020_Average_withHGVetc.csv.enc";
@@ -126,7 +126,7 @@ public class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAp
 		config.parallelEventHandling().setNumberOfThreads(null);
 		config.parallelEventHandling().setEstimatedNumberOfEvents(null);
 		config.global().setNumberOfThreads(4);
-		
+
 		EmissionsConfigGroup eConfig = ConfigUtils.addOrGetModule(config, EmissionsConfigGroup.class);
 		eConfig.setDetailedVsAverageLookupBehavior(DetailedVsAverageLookupBehavior.directlyTryAverageTable);
 		eConfig.setAverageColdEmissionFactorsFile(this.hbefaColdFile);
@@ -136,7 +136,9 @@ public class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAp
 		// input and outputs of emissions analysis
 		final String eventsFile = globFile(Path.of(runDirectory), runId, "output_events");
 		File dir = new File(analysisOutputDirectory);
-		if ( !dir.exists() ) { dir.mkdir(); }
+		if (!dir.exists()) {
+			dir.mkdir();
+		}
 		final String emissionEventOutputFile = analysisOutputDirectory + runId + ".emission.events.offline.xml.gz";
 		log.info("Writing emissions (link totals) to: {}", emissionEventOutputFile);
 		// for SimWrapper
@@ -144,12 +146,13 @@ public class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAp
 		log.info("Writing emissions per link [g/m] to: {}", linkEmissionPerMOutputFile);
 
 		Scenario scenario = ScenarioUtils.loadScenario(config);
-		
+
 		// network
 		new VspHbefaRoadTypeMapping().addHbefaMappings(scenario.getNetwork());
 		log.info("Using integrated road types");
 
-		{ // vehicles
+		{
+			// vehicles
 			Id<VehicleType> carVehicleTypeId = Id.create("car", VehicleType.class);
 			Id<VehicleType> freightVehicleTypeId = Id.create("freight", VehicleType.class);
 			Id<VehicleType> drtVehicleTypeId = Id.create("conventional_vehicle", VehicleType.class);
@@ -192,41 +195,42 @@ public class RunOfflineAirPollutionAnalysisByVehicleCategory implements MATSimAp
 			VehicleUtils.setHbefaVehicleCategory(bikeEngineInformation, HbefaVehicleCategory.NON_HBEFA_VEHICLE.toString());
 		}
 
-        EventsManager eventsManager = EventsUtils.createEventsManager();
+		EventsManager eventsManager = EventsUtils.createEventsManager();
 
-		AbstractModule module = new AbstractModule(){
+		AbstractModule module = new AbstractModule() {
 			@Override
-			public void install(){
-				bind( Scenario.class ).toInstance( scenario );
-				bind( EventsManager.class ).toInstance( eventsManager );
-				bind( EmissionModule.class ) ;
+			public void install() {
+				bind(Scenario.class).toInstance(scenario);
+				bind(EventsManager.class).toInstance(eventsManager);
+				bind(EmissionModule.class);
 			}
 		};
 
 		com.google.inject.Injector injector = Injector.createInjector(config, module);
 
-        EmissionModule emissionModule = injector.getInstance(EmissionModule.class);
+		EmissionModule emissionModule = injector.getInstance(EmissionModule.class);
 
-        EventWriterXML emissionEventWriter = new EventWriterXML(emissionEventOutputFile);
-        emissionModule.getEmissionEventsManager().addHandler(emissionEventWriter);
+		EventWriterXML emissionEventWriter = new EventWriterXML(emissionEventOutputFile);
+		emissionModule.getEmissionEventsManager().addHandler(emissionEventWriter);
 
 		// necessary for link emissions [g/m] output
 		EmissionsOnLinkEventHandler emissionsOnLinkEventHandler = new EmissionsOnLinkEventHandler(10.);
 		eventsManager.addHandler(emissionsOnLinkEventHandler);
 
-        eventsManager.initProcessing();
-        MatsimEventsReader matsimEventsReader = new MatsimEventsReader(eventsManager);
-        matsimEventsReader.readFile(eventsFile);
+		eventsManager.initProcessing();
+		MatsimEventsReader matsimEventsReader = new MatsimEventsReader(eventsManager);
+		matsimEventsReader.readFile(eventsFile);
 		log.info("-------------------------------------------------");
 		log.info("Done reading the events file");
 		log.info("Finish processing...");
 		eventsManager.finishProcessing();
 		log.info("Closing events file...");
-        emissionEventWriter.closeFile();
+		emissionEventWriter.closeFile();
 		log.info("Done");
 		log.info("Writing (more) output...");
 
-		{ // writing emissions (per link) per meter
+		{
+			// writing emissions (per link) per meter
 			File file1 = new File(linkEmissionPerMOutputFile);
 			BufferedWriter bw1 = new BufferedWriter(new FileWriter(file1));
 
