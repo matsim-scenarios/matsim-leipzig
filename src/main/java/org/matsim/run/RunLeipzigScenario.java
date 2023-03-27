@@ -71,7 +71,6 @@ import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
-import playground.vsp.simpleParkingCostHandler.ParkingCostModule;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -111,6 +110,13 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	@CommandLine.Option(names = "--parking-cost", defaultValue = "false", description = "Enable parking costs on network", negatable = true)
 	private boolean parkingCost;
+
+	//TODO: define adequate values for the following doubles
+	@CommandLine.Option(names = "--parking-cost-time-period-start", defaultValue = "0", description = "Start of time period for which parking cost will be charged.")
+	private Double parkingCostTimePeriodStart;
+
+	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
+	private Double parkingCostTimePeriodEnd;
 
 	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
 	private boolean incomeDependent;
@@ -244,7 +250,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 				}
 
 				if (parkingCost) {
-					install(new ParkingCostModule());
+					addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
 					install(new PersonMoneyEventsAnalysisModule());
 				}
 
