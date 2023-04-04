@@ -1,4 +1,4 @@
-package org.matsim.analysis;
+package org.matsim.run;
 /* *********************************************************************** *
  * project: org.matsim.*
  *                                                                         *
@@ -46,9 +46,11 @@ import com.google.inject.Inject;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 /**
+ * Implementation of ParkingCostHandler with an additional check for time restriction when including parking cost into a simulation.
+ *
  * @author ikaddoura, simei94
  */
-public final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEventHandler, ActivityEndEventHandler, PersonDepartureEventHandler, PersonLeavesVehicleEventHandler, PersonEntersVehicleEventHandler {
+final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEventHandler, ActivityEndEventHandler, PersonDepartureEventHandler, PersonLeavesVehicleEventHandler, PersonEntersVehicleEventHandler {
 
 	private final Map<Id<Person>, Double> personId2lastLeaveVehicleTime = new HashMap<>();
 	private final Map<Id<Person>, String> personId2previousActivity = new HashMap<>();
@@ -161,6 +163,7 @@ public final class TimeRestrictedParkingCostHandler implements TransitDriverStar
 
 
 	@Override
+	@SuppressWarnings("CyclomaticComplexity")
 	public void handleEvent(PersonEntersVehicleEvent event) {
 
 		isInRestrictedParkingPeriod = checkTimeRestriction(event.getTime());
