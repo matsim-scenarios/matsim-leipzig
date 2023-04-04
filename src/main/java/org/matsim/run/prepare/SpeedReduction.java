@@ -17,7 +17,9 @@ public class SpeedReduction {
 
     public static void implementPushMeasuresByModifyingNetworkInArea(Network network, List<PreparedGeometry> geometries, Double relativeSpeedChange) {
         Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
-                .filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
+//                .filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
+                //we have to filter for bike here! otherwise the speed reduction will not work for car free areas. -sm0423
+                .filter(link -> link.getAllowedModes().contains(TransportMode.bike))
                 .filter(link -> ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries)) //spatial filter
                 .filter(link -> ! ((String)link.getAttributes().getAttribute("type")).contains("motorway") )//we won't change motorways and motorway_links
                 .filter(link -> !((String)link.getAttributes().getAttribute("type")).contains("trunk") )
