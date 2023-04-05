@@ -24,7 +24,7 @@ import java.util.Set;
  * @author Simon Meinhardt (simei94)
  */
 
-class CarfreeMultiModalLinkChooserTest {
+public class CarfreeMultiModalLinkChooserTest {
 
     @Test
     public void testLinkChooserMultimodalNetwork() {

@@ -76,7 +76,7 @@ public class ExtractPersonEvents implements MATSimAppCommand, BasicEventHandler 
 
 		if (relevant) {
 
-			System.out.println(event);
+			log.info(event);
 
 			if (writer != null) {
 				try {

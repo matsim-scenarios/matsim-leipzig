@@ -66,16 +66,18 @@
         <param name="startTime" value="00:00:00"/>
         <param name="storageCapacityFactor" value="0.10"/>
         <param name="stuckTime" value="30.0"/>
-        <param name="trafficDynamics" value="queue"/>
+        <param name="trafficDynamics" value="kinematicWaves"/>
         <param name="linkDynamics" value="PassingQ"/>
         <param name="useLanes" value="false" />
         <param name="simStarttimeInterpretation" value="onlyUseStarttime" />
         <param name="vehiclesSource" value="modeVehicleTypesFromVehiclesData"/>
         <param name="insertingWaitingVehiclesBeforeDrivingVehicles" value="true"/>
+        <param name="simEndtimeInterpretation" value="onlyUseEndtime" />
+        <param name="simStarttimeInterpretation" value="onlyUseStarttime" />
     </module>
 
     <module name="strategy">
-        <param name="fractionOfIterationsToDisableInnovation" value="Infinity"/>
+        <param name="fractionOfIterationsToDisableInnovation" value="0.9" />
         <parameterset type="strategysettings">
             <param name="strategyName" value="ChangeExpBeta"/>
             <param name="subpopulation" value="person"/>
@@ -156,7 +158,7 @@
     </module>
 
     <module name="planCalcScore">
-        <param name="fractionOfIterationsToStartScoreMSA" value="1.0"/>
+        <param name="fractionOfIterationsToStartScoreMSA" value="0.9"/>
         <parameterset type="scoringParameters">
             <parameterset type="modeParams">
                 <param name="constant" value="0.0" />
@@ -264,7 +266,7 @@
             <param name="operationalScheme" value="serviceAreaBased"/>
 			<!-- If true, the max travel and wait times of a submitted request are considered hard constraints (the request gets rejected if one of the constraints is violated). If false, the max travel and wait times are considered soft constraints (insertion of a request that violates one of the constraints is allowed, but its cost is increased by additional penalty to make it relatively less attractive). Penalisation of insertions can be customised by injecting a customised InsertionCostCalculator.PenaltyCalculator -->
 			<param name="rejectRequestIfMaxWaitOrTravelTimeViolated" value="false" />
-			
+
 			<!-- allows to configure a service area per drt mode. Used with serviceArea Operational Scheme -->
             <param name="drtServiceAreaShapeFile" value="drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp"/>
 
@@ -310,7 +312,7 @@
             <param name="operationalScheme" value="serviceAreaBased"/>
 			<!-- If true, the max travel and wait times of a submitted request are considered hard constraints (the request gets rejected if one of the constraints is violated). If false, the max travel and wait times are considered soft constraints (insertion of a request that violates one of the constraints is allowed, but its cost is increased by additional penalty to make it relatively less attractive). Penalisation of insertions can be customised by injecting a customised InsertionCostCalculator.PenaltyCalculator -->
 			<param name="rejectRequestIfMaxWaitOrTravelTimeViolated" value="false" />
-			
+
 			<!-- allows to configure a service area per drt mode. Used with serviceArea Operational Scheme -->
             <param name="drtServiceAreaShapeFile" value="drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp"/>
 
@@ -337,7 +339,7 @@
                 </parameterset>
             </parameterset> -->
         </parameterset>
-		
+
     </module>
 
     <module name="dvrp" >
@@ -353,5 +355,5 @@
         </parameterset>
 
     </module>
-    
+
 </config>

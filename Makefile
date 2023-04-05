@@ -2,34 +2,33 @@
 JAR := matsim-leipzig-*.jar
 V := v1.2
 CRS := EPSG:25832
+MEMORY ?= 20G
 
-export SUMO_HOME := $(abspath ../../sumo-1.8.0/)
-osmosis := osmosis\bin\osmosis
+export SUMO_HOME ?= $(abspath ../../sumo-1.8.0/)
+osmosis := osmosis/bin/osmosis
 
-REGIONS := baden-wuerttemberg bayern brandenburg bremen hamburg hessen mecklenburg-vorpommern niedersachsen nordrhein-westfalen\
-	rheinland-pfalz saarland sachsen sachsen-anhalt schleswig-holstein thueringen
-
-SHP_FILES=$(patsubst %, scenarios/shp/%-latest-free.shp.zip, $(REGIONS))
+NETWORK := germany-220327.osm.pbf
+germany := ../shared-svn/projects/matsim-germany
 
 .PHONY: prepare
+
+# Scenario creation tool
+sc := java -Xmx$(MEMORY) -jar $(JAR)
 
 $(JAR):
 	mvn package
 
+
 # Required files
-scenarios/input/network.osm.pbf:
-	curl https://download.geofabrik.de/europe/germany-220327.osm.pbf\
+$(germany)/maps/$(NETWORK):
+	curl https://download.geofabrik.de/europe/$(NETWORK)\
 	  -o scenarios/input/network.osm.pbf
 
-${SHP_FILES} :
-	mkdir -p scenarios/shp
-	curl https://download.geofabrik.de/europe/germany/$(@:scenarios/shp/%=%) -o $@
-
-scenarios/input/gtfs-lvb.zip:
+input/gtfs-lvb.zip:
 	curl https://opendata.leipzig.de/dataset/8803f612-2ce1-4643-82d1-213434889200/resource/b38955c4-431c-4e8b-a4ef-9964a3a2c95d/download/gtfsmdvlvb.zip\
 	  -o $@
 
-scenarios/input/network.osm: scenarios/input/network.osm.pbf
+input/network.osm: $(germany)/maps/$(NETWORK)
 
 	$(osmosis) --rb file=$<\
 	 --tf accept-ways bicycle=yes highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction,residential,unclassified,living_street\
@@ -47,7 +46,7 @@ scenarios/input/network.osm: scenarios/input/network.osm.pbf
 
 	$(osmosis) --rb file=network-germany.osm.pbf --rb file=network-coarse.osm.pbf --rb file=network-detailed.osm.pbf\
   	 --merge --merge\
-  	 --tag-transform file=scenarios/input/remove-railway.xml\
+  	 --tag-transform file=input/remove-railway.xml\
   	 --wx $@
 
 	rm network-detailed.osm.pbf
@@ -55,7 +54,7 @@ scenarios/input/network.osm: scenarios/input/network.osm.pbf
 	rm network-germany.osm.pbf
 
 
-scenarios/input/sumo.net.xml: scenarios/input/network.osm
+input/sumo.net.xml: input/network.osm
 
 	$(SUMO_HOME)/bin/netconvert --geometry.remove --ramps.guess --ramps.no-split\
 	 --type-files $(SUMO_HOME)/data/typemap/osmNetconvert.typ.xml,$(SUMO_HOME)/data/typemap/osmNetconvertUrbanDe.typ.xml\
@@ -69,79 +68,86 @@ scenarios/input/sumo.net.xml: scenarios/input/network.osm
 	 --osm-files $< -o=$@
 
 
-scenarios/input/leipzig-$V-network.xml.gz: scenarios/input/sumo.net.xml
-	java -jar $(JAR) prepare network-from-sumo $<\
-	 --output $@
+input/$V/leipzig-$V-network.xml.gz: input/sumo.net.xml
+	$(sc) prepare network-from-sumo $< --output $@
+	$(sc) prepare fix-network $@ --output $@
+	$(sc) prepare clean-network $@ --output $@ --modes bike
 
-	java -jar $(JAR) prepare clean-network $@ --output $@ --modes bike
+input/$V/leipzig-$V-network-with-pt.xml.gz: input/$V/leipzig-$V-network.xml.gz input/gtfs-lvb.zip
+	$(sc) prepare transit-from-gtfs --network $< $(filter-out $<,$^)\
+	 --name leipzig-$V --date "2019-06-05" --target-crs $(CRS)\
+	 --output input/$V
 
-scenarios/input/leipzig-$V-network-with-pt.xml.gz: scenarios/input/leipzig-$V-network.xml.gz scenarios/input/gtfs-lvb.zip
-	java -jar $(JAR) prepare transit-from-gtfs --network $< $(filter-out $<,$^)\
-	 --name leipzig-$V --date "2019-06-05" --target-crs $(CRS)
+	$(sc) prepare prepare-transit-schedule\
+	 --input input/$V/leipzig-$V-transitSchedule.xml.gz\
+	 --output input/$V/leipzig-$V-transitSchedule.xml.gz\
+	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp
 
-scenarios/input/freight-trips.xml.gz: scenarios/input/leipzig-$V-network.xml.gz
-	java -jar $(JAR) prepare extract-freight-trips ../shared-svn/projects/german-wide-freight/v1.2/german-wide-freight-25pct.xml.gz\
-	 --network ../shared-svn/projects/german-wide-freight/original-data/german-primary-road.network.xml.gz\
-	 --input-crs EPSG:5677\
+input/freight-trips.xml.gz: input/$V/leipzig-$V-network.xml.gz
+	$(sc) prepare extract-freight-trips ../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/german_freight.25pct.plans.xml.gz\
+	 --network ../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/germany-europe-network.xml.gz\
+	 --input-crs $(CRS)\
 	 --target-crs $(CRS)\
-	 --shp ../../shared-svn/NaMAV/data/freight-area/freight-area.shp\
+	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/freight-area/freight-area.shp\
 	 --output $@
 
-scenarios/input/landuse/landuse.shp: ${SHP_FILES}
-	mkdir -p scenarios/input/landuse
-	java -Xmx20G -jar $(JAR) prepare create-landuse-shp $^\
-	 --target-crs ${CRS}\
-	 --output $@
-
-scenarios/input/leipzig-$V-25pct.plans.xml.gz: scenarios/input/freight-trips.xml.gz scenarios/input/landuse/landuse.shp
-	java -jar $(JAR) prepare trajectory-to-plans\
+input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/freight-trips.xml.gz
+	$(sc) prepare trajectory-to-plans\
 	 --name prepare --sample-size 0.25\
-	 --population ../../shared-svn/NaMAV/matsim-input-files/senozon/20210520_leipzig/population.xml.gz\
-	 --attributes  ../../shared-svn/NaMAV/matsim-input-files/senozon/20210520_leipzig/personAttributes.xml.gz
+	 --max-typical-duration 0\
+	 --output input/\
+	 --population ../shared-svn/projects/NaMAV/matsim-input-files/senozon/20210520_leipzig/population.xml.gz\
+	 --attributes  ../shared-svn/projects/NaMAV/matsim-input-files/senozon/20210520_leipzig/personAttributes.xml.gz
 
-	java -jar $(JAR) prepare population scenarios/input/prepare-25pct.plans.xml.gz\
-	 --output scenarios/input/prepare-25pct.plans.xml.gz
+	$(sc) prepare population input/prepare-25pct.plans.xml.gz\
+	 --output input/prepare-25pct.plans.xml.gz
 
-	java -jar $(JAR) prepare resolve-grid-coords\
-	 scenarios/input/prepare-25pct.plans.xml.gz\
+	$(sc) prepare resolve-grid-coords input/prepare-25pct.plans.xml.gz\
 	 --input-crs $(CRS)\
 	 --grid-resolution 300\
-	 --landuse scenarios/input/landuse/landuse.shp\
-	 --output scenarios/input/prepare-25pct.plans.xml.gz
+	 --landuse $(germany)/landuse/landuse.shp\
+	 --output input/prepare-25pct.plans.xml.gz
 
-	java -jar $(JAR) prepare generate-short-distance-trips\
- 	 --population scenarios/input/prepare-25pct.plans.xml.gz\
+	$(sc) prepare generate-short-distance-trips\
+ 	 --population input/prepare-25pct.plans.xml.gz\
  	 --input-crs $(CRS)\
- 	 --shp ../../shared-svn/NaMAV/data/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
+ 	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
  	 --num-trips 67395
 
-	java -jar $(JAR) prepare adjust-activity-to-link-distances scenarios/input/prepare-25pct.plans-with-trips.xml.gz\
-	 --shp ../../shared-svn/NaMAV/data/leipzig-utm32n/leipzig-utm32n.shp\
+	$(sc) prepare adjust-activity-to-link-distances input/prepare-25pct.plans-with-trips.xml.gz\
+	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
 	 --scale 1.15\
 	 --input-crs $(CRS)\
-	 --network scenarios/input/leipzig-$V-network.xml.gz\
-	 --output scenarios/input/prepare-25pct.plans-adj.xml.gz
+	 --network input/$V/leipzig-$V-network.xml.gz\
+	 --output input/prepare-25pct.plans-adj.xml.gz
 
-	java -jar $(JAR) prepare merge-populations scenarios/input/prepare-25pct.plans-adj.xml.gz $<\
-     --output scenarios/input/leipzig-$V-25pct.plans.xml.gz
+	$(sc) prepare split-activity-types-duration\
+		--input input/prepare-25pct.plans-with-trips.xml.gz\
+		--output $@
 
-	java -jar $(JAR) prepare downsample-population scenarios/input/leipzig-$V-25pct.plans.xml.gz\
+	$(sc) prepare fix-subtour-modes --input $@ --coord-dist 100 --output $@
+
+	$(sc) prepare merge-populations $@ $< --output $@
+
+	$(sc) prepare extract-home-coordinates $@ --csv input/$V/leipzig-$V-homes.csv
+
+	$(sc) prepare downsample-population $@\
     	 --sample-size 0.25\
-    	 --samples 0.1 0.01 0.001\
+    	 --samples 0.1 0.01\
 
 counts:
 	java -cp $(JAR) org.matsim.run.prepare.CreatingCountsFromZaehldaten\
-		--network scenarios/input/leipzig-$V-network.xml.gz\
-		--excel ../../shared-svn/NaMAV/data/Zaehldaten/Zaehldaten.xlsx\
-		-i scenarios/input/ignored_counts.csv -m scenarios/input/manuallyMatsimLinkShift.csv\
-		--output scenarios/input/leipzig-v1.1-counts
+		--network input/leipzig-$V-network.xml.gz\
+		--excel ../shared-svn/projects//NaMAV/data/Zaehldaten/Zaehldaten.xlsx\
+		-i input/ignored_counts.csv -m input/manuallyMatsimLinkShift.csv\
+		--output input/$V/leipzig-$V-counts
 
-check: scenarios/input/leipzig-$V-25pct.plans.xml.gz
-	java -jar $(JAR) analysis check-population $<\
+check: input/$V/leipzig-$V-25pct.plans-initial.xml.gz
+	$(sc) analysis check-population $<\
  	 --input-crs $(CRS)\
  	 --attribute carAvail\
- 	 --shp ../../shared-svn/NaMAV/data/leipzig-utm32n/leipzig-utm32n.shp\
+ 	 --shp ../shared-svn/projects/NaMAV/data/leipzig-utm32n/leipzig-utm32n.shp\
 
 # Aggregated target
-prepare: scenarios/input/leipzig-$V-25pct.plans.xml.gz scenarios/input/leipzig-$V-network-with-pt.xml.gz
+prepare: input/$V/leipzig-$V-25pct.plans-initial.xml.gz input/$V/leipzig-$V-network-with-pt.xml.gz
 	echo "Done"

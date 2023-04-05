@@ -28,136 +28,136 @@ import java.util.Map;
 import java.util.Set;
 
 @CommandLine.Command(
-        name = "create-drt-stops",
-        description = "create drt stops based on matsim network nodes inside of service area"
+		name = "create-drt-stops",
+		description = "create drt stops based on matsim network nodes inside of service area"
 )
-public class CreateDrtStopsFromNetwork implements MATSimAppCommand {
-    @CommandLine.Mixin
-    private ShpOptions shp = new ShpOptions();
+public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
+	@CommandLine.Mixin
+	private final ShpOptions shp = new ShpOptions();
 
-    @CommandLine.Option(names = "--network", description = "network file", required = true)
-    private String network;
+	@CommandLine.Option(names = "--network", description = "network file", required = true)
+	private String network;
 
-    @CommandLine.Option(names = "--mode", description = "mode of the drt", required = true)
-    private String mode;
-    // mode = "drt", "av" or other specific drt operator mode
+	@CommandLine.Option(names = "--mode", description = "mode of the drt", required = true)
+	private String mode;
+	// mode = "drt", "av" or other specific drt operator mode
 
-    @CommandLine.Option(names = "--modeFilteredNetwork", defaultValue = "false", description = "Use mode filtered network for stops generation")
-    private boolean modeFilteredNetwork;
+	@CommandLine.Option(names = "--modeFilteredNetwork", defaultValue = "false", description = "Use mode filtered network for stops generation")
+	private boolean modeFilteredNetwork;
 
-    @CommandLine.Option(names = "--min-distance", description = "minimal distance between two stops in m", defaultValue = "100.")
-    private double minDistance;
+	@CommandLine.Option(names = "--min-distance", description = "minimal distance between two stops in m", defaultValue = "100.")
+	private double minDistance;
 
-    @CommandLine.Option(names = "--output-folder", description = "path to output folder", required = true)
-    private String outputFolder;
+	@CommandLine.Option(names = "--output-folder", description = "path to output folder", required = true)
+	private String outputFolder;
 
-    private static final Logger log = LogManager.getLogger(CreateDrtStopsFromNetwork.class);
+	private static final Logger log = LogManager.getLogger(CreateDrtStopsFromNetwork.class);
 
-    public static void main(String[] args) throws IOException {
-        new CreateDrtStopsFromNetwork().execute(args);
-    }
+	public static void main(String[] args) throws IOException {
+		new CreateDrtStopsFromNetwork().execute(args);
+	}
 
-    @Override
-    public Integer call() throws Exception {
-        Config config = ConfigUtils.createConfig();
-        config.network().setInputFile(network);
-        Scenario scenario = ScenarioUtils.loadScenario(config);
-        Network network = scenario.getNetwork();
+	@Override
+	public Integer call() throws Exception {
+		Config config = ConfigUtils.createConfig();
+		config.network().setInputFile(network);
+		Scenario scenario = ScenarioUtils.loadScenario(config);
+		Network network = scenario.getNetwork();
 
-        String stopsData = shp.getShapeFile().toString() + "_" + mode + "_stops.csv";
-        Geometry drtServiceArea = null;
-        Map<Id<Node>, Node> stopNodes = new HashMap<>();
+		String stopsData = shp.getShapeFile().toString() + "_" + mode + "_stops.csv";
+		Geometry drtServiceArea = null;
+		Map<Id<Node>, Node> stopNodes = new HashMap<>();
 
-        if(shp.getShapeFile()!=null) {
-            drtServiceArea = shp.getGeometry();
-        } else {
-            log.error("The input shp file is empty or does not exist.");
-            return 2;
-        }
+		if (shp.getShapeFile() != null) {
+			drtServiceArea = shp.getGeometry();
+		} else {
+			log.error("The input shp file is empty or does not exist.");
+			return 2;
+		}
 
-        if(modeFilteredNetwork) {
-            Network filteredNetwork = NetworkUtils.createNetwork();
-            Set<String> modes = new HashSet<>();
-            modes.add(mode);
+		if (modeFilteredNetwork) {
+			Network filteredNetwork = NetworkUtils.createNetwork();
+			Set<String> modes = new HashSet<>();
+			modes.add(mode);
 
-            TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
-            filter.filter(filteredNetwork, modes);
+			TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
+			filter.filter(filteredNetwork, modes);
 
-            //still car has to be re-added for further usage
-            modes.add(TransportMode.car);
-            for(Link link : filteredNetwork.getLinks().values()) {
-                link.setAllowedModes(modes);
-            }
+			//still car has to be re-added for further usage
+			modes.add(TransportMode.car);
+			for (Link link : filteredNetwork.getLinks().values()) {
+				link.setAllowedModes(modes);
+			}
 
-            network = filteredNetwork;
+			network = filteredNetwork;
 
-            log.info("Using a network filtered by mode " + mode + ". " +
-                    "If you do not want to use the filtered network do not use the option --modeFilteredNetwork.");
-        }
+			log.info("Using a network filtered by mode " + mode + ". " +
+					"If you do not want to use the filtered network do not use the option --modeFilteredNetwork.");
+		}
 
-        for(Node node : network.getNodes().values()) {
-            //we dont want pt nodes included as pt has a separate network + no dead ends
-            if(MGC.coord2Point(node.getCoord()).within(drtServiceArea) && (node.getInLinks().size() + node.getOutLinks().size() > 2)
-            && !node.getId().toString().contains("pt_")) {
+		for (Node node : network.getNodes().values()) {
+			//we dont want pt nodes included as pt has a separate network + no dead ends
+			if (MGC.coord2Point(node.getCoord()).within(drtServiceArea) && (node.getInLinks().size() + node.getOutLinks().size() > 2)
+					&& !node.getId().toString().contains("pt_")) {
 
-                stopNodes.putIfAbsent(node.getId(), node);
-            }
-        }
+				stopNodes.putIfAbsent(node.getId(), node);
+			}
+		}
 
-        Map<Id<Node>, Node> filteredNodes = filterDistance(minDistance, stopNodes);
+		Map<Id<Node>, Node> filteredNodes = filterDistance(minDistance, stopNodes);
 
-        FileWriter csvWriter = new FileWriter(stopsData);
-        csvWriter.append("name");
-        csvWriter.append(";");
-        csvWriter.append("ort");
-        csvWriter.append(";");
-        csvWriter.append("x");
-        csvWriter.append(";");
-        csvWriter.append("y");
+		FileWriter csvWriter = new FileWriter(stopsData);
+		csvWriter.append("name");
+		csvWriter.append(";");
+		csvWriter.append("ort");
+		csvWriter.append(";");
+		csvWriter.append("x");
+		csvWriter.append(";");
+		csvWriter.append("y");
 
-        for(Id<Node> nodeId : filteredNodes.keySet()) {
-            csvWriter.append("\n");
-            csvWriter.append(nodeId.toString());
-            csvWriter.append(";");
-            csvWriter.append("matsimNetworkNode");
-            csvWriter.append(";");
-            csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getX()));
-            csvWriter.append(";");
-            csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getY()));
-        }
-        csvWriter.close();
+		for (Id<Node> nodeId : filteredNodes.keySet()) {
+			csvWriter.append("\n");
+			csvWriter.append(nodeId.toString());
+			csvWriter.append(";");
+			csvWriter.append("matsimNetworkNode");
+			csvWriter.append(";");
+			csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getX()));
+			csvWriter.append(";");
+			csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getY()));
+		}
+		csvWriter.close();
 
-        MATSimAppCommand prepareDrtStops = new PrepareDrtStops();
-        String outputNet = outputFolder + "/" + mode + "networkForDrtStopCreation.xml.gz";
-        NetworkUtils.writeNetwork(network, outputNet);
+		MATSimAppCommand prepareDrtStops = new PrepareDrtStops();
+		String outputNet = outputFolder + "/" + mode + "networkForDrtStopCreation.xml.gz";
+		NetworkUtils.writeNetwork(network, outputNet);
 
-        prepareDrtStops.execute("--stops-data", stopsData, "--network", outputNet, "--mode", mode,
-                "--shp", shp.getShapeFile().toString(), "--output-folder", outputFolder);
+		prepareDrtStops.execute("--stops-data", stopsData, "--network", outputNet, "--mode", mode,
+				"--shp", shp.getShapeFile().toString(), "--output-folder", outputFolder);
 
-        return 0;
-    }
+		return 0;
+	}
 
-    Map<Id<Node>, Node> filterDistance(Double minDistance, Map<Id<Node>, Node> nodes) {
-        HashMap<Id<Node>, Node> filteredNodes = new HashMap<>(nodes);
+	Map<Id<Node>, Node> filterDistance(Double minDistance, Map<Id<Node>, Node> nodes) {
+		Map<Id<Node>, Node> filteredNodes = new HashMap<>(nodes);
 
-        Network network = NetworkUtils.createNetwork();
+		Network network = NetworkUtils.createNetwork();
 
-        for(Id<Node> nodeId : nodes.keySet()) {
-            network.addNode(nodes.get(nodeId));
-        }
+		for (Id<Node> nodeId : nodes.keySet()) {
+			network.addNode(nodes.get(nodeId));
+		}
 
-        for(Id<Node> nodeId : nodes.keySet()) {
+		for (Id<Node> nodeId : nodes.keySet()) {
 
-            network.removeNode(nodeId);
-            Node nearestNode = NetworkUtils.getNearestNode(network, nodes.get(nodeId).getCoord());
-            network.addNode(nodes.get(nodeId));
+			network.removeNode(nodeId);
+			Node nearestNode = NetworkUtils.getNearestNode(network, nodes.get(nodeId).getCoord());
+			network.addNode(nodes.get(nodeId));
 
-            double distance = CoordUtils.calcEuclideanDistance(nodes.get(nodeId).getCoord(), nearestNode.getCoord());
+			double distance = CoordUtils.calcEuclideanDistance(nodes.get(nodeId).getCoord(), nearestNode.getCoord());
 
-            if(distance <= minDistance) {
-                filteredNodes.remove(nearestNode.getId());
-            }
-        }
-        return filteredNodes;
-    }
+			if (distance <= minDistance) {
+				filteredNodes.remove(nearestNode.getId());
+			}
+		}
+		return filteredNodes;
+	}
 }

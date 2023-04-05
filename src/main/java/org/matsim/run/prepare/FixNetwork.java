@@ -5,7 +5,6 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.NetworkFactory;
-import org.matsim.api.core.v01.network.Node;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.core.network.NetworkUtils;
 import picocli.CommandLine;
@@ -35,8 +34,8 @@ public class FixNetwork implements MATSimAppCommand {
 
 		Network network = NetworkUtils.readNetwork(input.get(0).toString());
 
-		createSchlachthofBrücke(network, "24020319", "260443657", "206313940");
-		createSchlachthofBrücke(network, "-24020319", "206313940", "260443657");
+		createSchlachthofBruecke(network, "24020319", "260443657", "206313940");
+		createSchlachthofBruecke(network, "-24020319", "206313940", "260443657");
 
 
 		NetworkUtils.writeNetwork(network, output.toString());
@@ -47,7 +46,7 @@ public class FixNetwork implements MATSimAppCommand {
 	/**
 	 * Create a link that was missing in OSM data at some point. It was later re-added (around july 2022).
 	 */
-	private void createSchlachthofBrücke(Network network, String linkId, String from, String to) {
+	private void createSchlachthofBruecke(Network network, String linkId, String from, String to) {
 
 		NetworkFactory f = network.getFactory();
 
