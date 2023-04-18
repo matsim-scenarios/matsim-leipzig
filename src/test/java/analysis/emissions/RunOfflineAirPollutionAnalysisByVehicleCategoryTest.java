@@ -4,10 +4,10 @@ import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
 import org.matsim.analysis.emissions.RunOfflineAirPollutionAnalysisByVehicleCategory;
 
-@Ignore
 class RunOfflineAirPollutionAnalysisByVehicleCategoryTest {
 
     // to run this test an environment variable needs to be set in your IDE and on the server...
+	@Ignore("Can only run when setup ENV correctly")
     @Test
     void run() {
         try {
