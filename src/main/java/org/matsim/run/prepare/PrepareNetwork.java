@@ -1,7 +1,6 @@
 package org.matsim.run.prepare;
 
 import org.locationtech.jts.geom.*;
-import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -56,7 +55,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 	 * Adapt network to one or more drt service areas. Therefore, a shape file of the wished service area + a list
 	 * of drt modes are needed.
 	 */
-	static void prepareDRT(Network network, ShpOptions shp, String modes) {
+	public static void prepareDRT(Network network, ShpOptions shp, String modes) {
 
 		Set<String> modesToAdd = new HashSet<>(Arrays.asList(modes.split(",")));
 		Geometry drtOperationArea = null;
@@ -196,26 +195,21 @@ public class PrepareNetwork implements MATSimAppCommand {
     /**
      * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
      */
-    static void prepareParking(Network network, ShpOptions parkingCostShape, ShpOptions parkingArea, Path inputParkingCapacities) {
+    static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
         ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
         Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
 
         for (var link : network.getLinks().values()) {
 
             if (!link.getAllowedModes().contains("pt")) {
-                // only when both nodes within the zone 1 then 2 EUR
-                // one node within zone 1 and one within zone 2 then 1 EUR
-                // both nodes within zone 2 then 1 EUR
 
-                Coord coordFromNode = link.getFromNode().getCoord();
-                Coord coordToNode = link.getToNode().getCoord();
+				GeometryFactory gf = new GeometryFactory();
 
-                //Coord coord = link.getCoord();
-                //Point point = MGC.coord2Point(coord);
-                Point pointFromNode = MGC.coord2Point(coordFromNode);
-                Point pointToNode = MGC.coord2Point(coordToNode);
+				LineString line = gf.createLineString(new Coordinate[]{MGC.coord2Coordinate(link.getFromNode().getCoord()),
+						MGC.coord2Coordinate(link.getToNode().getCoord())});
                 double oneHourPCost = 0.;
                 double extraHourPCost = 0.;
+				double resPFee = 0.;
 
                 for (SimpleFeature feature : features) {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
@@ -224,30 +218,26 @@ public class PrepareNetwork implements MATSimAppCommand {
                         if (feature.getAttribute("cost_h") != null) {
                             oneHourPCost = (Double) feature.getAttribute("cost_h");
                             extraHourPCost = (Double) feature.getAttribute("cost_h");
+
+							if(feature.getAttribute("resPFee") != null) {
+								resPFee = (Double) feature.getAttribute("resPFee");
+							}
                         }
                         break;
-                    }
-                    if (geometry.covers(pointFromNode)) {
-                        if (feature.getAttribute("cost_h").equals(1.0)) {
-                            oneHourPCost = (Double) feature.getAttribute("cost_h");
-                            extraHourPCost = (Double) feature.getAttribute("cost_h");
-                        }
-                    }
-                    if (geometry.covers(pointToNode)) {
-                        if (feature.getAttribute("cost_h").equals(1.0)) {
-                            oneHourPCost = (Double) feature.getAttribute("cost_h");
-                            extraHourPCost = (Double) feature.getAttribute("cost_h");
-                        }
                     }
                 }
 
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), oneHourPCost);
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourPCost);
+                link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
             }
         }
-
-        ParkingNetworkWriter writer = new ParkingNetworkWriter(network, parkingArea, inputParkingCapacities);
-        writer.addParkingInformationToLinks();
     }
+
+	static void prepareParkingCapacities(Network network, ShpOptions parkingArea, Path inputParkingCapacities) {
+
+		ParkingCapacitiesAttacher attacher = new ParkingCapacitiesAttacher(network, parkingArea, inputParkingCapacities);
+		attacher.addParkingInformationToLinks();
+	}
 
 }

@@ -9,11 +9,8 @@ import org.locationtech.jts.geom.LineString;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
-import org.matsim.core.config.Config;
-import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import org.matsim.utils.objectattributes.attributable.Attributes;
-import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -25,24 +22,20 @@ import java.util.Map;
 /**
  * Attach parking information to links.
  */
-public final class ParkingNetworkWriter {
+public final class ParkingCapacitiesAttacher {
 
-	private static final Logger log = LogManager.getLogger(ParkingNetworkWriter.class);
+	private static final Logger log = LogManager.getLogger(ParkingCapacitiesAttacher.class);
 
 	Network network;
 	private final ShpOptions shp;
 	Path inputParkingCapacities;
 	private static int adaptedLinksCount = 0;
 	private static int networkLinksCount = 0;
-	private static double firstHourParkingCost;
-	private static double extraHourParkingCost;
 
-	ParkingNetworkWriter(Network network, ShpOptions shp, Path inputParkingCapacities, Double firstHourParkingCost, Double extraHourParkingCost) {
+	ParkingCapacitiesAttacher(Network network, ShpOptions shp, Path inputParkingCapacities) {
 		this.network = network;
 		this.shp = shp;
 		this.inputParkingCapacities = inputParkingCapacities;
-		ParkingNetworkWriter.firstHourParkingCost = firstHourParkingCost;
-		ParkingNetworkWriter.extraHourParkingCost = extraHourParkingCost;
 	}
 
 	public void addParkingInformationToLinks() {
@@ -82,14 +75,6 @@ public final class ParkingNetworkWriter {
 
 					Attributes linkAttributes = link.getAttributes();
 					linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
-
-                    //TODO maybe it would be better to have a csv file with parking cost per link here instead of a fixed value -sm0123
-                    // Parking cost are now defined by the shp file already, if link is inside our defined parking area, but has no parking cost we set them to zero to increase them later gr 1802
-                    ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
-                    if (link.getAttributes().getAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName()).equals(null)) {
-                        linkAttributes.putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), 0.0);
-                        linkAttributes.putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), 0.0);
-                    }
 
                     adaptedLinksCount++;
                 }

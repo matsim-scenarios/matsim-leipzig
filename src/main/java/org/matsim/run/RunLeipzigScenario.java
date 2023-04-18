@@ -16,6 +16,7 @@ import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.application.MATSimAppCommand;
@@ -216,12 +217,20 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (drt) {
 			scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class, new DrtRouteFactory());
+
+			//TODO do the following for every use case network adaption: carFree, slowSpeed, parkingCost, parkingCap
+			String drtModes = null;
+
+			Path drtArea = null;
+			Network net = null;
+			PrepareNetwork.prepareDRT(net, new ShpOptions(drtArea, null, null), drtModes);
 		}
 
+		//this shoudl be obsolete after our refactoring TODO: check together with christian maybe
 		network.prepare(scenario.getNetwork());
 
 		if (tempo30Zone) {
-			SlowSpeed.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())));
+			Tempo30Zone.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())));
 		}
 	}
 

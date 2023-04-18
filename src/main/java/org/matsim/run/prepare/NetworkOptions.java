@@ -22,7 +22,7 @@ public class NetworkOptions {
 	@CommandLine.Option(names = "--car-free-modes", description = "List of modes to remove. Use comma as delimiter", defaultValue = TransportMode.car)
 	private String carFreeModes;
 	@CommandLine.Option(names = "--parking-area", description = "Path to SHP file specifying parking area")
-	private Path parkingArea;
+	private Path parkingCapacitiesArea;
 	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking area")
 	private Path parkingCostArea;
 	@CommandLine.Option(names = "--parking-capacities", description = "Path to csv file containing parking capacity data per link")
@@ -58,11 +58,18 @@ public class NetworkOptions {
 			PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
 		}
 
+		if (isDefined(parkingCapacitiesArea)) {
+			if (!Files.exists(parkingCapacitiesArea)) {
+				throw new IllegalArgumentException("Path to parking capacities shape information not found: " + parkingCapacitiesArea);
+			}
+			PrepareNetwork.prepareParkingCapacities(network, new ShpOptions(parkingCapacitiesArea, null, null), inputParkingCapacities);
+		}
+
 		if (isDefined(parkingCostArea)) {
 			if (!Files.exists(parkingCostArea))
-				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingArea);
+				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingCostArea);
 
-			PrepareNetwork.prepareParking(network,new ShpOptions(parkingCostArea, null, null), new ShpOptions(parkingArea, null, null), inputParkingCapacities);
+			PrepareNetwork.prepareParkingCost(network,new ShpOptions(parkingCostArea, null, null));
 		}
 
 		if(isDefined(cityArea)) {
