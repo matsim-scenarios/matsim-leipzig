@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/github/license/matsim-scenarios/matsim-leipzig.svg)
 ![JDK](https://img.shields.io/badge/JDK-11+-green.svg)
 
-![Leipzig MATSim network and agents](scenarios/visualization-leipzig.png "Leipzig MATSim network and agents")
+![Leipzig MATSim network and agents](input/visualization-leipzig.png "Leipzig MATSim network and agents")
 
 
 ### About this project
@@ -33,7 +33,7 @@ Handling of large files within git is not without problems (git lfs files are no
 
 The Leipzig scenario has a command line interface providing the following options:
 
-![Leipzig Scenario CLI](scenarios/cli.png "Leipzig Scenario CLI")
+![Leipzig Scenario CLI](input/cli.png "Leipzig Scenario CLI")
 
 It can be used by using either of these methods:
 

@@ -48,7 +48,10 @@ import org.matsim.contrib.dvrp.run.DvrpQSimComponents;
 import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.*;
+import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
+import org.matsim.core.config.groups.QSimConfigGroup;
+import org.matsim.core.config.groups.SubtourModeChoiceConfigGroup;
+import org.matsim.core.config.groups.VspExperimentalConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.replanning.choosers.ForceInnovationStrategyChooser;
@@ -85,7 +88,7 @@ import java.util.*;
 		CreateNetworkFromSumo.class, CreateTransitScheduleFromGtfs.class, TrajectoryToPlans.class, GenerateShortDistanceTrips.class,
 		MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, PrepareNetwork.class, CleanNetwork.class,
 		CreateLandUseShp.class, ResolveGridCoordinates.class, PreparePopulation.class, CleanPopulation.class, AdjustActivityToLinkDistances.class,
-		FixSubtourModes.class, FixNetwork.class
+		SplitActivityTypesDuration.class, ExtractHomeCoordinates.class, FixSubtourModes.class, FixNetwork.class, PrepareTransitSchedule.class
 })
 @MATSimApplication.Analysis({
 		CheckPopulation.class, TravelTimeAnalysis.class, LinkStats.class, SubTourAnalysis.class, DrtServiceQualityAnalysis.class,
@@ -95,7 +98,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
 
-	static final String VERSION = "1.2";
+	static final String VERSION = "1.1";
 
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
@@ -122,8 +125,11 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
 	private boolean incomeDependent;
 
-	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed to 30 km/h")
+	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed")
 	boolean tempo30Zone;
+
+	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
+	Double relativeSpeedChange;
 
 	@CommandLine.Mixin
 	private ShpOptions shp;
@@ -136,7 +142,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	}
 
 	public RunLeipzigScenario() {
-		super(String.format("scenarios/input/leipzig-v%s-25pct.config.xml", VERSION));
+		super(String.format("input/v%s/leipzig-v%s-25pct.config.xml", VERSION, VERSION));
 	}
 
 	public static void main(String[] args) {
@@ -230,7 +236,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		network.prepare(scenario.getNetwork());
 
 		if (tempo30Zone) {
-			Tempo30Zone.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())));
+			SpeedReduction.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())), relativeSpeedChange);
 		}
 	}
 

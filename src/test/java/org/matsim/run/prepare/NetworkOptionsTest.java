@@ -22,7 +22,7 @@ import java.io.IOException;
 public class NetworkOptionsTest {
 
     private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.1/input/";
-    private static final String shpPath = "./scenarios/input/drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp";
+    private static final String shpPath = "./input/v1.1/drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp";
 
     @Test
     public void runDrtAreaCreationTest() {

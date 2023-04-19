@@ -18,6 +18,8 @@
 	<properties>
 		<matsim.version>${project.parent.version}</matsim.version>
 		<mainClass>org.matsim.run.RunLeipzigScenario</mainClass>
+		<sonar.organization>matsim-scenarios</sonar.organization>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 
 	<repositories>
@@ -97,6 +99,13 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.matsim</groupId>
+			<artifactId>matsim-examples</artifactId>
+			<version>${matsim.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.matsim.contrib</groupId>
 			<artifactId>drt</artifactId>
 			<version>${matsim.version}</version>
@@ -118,6 +127,10 @@
 					<groupId>org.postgresql</groupId>
 					<artifactId>postgresql</artifactId>
 				</exclusion>
+				<exclusion>
+					<groupId>com.github.matsim-org</groupId>
+					<artifactId>gtfs2matsim</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 
@@ -131,6 +144,22 @@
 			<groupId>org.matsim.contrib</groupId>
 			<artifactId>vsp</artifactId>
 			<version>${matsim.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.matsim-org</groupId>
+			<artifactId>gtfs2matsim</artifactId>
+			<version>master-33809c4f0f-1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.matsim</groupId>
+					<artifactId>matsim</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.postgresql</groupId>
+					<artifactId>postgresql</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -151,10 +180,6 @@
 					<groupId>org.matsim</groupId>
 					<artifactId>matsim-examples</artifactId>
 				</exclusion>
-				<exclusion>
-					<groupId>org.matsim.contrib</groupId>
-					<artifactId>vsp</artifactId>
-				</exclusion>
 			</exclusions>
 		</dependency>
 
@@ -173,29 +198,25 @@
 					<groupId>org.matsim</groupId>
 					<artifactId>matsim</artifactId>
 				</exclusion>
-				<exclusion>
-					<groupId>org.matsim.contrib</groupId>
-					<artifactId>av</artifactId>
-				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>
-			<version>5.8.2</version>
+			<version>5.9.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.8.2</version>
+			<version>5.9.2</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
-			<version>3.22.0</version>
+			<version>3.24.2</version>
 			<scope>test</scope>
 		</dependency>
 

@@ -141,13 +141,13 @@ public class DrtServiceQualityAnalysis implements MATSimAppCommand {
 			int numOfTrips = 0;
 			try (CSVParser parser = new CSVParser(Files.newBufferedReader(tripsFile),
 					CSVFormat.DEFAULT.withDelimiter(';').withFirstRecordAsHeader())) {
-				for (CSVRecord record : parser.getRecords()) {
-					double waitingTime = Double.parseDouble(record.get(9));
+				for (CSVRecord row : parser.getRecords()) {
+					double waitingTime = Double.parseDouble(row.get(9));
 
 					if (!onlyShape) {
-						Link fromLink = network.getLinks().get(Id.createLinkId(record.get(3)));
-						Link toLink = network.getLinks().get(Id.createLinkId(record.get(6)));
-						double departureTime = Double.parseDouble(record.get(0));
+						Link fromLink = network.getLinks().get(Id.createLinkId(row.get(3)));
+						Link toLink = network.getLinks().get(Id.createLinkId(row.get(6)));
+						double departureTime = Double.parseDouble(row.get(0));
 						Vehicle vehicle = null;
 						if (mode.equals("av")) {
 							vehicle = avVehicle;
@@ -157,9 +157,9 @@ public class DrtServiceQualityAnalysis implements MATSimAppCommand {
 						path.links.add(toLink);
 						double estimatedDirectInVehicleTime = path.travelTime + travelTime.getLinkTravelTime(toLink, path.travelTime + departureTime, null, null) + 2;
 						double estimatedDirectTravelDistance = path.links.stream().map(Link::getLength).mapToDouble(l -> l).sum();
-						double actualInVehicleTime = Double.parseDouble(record.get(11));
+						double actualInVehicleTime = Double.parseDouble(row.get(11));
 						double totalTravelTime = waitingTime + actualInVehicleTime;
-						double actualTravelDistance = Double.parseDouble(record.get(12));
+						double actualTravelDistance = Double.parseDouble(row.get(12));
 						double euclideanDistance = DistanceUtils.calculateDistance(fromLink.getToNode().getCoord(), toLink.getToNode().getCoord());
 						double onboardDelayRatio = actualInVehicleTime / estimatedDirectInVehicleTime - 1;
 						double detourRatioDistance = actualTravelDistance / estimatedDirectTravelDistance - 1;
@@ -186,15 +186,15 @@ public class DrtServiceQualityAnalysis implements MATSimAppCommand {
 					}
 
 					//-------------spatial analysis
-					Coord fromCoord = new Coord(Double.parseDouble(record.get(4)), Double.parseDouble(record.get(5)));
-					Coord toCoord = new Coord(Double.parseDouble(record.get(7)), Double.parseDouble(record.get(8)));
+					Coord fromCoord = new Coord(Double.parseDouble(row.get(4)), Double.parseDouble(row.get(5)));
+					Coord toCoord = new Coord(Double.parseDouble(row.get(7)), Double.parseDouble(row.get(8)));
 
 					Set<SimpleFeature> originFeatures = getSimpleFeaturesContainingCoord(shpWaitingTimes.keySet(), fromCoord);
 					//waiting time is monitored for the geometry containing the from coordinate
 					if (originFeatures != null) {
 						if (originFeatures.size() > 1) {
 							log.warn("from coordinate " + fromCoord + " appears to be covered by several SimpleFeatures. It will be part of all of their statistics.\n" +
-									"csv record = " + record);
+									"csv record = " + row);
 						}
 						for (SimpleFeature originFeature : originFeatures) {
 							shpWaitingTimes.get(originFeature).add(waitingTime);

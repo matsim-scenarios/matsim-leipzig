@@ -266,7 +266,7 @@
             <param name="operationalScheme" value="serviceAreaBased"/>
 			<!-- If true, the max travel and wait times of a submitted request are considered hard constraints (the request gets rejected if one of the constraints is violated). If false, the max travel and wait times are considered soft constraints (insertion of a request that violates one of the constraints is allowed, but its cost is increased by additional penalty to make it relatively less attractive). Penalisation of insertions can be customised by injecting a customised InsertionCostCalculator.PenaltyCalculator -->
 			<param name="rejectRequestIfMaxWaitOrTravelTimeViolated" value="false" />
-			
+
 			<!-- allows to configure a service area per drt mode. Used with serviceArea Operational Scheme -->
             <param name="drtServiceAreaShapeFile" value="drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp"/>
 
@@ -312,7 +312,7 @@
             <param name="operationalScheme" value="serviceAreaBased"/>
 			<!-- If true, the max travel and wait times of a submitted request are considered hard constraints (the request gets rejected if one of the constraints is violated). If false, the max travel and wait times are considered soft constraints (insertion of a request that violates one of the constraints is allowed, but its cost is increased by additional penalty to make it relatively less attractive). Penalisation of insertions can be customised by injecting a customised InsertionCostCalculator.PenaltyCalculator -->
 			<param name="rejectRequestIfMaxWaitOrTravelTimeViolated" value="false" />
-			
+
 			<!-- allows to configure a service area per drt mode. Used with serviceArea Operational Scheme -->
             <param name="drtServiceAreaShapeFile" value="drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp"/>
 
@@ -339,7 +339,7 @@
                 </parameterset>
             </parameterset> -->
         </parameterset>
-		
+
     </module>
 
     <module name="dvrp" >
@@ -355,5 +355,5 @@
         </parameterset>
 
     </module>
-    
+
 </config>
