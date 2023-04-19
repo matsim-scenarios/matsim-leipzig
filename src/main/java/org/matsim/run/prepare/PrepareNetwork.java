@@ -1,19 +1,18 @@
 package org.matsim.run.prepare;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
-import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.network.Node;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
-import org.matsim.core.network.algorithms.NetworkCleaner;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import org.matsim.core.utils.gis.ShapeFileReader;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
@@ -36,9 +35,10 @@ public class PrepareNetwork implements MATSimAppCommand {
 	@CommandLine.Option(names = "--output", description = "Output path of the prepared network", required = true)
 	private String outputPath;
 
-
 	@CommandLine.Mixin
 	private NetworkOptions options;
+
+	private static final Logger log = LogManager.getLogger(PrepareNetwork.class);
 
 	public static void main(String[] args) {
 		new PrepareNetwork().execute(args);
@@ -58,7 +58,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 	 * Adapt network to one or more drt service areas. Therefore, a shape file of the wished service area + a list
 	 * of drt modes are needed.
 	 */
-	public static void prepareDRT(Network network, ShpOptions shp, String modes) {
+	static void prepareDRT(Network network, ShpOptions shp, String modes) {
 
 		Set<String> modesToAdd = new HashSet<>(Arrays.asList(modes.split(",")));
 		Geometry drtOperationArea = null;
@@ -111,55 +111,14 @@ public class PrepareNetwork implements MATSimAppCommand {
 		}
 		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
 		multimodalNetworkCleaner.run(modesToAdd);
-	}
 
-	/**
-	 * Cut out network inside a shape which must be provided.
-	 */
-
-	static void prepareCityArea(Network network, ShpOptions shp) {
-		Geometry cityArea = null;
-
-		for (SimpleFeature feature : shp.readFeatures()) {
-			if (cityArea == null) {
-				cityArea = (Geometry) feature.getDefaultGeometry();
-			} else {
-				cityArea = cityArea.union((Geometry) feature.getDefaultGeometry());
-			}
-		}
-		Map<Id<Node>, Node> cityNodes = new HashMap<>();
-		Map<Id<Link>, Link> cityLinks = new HashMap<>();
-
-		for (Link link : network.getLinks().values()) {
-			if (!(link.getAllowedModes().contains("car") || link.getAllowedModes().contains("bike"))) {
-				continue;
-			}
-
-			boolean isInsideCityArea = MGC.coord2Point(link.getFromNode().getCoord()).within(cityArea) &&
-					MGC.coord2Point(link.getToNode().getCoord()).within(cityArea);
-
-			if (isInsideCityArea) {
-				cityNodes.putIfAbsent(link.getFromNode().getId(), link.getFromNode());
-				cityNodes.putIfAbsent(link.getToNode().getId(), link.getToNode());
-
-				cityLinks.putIfAbsent(link.getId(), link);
-			}
-		}
-
-		Network cityNetwork = NetworkUtils.createNetwork();
-		cityNodes.values().forEach(cityNetwork::addNode);
-		cityLinks.values().forEach(cityNetwork::addLink);
-
-		NetworkCleaner networkCleaner = new NetworkCleaner();
-		networkCleaner.run(cityNetwork);
-
-
+		log.info("Modes " + modes + " have been added to network.");
 	}
 
     /**
      * Adapt network to one or more car-free zones. Therefore, a shape file of the wished car-free area is needed.
      */
-    public static void prepareCarFree(Network network, ShpOptions shp, String modes) {
+    static void prepareCarFree(Network network, ShpOptions shp, String modes) {
 
 		Set<String> modesToRemove = new HashSet<>(Arrays.asList(modes.split(",")));
 
@@ -192,12 +151,14 @@ public class PrepareNetwork implements MATSimAppCommand {
 		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
 		modesToRemove.forEach(m -> multimodalNetworkCleaner.run(Set.of(m)));
 
+		log.info("Car free areas have been added to network.");
+
 	}
 
     /**
      * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
      */
-    public static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
+    static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
         ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
         Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
 
@@ -234,6 +195,8 @@ public class PrepareNetwork implements MATSimAppCommand {
                 link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
             }
         }
+
+		log.info("Parking cost information has been added to network.");
     }
 
 	/**
@@ -241,17 +204,42 @@ public class PrepareNetwork implements MATSimAppCommand {
 	 * For the creation of a capacities.csv see {@link org.matsim.analysis.ParkedVehiclesAnalysis}
 	 */
 
-	public static void prepareParkingCapacities(Network network, ShpOptions parkingArea, Path inputParkingCapacities) {
+	static void prepareParkingCapacities(Network network, ShpOptions parkingArea, Path inputParkingCapacities) {
 
 		ParkingCapacitiesAttacher attacher = new ParkingCapacitiesAttacher(network, parkingArea, inputParkingCapacities);
 		attacher.addParkingInformationToLinks();
+
+		log.info("Parking capacity information has been added to network.");
 	}
 
 	/**
 	 * Reduce speed of link in certain zone.
 	 */
-	public static void prepareSlowSpeed(Network network, List<PreparedGeometry> geometries) {
+	static void prepareSlowSpeed(Network network, List<PreparedGeometry> geometries, Double relativeSpeedChange) {
 
+		Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
+				.filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
+				//spatial filter
+				.filter(link -> ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries))
+				//we won't change motorways and motorway_links
+				.filter(link -> !((String) link.getAttributes().getAttribute("type")).contains("motorway"))
+				.filter(link -> !((String) link.getAttributes().getAttribute("type")).contains("trunk"))
+				.collect(Collectors.toSet());
+
+		if (relativeSpeedChange >= 0.0 && relativeSpeedChange < 1.0) {
+			log.info("reduce speed relatively by a factor of: {}", relativeSpeedChange);
+
+			//apply 'tempo 20' to all roads but motorways
+			carLinksInArea.forEach(link -> link.setFreespeed(link.getFreespeed() * relativeSpeedChange));
+
+		} else {
+			log.info("reduce speed to 20 km/h");
+			carLinksInArea.forEach(link -> {
+				//apply 'tempo 20' to all roads but motorways
+				//20 km/h --> 5.5 m/s
+				link.setFreespeed(5.5);
+			});
+		}
 
 	}
 

@@ -15,7 +15,9 @@ import java.util.stream.Collectors;
 /**
  * This class provides a method to reduce the speed of the network for a given geometry.
  * This can be done relativly or tempo 20 on every link
+ * @deprecated use {@link PrepareNetwork} instead
  */
+@Deprecated
 public final class SpeedReduction {
 
 	private static final Logger log = LogManager.getLogger(SpeedReduction.class);
@@ -28,9 +30,7 @@ public final class SpeedReduction {
 	 */
 	public static void implementPushMeasuresByModifyingNetworkInArea(Network network, List<PreparedGeometry> geometries, Double relativeSpeedChange) {
 		Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
-				//.filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
-				//we have to filter for bike here! otherwise the speed reduction will not work for car free areas. -sm0423
-				.filter(link -> link.getAllowedModes().contains(TransportMode.bike))
+				.filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
 				//spatial filter
 				.filter(link -> ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries))
 				//we won't change motorways and motorway_links
