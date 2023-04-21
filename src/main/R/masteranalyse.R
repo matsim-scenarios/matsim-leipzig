@@ -7,11 +7,12 @@ print("#### Shapes geladen! ####")
 #### reading trips/legs files ####
 
 ## Trip File
-scenarioTripsTable <- readTripsTable(pathToMATSimOutputDirectory = paste0(scenario_run_path,list.files(path = scenario_run_path, pattern = "output_trips")))
+scenarioTripsTable <- readTripsTable(scenario_run_path)
 print("#### Trips geladen! ####")
 
 ## Leg Files
-scenariolegsTable <- read_delim(paste0(scenario_run_path,list.files(path = scenario_run_path, pattern = "output_legs")), delim= ";", n_max = 3000)
+#TODO: do you really only want 3000 legs? -jr April'23
+scenariolegsTable <- read_delim(paste0(scenario_run_path,"/",list.files(path = scenario_run_path, pattern = "output_legs")), delim= ";", n_max = 3000)
 print("#### Legs geladen! ####")
 
 ## Filters
@@ -25,7 +26,8 @@ scenario_legs_area <- filterByRegion(scenariolegsTable,AreaShape,crs=CRS,start.i
 print("#### Legs gefiltert! ####")
 
 #### reading persons ####
-scenario_persons <- read_delim(paste0(scenario_run_path,list.files(path = scenario_run_path, pattern = "output_persons")), delim = ";")
+base_persons <- readPersonsTable(base_run_path)
+scenario_persons <- readPersonsTable(scenario_run_path)
 
 #### 0. Parameters ####
 
@@ -282,12 +284,13 @@ if (x_personen_h_trips == 1){
     x %>% 
       filter(main_mode!="freight") %>%
       group_by(mode) %>%
-      summarise(personen_stunden_trips = (sum(trav_time))
+      summarise(personen_stunden_trips = sum(trav_time))
+    
   }
   ph_trips_scenario_city <- personen_km_trips(scenario_trips_city)
   ph_trips_scenario_region <- personen_km_trips(scenario_trips_region)
   ph_trips_scenario_network <- personen_km_trips(scenarioTripsTable)
-
+  
   write.csv(ph_trips_scenario_city, file = paste0(outputDirectoryScenario,"/trips_city_ph.csv"))
   write.csv(ph_trips_scenario_region, file = paste0(outputDirectoryScenario,"/trips_region_ph.csv"))
   write.csv(ph_trips_scenario_network, file = paste0(outputDirectoryScenario,"/trips_network_ph.csv"))
@@ -410,7 +413,7 @@ if (x_traffic == 1){
 #### #8.1 Execution Scores Winner-Loser ####
 
 if (x_winner_loser == 1){
-  base_scenario_persons <- inner_join(base_persons, scenario_persons, by= "person") %>% 
+  base_scenario_persons <- inner_join(base_persons, scenario_persons, by = "person") %>% 
     select(person, executed_score.x, executed_score.y, income.x, sex.x, age.x, carAvail.x, first_act_x.x, first_act_y.x) %>% 
     mutate(score_change = format((executed_score.y - executed_score.x), scientific = FALSE), person = as.character(person))
   
@@ -462,6 +465,21 @@ if (x_winner_loser == 1){
   
   
 } 
+
+#### #8.2 Execution Scores Winner-Loser Plots ####
+
+if (x_winner_loser == 1){
+  source("~/git/matsim-leipzig/src/main/R/utils_jr.R")
+  
+  shp = st_read("/Users/jakob/Downloads/Leipzig_Ortsteile_UTM33N(1)/ot.shp") %>% 
+    st_transform(CRS)
+  joined <- join_base_and_policy(base_persons, scenario_persons, shp)
+  
+  joined_hex <- create_hex_grid(joined, shp)
+  
+  st_write(joined_hex, paste0(outputDirectoryScenario,"/winners_losers_hex.shp"))
+}
+
 
 
 
