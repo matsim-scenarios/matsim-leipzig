@@ -28,17 +28,17 @@ print("#### Libraries geladen! ####")
 #slow-speed-relative = 0
 #combined_scenarioA = 0
 ################################################################################ INPUT ####
-publicSVN = "/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
+publicSVN = "/Users/mkreuschnervsp/Desktop/ils/matsim-leipzig/"
 #local = /Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV
 
-runID = "carfree-area-90"                                        
-network <- paste(publicSVN,"base-case/leipzig-25pct-base.output_network.xml.gz")
+runID = "carfree-area-large/output_simwrapper/"                                        
+network <- paste0(publicSVN,"base-case/output_simwrapper/leipzig-25pct-base.output_network.xml.gz")
 CRS <- 25832
 
-scenario_run_path <- paste(publicSVN,runID)
+scenario_run_path <- paste0(publicSVN,runID,collapse = NULL)
 
 #base path nur für Sankey und Winner/Loser Analysis
-base_run_path <- "/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
+base_run_path <- "/Users/mkreuschnervsp/Desktop/ils/matsim-leipzig/base-case/output_simwrapper/"
 
 
 region_shp_path <- "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/shapefiles/Leipzig_puffer.shp"
@@ -49,13 +49,8 @@ area_shp_path <- "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/shapefil
 print("#### Inputspath definiert! ####")
 ################################################################################ OUTPUT ####
 
-outputDirectoryBase <-  "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/base-analysis-R" # the plots are going to be saved here
-if(!file.exists(outputDirectoryBase)){
-  print("creating analysis sub-directory")
-  dir.create(outputDirectoryBase)  
-}
 #/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/",runID,"/analysis/analysis-R
-outputDirectoryScenario <-  "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/policy-analysis-R"
+outputDirectoryScenario <-  "/Users/mkreuschnervsp/Desktop/ils/matsim-leipzig/carfree-area-large/output_simwrapper/analysis/analysis-R"
   #paste(scenario_run_path, "analysis/analysis-R", sep = "") # the plots are going to be saved here
 if(!file.exists(outputDirectoryScenario)){
   print("creating analysis sub-directory")
@@ -82,12 +77,12 @@ print("#### Output folder geladen! ####")
   x_average_traveled_distance_trips =   1
 #### #3.2 Distances EUCLIDEAN - trips based
   x_average_euclidean_distance_trips =  1
-#### #3.3 PKM - trips based  
+#### #3.3 Distances HEATMAP
+  x_heatmap_distance_trips =            0
+#### #3.4 PKM - trips based  
   x_personen_km_trips =                 0
-#### #3.4 Distances TRAVELED - legs based
+#### #3.5 Distances TRAVELED - legs based
   x_average_traveled_distance_legs =    0
-#### #3.5 Distances EUCLIDEAN - legs based  
-  x_average_euclidean_distance_legs =   0
 #### #3.6 PKM - legs based
   x_personen_km_legs =                  1
 
@@ -112,7 +107,7 @@ print("#### Output folder geladen! ####")
   #x_emissions = 0  
   
 #### #8.1 Winner/Loser Analysis
-  x_winner_loser = 1
+  x_winner_loser = 0
 
 #x_distance_distribution_trips = 1
 #x_distance_distribution_legs =  0
@@ -124,7 +119,7 @@ print("#### Output folder geladen! ####")
 print("#### Auswahl getroffen! ####")
 ################################################################################ SOURCE ####
 
-source("/Users/mkreuschnervsp/Desktop/R_Studio/mastersolver.R")
+source("/Users/mkreuschnervsp/Desktop/R_Studio/masteranalyse.R")
 
 print("#### Masterscript fertig! ####")
 
