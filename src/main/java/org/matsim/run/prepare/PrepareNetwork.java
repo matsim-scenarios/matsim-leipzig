@@ -182,10 +182,12 @@ public class PrepareNetwork implements MATSimAppCommand {
                             oneHourPCost = (Double) feature.getAttribute("cost_h");
                             extraHourPCost = (Double) feature.getAttribute("cost_h");
 
-							if(feature.getAttribute("resPFee") != null) {
-								resPFee = (Double) feature.getAttribute("resPFee");
-							}
                         }
+
+						if (feature.getAttribute("resPFee") != null) {
+							resPFee = (Double) feature.getAttribute("resPFee");
+						}
+
                         break;
                     }
                 }
