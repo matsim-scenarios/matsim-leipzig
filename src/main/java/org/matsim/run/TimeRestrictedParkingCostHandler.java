@@ -1,4 +1,5 @@
 package org.matsim.run;
+
 /* *********************************************************************** *
  * project: org.matsim.*
  *                                                                         *
@@ -75,7 +76,7 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 	@Inject
 	private QSimConfigGroup qSimConfigGroup;
 
-	public TimeRestrictedParkingCostHandler(double parkingCostTimePeriodStart, double parkingCostTimePeriodEnd) {
+	TimeRestrictedParkingCostHandler(double parkingCostTimePeriodStart, double parkingCostTimePeriodEnd) {
 		this.parkingCostTimePeriodStart = parkingCostTimePeriodStart;
 		this.parkingCostTimePeriodEnd = parkingCostTimePeriodEnd;
 	}

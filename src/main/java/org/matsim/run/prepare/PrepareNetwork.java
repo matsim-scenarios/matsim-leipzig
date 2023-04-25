@@ -115,11 +115,10 @@ public class PrepareNetwork implements MATSimAppCommand {
 		log.info("Modes " + modes + " have been added to network.");
 	}
 
-    /**
-     * Adapt network to one or more car-free zones. Therefore, a shape file of the wished car-free area is needed.
-     */
-    static void prepareCarFree(Network network, ShpOptions shp, String modes) {
-
+	/**
+	 * Adapt network to one or more car-free zones. Therefore, a shape file of the wished car-free area is needed.
+	 */
+	static void prepareCarFree(Network network, ShpOptions shp, String modes) {
 		Set<String> modesToRemove = new HashSet<>(Arrays.asList(modes.split(",")));
 
 		Geometry carFreeArea = shp.getGeometry();
@@ -155,51 +154,53 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 	}
 
-    /**
-     * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
+	/**
+	 * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
      */
-    static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
-        ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
-        Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
+	static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
+		ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
+		Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
 
-        for (var link : network.getLinks().values()) {
+		for (var link : network.getLinks().values()) {
 
-            if (!link.getAllowedModes().contains("pt")) {
+			if (!link.getAllowedModes().contains("pt")) {
 
 				GeometryFactory gf = new GeometryFactory();
 
 				LineString line = gf.createLineString(new Coordinate[]{MGC.coord2Coordinate(link.getFromNode().getCoord()),
 						MGC.coord2Coordinate(link.getToNode().getCoord())});
-                double oneHourPCost = 0.;
-                double extraHourPCost = 0.;
+				double oneHourPCost = 0.;
+				double extraHourPCost = 0.;
 				double resPFee = 0.;
 
-                for (SimpleFeature feature : features) {
-                    Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                    boolean linkInShp = line.intersects(geometry);
-                    if (linkInShp==true) {
-                        if (feature.getAttribute("cost_h") != null) {
-                            oneHourPCost = (Double) feature.getAttribute("cost_h");
-                            extraHourPCost = (Double) feature.getAttribute("cost_h");
+				for (SimpleFeature feature : features) {
+					Geometry geometry = (Geometry) feature.getDefaultGeometry();
+					boolean linkInShp = line.intersects(geometry);
+					if (linkInShp) {
+						if (feature.getAttribute("cost_h") != null) {
+							oneHourPCost = (Double) feature.getAttribute("cost_h");
+							extraHourPCost = (Double) feature.getAttribute("cost_h");
 
-                        }
+						}
 
 						if (feature.getAttribute("resPFee") != null) {
 							resPFee = (Double) feature.getAttribute("resPFee");
 						}
 
-                        break;
-                    }
-                }
+						break;
 
-                link.getAttributes().putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), oneHourPCost);
-                link.getAttributes().putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourPCost);
-                link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
-            }
-        }
+					}
+				}
+
+				link.getAttributes().putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), oneHourPCost);
+				link.getAttributes().putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourPCost);
+				link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
+			}
+		}
 
 		log.info("Parking cost information has been added to network.");
-    }
+
+	}
 
 	/**
 	 * Add parking capacities per link to network links. Therefore, a shape file of the parking area + a csv with capacity data are needed
@@ -220,7 +221,8 @@ public class PrepareNetwork implements MATSimAppCommand {
 	static void prepareSlowSpeed(Network network, List<PreparedGeometry> geometries, Double relativeSpeedChange) {
 
 		Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
-				.filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
+				//filter car links
+				.filter(link -> link.getAllowedModes().contains(TransportMode.car))
 				//spatial filter
 				.filter(link -> ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries))
 				//we won't change motorways and motorway_links

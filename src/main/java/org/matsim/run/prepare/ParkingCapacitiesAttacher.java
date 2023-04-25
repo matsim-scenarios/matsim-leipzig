@@ -77,11 +77,11 @@ public final class ParkingCapacitiesAttacher {
 					linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
 
                     adaptedLinksCount++;
-                }
-            }
-        }
-        log.info(adaptedLinksCount + " / " + networkLinksCount + " were complemented with parking information attribute.");
-    }
+				}
+			}
+		}
+		log.info(adaptedLinksCount + " / " + networkLinksCount + " were complemented with parking information attribute.");
+	}
 
 	private Map<String, String> getLinkParkingCapacities() {
 		Map<String, String> linkParkingCapacities = new HashMap<>();

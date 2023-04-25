@@ -48,12 +48,14 @@ public class NetworkOptions {
 	/**
 	 * Return whether a drt area is defined.
 	 */
-	public boolean hasDrtArea() { return isDefined(drtArea); }
+	public boolean hasDrtArea() {
+		return isDefined(drtArea); }
 
 	/**
 	 * Return whether a parkingCost area is defined.
 	 */
-	public boolean hasParkingCostArea() { return isDefined(parkingCostArea); }
+	public boolean hasParkingCostArea() {
+		return isDefined(parkingCostArea); }
 
 
 	/**
@@ -72,7 +74,7 @@ public class NetworkOptions {
 			if (!Files.exists(parkingCostArea))
 				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingCostArea);
 
-			PrepareNetwork.prepareParkingCost(network,new ShpOptions(parkingCostArea, null, null));
+			PrepareNetwork.prepareParkingCost(network, new ShpOptions(parkingCostArea, null, null));
 		}
 
 		if (isDefined(slowSpeedArea)) {

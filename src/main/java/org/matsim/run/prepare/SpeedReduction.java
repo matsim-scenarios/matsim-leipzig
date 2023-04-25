@@ -30,7 +30,8 @@ public final class SpeedReduction {
 	 */
 	public static void implementPushMeasuresByModifyingNetworkInArea(Network network, List<PreparedGeometry> geometries, Double relativeSpeedChange) {
 		Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
-				.filter(link -> link.getAllowedModes().contains(TransportMode.car)) //filter car links
+				//filter car links
+				.filter(link -> link.getAllowedModes().contains(TransportMode.car))
 				//spatial filter
 				.filter(link -> ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries))
 				//we won't change motorways and motorway_links
