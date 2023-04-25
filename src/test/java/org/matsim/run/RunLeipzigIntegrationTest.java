@@ -38,6 +38,7 @@ public class RunLeipzigIntegrationTest {
 	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.1/input/";
 	@CommandLine.Mixin
 	private ShpOptions shp;
+	private static final String exampleShp = "input/v1.2/drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp";
 
 
 	@Test
@@ -54,7 +55,7 @@ public class RunLeipzigIntegrationTest {
 		config.plans().setInputFile(URL + "leipzig-v1.1-0.1pct.plans.xml.gz");
 
 		Controler controler = RunLeipzigScenario.prepare(RunLeipzigScenario.class, config,
-				"--with-drt"
+				"--drt-area", exampleShp, "--drt-modes", "drtNorth,drtSoutheast"
 		);
 
 		config.controler().setLastIteration(1);
@@ -77,7 +78,8 @@ public class RunLeipzigIntegrationTest {
 		// Change input paths
 		config.plans().setInputFile(URL + "leipzig-v1.1-0.1pct.plans.xml.gz");
 		Controler controler = RunLeipzigScenario.prepare(RunLeipzigScenario.class, config,
-				"--tempo30Zone","--shp", "input/v1.2/drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp", "--with-drt", "--output=" + output + "withSlowSped"
+				"--slow-speed-area", exampleShp, "--drt-area", exampleShp,
+				"--drt-modes", "drtNorth,drtSoutheast", "--output=" + output + "withSlowSpeed"
 		);
 
 		config.controler().setLastIteration(0);
@@ -106,7 +108,8 @@ public class RunLeipzigIntegrationTest {
 		config.transit().setVehiclesFile(URL + "leipzig-v1.1-transitVehicles.xml.gz");
 		config.vehicles().setVehiclesFile(URL + "drt-base-case/leipzig-v1.1-vehicle-types-with-drt-scaledFleet.xml");
 
-		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--with-drt", "--post-processing", "disabled");
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--drt-area", exampleShp,
+				"--drt-modes", "drtNorth,drtSoutheast", "--post-processing", "disabled");
 	}
 
 	@Test
@@ -123,7 +126,8 @@ public class RunLeipzigIntegrationTest {
 		config.transit().setVehiclesFile(URL + "leipzig-v1.1-transitVehicles.xml.gz");
 		config.vehicles().setVehiclesFile(URL + "drt-base-case/leipzig-v1.1-vehicle-types-with-drt-scaledFleet.xml");
 
-		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--with-drt", "--waiting-time-threshold-optDrt", "600", "--post-processing", "disabled");
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--drt-area", exampleShp,
+				"--drt-modes", "drtNorth,drtSoutheast", "--waiting-time-threshold-optDrt", "600", "--post-processing", "disabled");
 
 		Assert.assertNotNull(config.getModules().get("multiModeOptDrt"));
 		Assert.assertNotNull(config.getModules().get("multiModeOptDrt").getParameterSets());
