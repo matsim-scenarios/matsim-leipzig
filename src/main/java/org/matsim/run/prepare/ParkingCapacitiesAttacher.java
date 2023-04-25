@@ -76,7 +76,7 @@ public final class ParkingCapacitiesAttacher {
 					Attributes linkAttributes = link.getAttributes();
 					linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
 
-                    adaptedLinksCount++;
+					adaptedLinksCount++;
 				}
 			}
 		}
