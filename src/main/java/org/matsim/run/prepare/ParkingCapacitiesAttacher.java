@@ -29,8 +29,8 @@ public final class ParkingCapacitiesAttacher {
 	Network network;
 	private final ShpOptions shp;
 	Path inputParkingCapacities;
-	private static int adaptedLinksCount = 0;
-	private static int networkLinksCount = 0;
+	private int adaptedLinksCount = 0;
+	private int networkLinksCount = 0;
 
 	ParkingCapacitiesAttacher(Network network, ShpOptions shp, Path inputParkingCapacities) {
 		this.network = network;
