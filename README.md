@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/matsim-scenarios/matsim-leipzig/workflows/build/badge.svg?branch=main)
 ![license](https://img.shields.io/github/license/matsim-scenarios/matsim-leipzig.svg)
-![JDK](https://img.shields.io/badge/JDK-11+-green.svg)
+![JDK](https://img.shields.io/badge/JDK-17+-green.svg)
 
 ![Leipzig MATSim network and agents](input/visualization-leipzig.png "Leipzig MATSim network and agents")
 
