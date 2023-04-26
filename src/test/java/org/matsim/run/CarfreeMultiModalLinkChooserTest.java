@@ -23,7 +23,6 @@ import java.util.Set;
 /**
  * @author Simon Meinhardt (simei94)
  */
-
 public class CarfreeMultiModalLinkChooserTest {
 
     @Test
