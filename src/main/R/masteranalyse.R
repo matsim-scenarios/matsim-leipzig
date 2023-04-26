@@ -46,7 +46,10 @@ if (x_winner_loser == 1){
 #BREAKING DIFFERENT DISTANCES IN M
 breaks = c(0, 1000, 2000, 5000, 10000, 20000, Inf)
 breaks2 = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, Inf)
-time_breaks = c(1200, 2400, 3600, 4800, 6000, 7200, 8400, 9600, 10800, 12000, 13200, 14400, 15600, 16800, 18000, Inf)
+time_breaks = c(-Inf,  0, 1200, 2400,3600,4800,6000,7200,8400,9600,10800,12000,13200,14400,15600,16800,18000,Inf)
+time_labels = c("0 mins", "<20 mins","<40 mins", "<60 mins","<80 mins","<100 mins","<120 mins",
+                "<140 mins" ,"<160 mins", "<180 mins" , "<200 mins", "<220 mins" ,"<240 mins",
+                "<260 mins", "<280 mins", "<300 mins", ">= 300 mins")
 #NAMES OF THE CASES
 cases <- c("base", "scenario")
 print("#### Parameter spezifiziert! ####")
@@ -435,8 +438,8 @@ if (x_heatmap_time_trips == 1){
   heatmap_trav_time_trips_by_mode <- function(x){
     
     x %>%
-      mutate(trav_time_s = as.integer(hms(x$trav_time), scientific = FALSE) ) %>% 
-      mutate(time_bin = cut(trav_time_s, breaks = time_breaks)) %>% 
+      mutate(trav_time_s = as.integer(x$trav_time, scientific = FALSE) ) %>% 
+      mutate(time_bin = cut(trav_time_s, breaks = time_breaks, labels = time_labels)) %>% 
       group_by(main_mode, time_bin) %>% 
       summarise(freq = n()) %>% 
       pivot_wider(names_from = main_mode, values_from = freq)
@@ -459,14 +462,6 @@ avg_trav_distance <- function(x){
     summarise(avg_trav_distance = mean(traveled_distance)) %>% 
     pivot_wider(names_from = main_mode, values_from = avg_trav_distance)
 }
-avg_trav_time <- function(x){
-  x %>%
-    select(main_mode, trav_time) %>% 
-    mutate(trav_time = hms(trav_time)) %>% 
-    group_by(main_mode) %>%  
-    summarise(avgTime_s = mean(hour(trav_time)*3600 + minute(trav_time) *60 + second(trav_time) ))# %>% 
-    #pivot_wider(names_from = main_mode, values_from = avgTime_s)
-}  
 
 avg_trav_time <- function(x){
   x %>%
@@ -485,7 +480,7 @@ avg_trav_time_scenario_city <- avg_trav_time(scenario_trips_city)
 avg_trav_time_scenario_region <- avg_trav_time(scenario_trips_region)
 avg_trav_time_scenario_network <- avg_trav_time(scenarioTripsTable)
 
-avg_trav_speed_scenario_city = avg_trav_dist_scenario_city/avg_trav_time_scenario_city*3.6 #km/h
+avg_trav_speed_scenario_city = round(avg_trav_dist_scenario_city/avg_trav_time_scenario_city*3.6, digits =   3) #km/h
 avg_trav_speed_scenario_region = avg_trav_dist_scenario_region/avg_trav_time_scenario_region*3.6 #km/h
 avg_trav_speed_scenario_network = avg_trav_dist_scenario_network/avg_trav_time_scenario_network*3.6
 
