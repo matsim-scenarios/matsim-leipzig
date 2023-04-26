@@ -16,8 +16,7 @@ print("#### Legs geladen! ####")
 
 ## Filters
 scenario_trips_region <- filterByRegion(scenarioTripsTable,RegionShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
-scenario_trips_city <- filterByRegion(scenarioTripsTable,CityShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
-scenario_trips_area <- filterByRegion(scenarioTripsTable,AreaShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+ scenario_trips_area <- filterByRegion(scenarioTripsTable,AreaShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 print("#### Trips gefiltert! ####")
 scenario_legs_region <- filterByRegion(scenarioLegsTable,RegionShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario_legs_city <- filterByRegion(scenarioLegsTable,CityShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
@@ -47,6 +46,7 @@ if (x_winner_loser == 1){
 #BREAKING DIFFERENT DISTANCES IN M
 breaks = c(0, 1000, 2000, 5000, 10000, 20000, Inf)
 breaks2 = c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, Inf)
+time_breaks = c(1200, 2400, 3600, 4800, 6000, 7200, 8400, 9600, 10800, 12000, 13200, 14400, 15600, 16800, 18000, Inf)
 #NAMES OF THE CASES
 cases <- c("base", "scenario")
 print("#### Parameter spezifiziert! ####")
@@ -176,7 +176,8 @@ if (x_average_traveled_distance_trips == 1){
   avg_trav_distance_trips_by_mode <- function(x){
     x %>%
       group_by(main_mode) %>%
-      summarise_at(vars(traveled_distance), list(name=mean))
+      summarise_at(vars(traveled_distance), list(name=mean)) %>% 
+      pivot_wider(names_from = main_mode, values_from = name)
   }
   #calculation
   avg_trav_dist_trips_scenario_network <- avg_trav_distance_trips_by_mode(scenarioTripsTable)
@@ -187,7 +188,15 @@ if (x_average_traveled_distance_trips == 1){
   write.csv(avg_trav_dist_trips_scenario_network, file = paste0(outputDirectoryScenario,"/avg_trav_dist_trips_network.csv"))
   write.csv(avg_trav_dist_trips_scenario_region, file = paste0(outputDirectoryScenario,"/avg_trav_dist_trips_region.csv"))
   write.csv(avg_trav_dist_trips_scenario_city, file = paste0(outputDirectoryScenario,"/avg_trav_dist_trips_city.csv"))
-}
+
+  df_list <- list(network = avg_trav_dist_trips_scenario_network,
+                  region = avg_trav_dist_trips_scenario_region,
+                  city = avg_trav_dist_trips_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.trav_dist_trips.csv"))
+  
+  }
 #### #3.2 Average Euclidean Distance - trips based####
 print("#### in 3.2 ####")
 if (x_average_euclidean_distance_trips == 1){
@@ -195,8 +204,8 @@ if (x_average_euclidean_distance_trips == 1){
   avg_eucl_distance_trips_by_mode <- function(x){
     x %>%
       group_by(main_mode) %>%
-      #summarise_at(vars(traveled_distance), list(name=mean))
-      summarise_at(vars(euclidean_distance), list(name=mean))
+      summarise_at(vars(euclidean_distance), list(name=mean)) %>% 
+      pivot_wider(names_from = main_mode, values_from = name)
   }
   #calculation
   avg_eucl_dist_trips_scenario_network <- avg_eucl_distance_trips_by_mode(scenarioTripsTable)
@@ -206,15 +215,41 @@ if (x_average_euclidean_distance_trips == 1){
   write.csv(avg_eucl_dist_trips_scenario_network, file = paste0(outputDirectoryScenario,"/avg_eucl_dist_trips_network.csv"))
   write.csv(avg_eucl_dist_trips_scenario_region, file = paste0(outputDirectoryScenario,"/avg_eucl_dist_trips_region.csv"))
   write.csv(avg_eucl_dist_trips_scenario_city, file = paste0(outputDirectoryScenario,"/avg_eucl_dist_trips_city.csv"))
+  
+  df_list <- list(network = avg_eucl_dist_trips_scenario_network,
+                  region = avg_eucl_dist_trips_scenario_region,
+                  city = avg_eucl_dist_trips_scenario_city)
+  write.csv(bind_rows(df_list,
+            .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.eucl_dist_trips.csv"))
 }
-#### #3.3 Personen KM - trips based ####
+#### #3.3 Traveled Distance Heatmap - trips based ####
+
+if (x_heatmap_distance_trips == 1){
+  
+  heatmap_trav_distance_trips_by_mode <- function(x){
+    x %>% 
+      mutate(dist_bin = as.numeric(cut(traveled_distance, breaks = breaks2))) %>% 
+      group_by(main_mode, dist_bin) %>% 
+      summarise(freq = n()) %>% 
+      pivot_wider(names_from = main_mode, values_from = freq)
+  }
+  
+  heatmap_trav_distance_trips_city <- heatmap_trav_distance_trips_by_mode(scenario_trips_city)
+  
+  write.csv(heatmap_trav_distance_trips_city,file = paste0(outputDirectoryScenario,"/heatmap_trav_distance_trips_city.csv"))
+  
+}
+
+#### #3.4 Personen KM - trips based ####
 print("#### in 3.3 ####")
 if (x_personen_km_trips == 1){
   personen_km_trips <- function (x){
     x %>%
       filter(main_mode!="freight") %>%
       group_by(main_mode) %>%
-      summarise(pers_km = sum(traveled_distance)/1000) 
+      summarise(pers_km = sum(traveled_distance)/1000) %>% 
+      pivot_wider(names_from = main_mode, values_from = pers_km)
     
   }
   pkm_trips_scenario_city <- personen_km_trips(scenario_trips_city)
@@ -225,17 +260,24 @@ if (x_personen_km_trips == 1){
   write.csv(pkm_trips_scenario_region, file = paste0(outputDirectoryScenario,"/trips_region_pkm.csv"))
   write.csv(pkm_trips_scenario_network, file = paste0(outputDirectoryScenario,"/trips_network_pkm.csv"))
   
+  df_list <- list(network = pkm_trips_scenario_network,
+                  region = pkm_trips_scenario_region,
+                  city = pkm_trips_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.pkm_trips_scenario.csv"))
 }
 
-#### #3.4 Average Traveled Distance - legs based#####
+#### #3.5 Average Traveled Distance - legs based#####
 print("#### in 3.4 ####")
 if (x_average_traveled_distance_legs == 1){
   
   avg_trav_distance_legs_by_mode <- function(x){
     x %>%
       group_by(mode) %>%
-      summarise_at(vars(distance), list(name=mean))
-    #summarise_at(vars(euclidean_distance), list(name=mean))
+      summarise_at(vars(distance), list(name=mean)) %>% 
+      pivot_wider(names_from = mode, values_from = name)
+    
   }
   #calculation
   avg_trav_dist_legs_scenario_network <- avg_trav_distance_legs_by_mode(scenarioLegsTable)
@@ -245,32 +287,23 @@ if (x_average_traveled_distance_legs == 1){
   write.csv(avg_trav_dist_legs_scenario_network, file = paste0(outputDirectoryScenario,"/avg_trav_dist_legs_network.csv"))
   write.csv(avg_trav_dist_legs_scenario_region, file = paste0(outputDirectoryScenario,"/avg_trav_dist_legs_region.csv"))
   write.csv(avg_trav_dist_legs_scenario_city, file = paste0(outputDirectoryScenario,"/avg_trav_dist_legs_city.csv"))
-}
-#### #3.5 Average Euclidean Distance - legs based#####
-print("#### in 3.5 ####")
-if (x_average_euclidean_distance_legs == 1){
-  
-  avg_eucl_distance_legs_by_mode <- function(x){
-    x %>%
-      group_by(mode) %>%
-      summarise_at(vars(euclidean_distance), list(name=mean))
+
+  df_list <- list(network = avg_trav_dist_legs_scenario_network,
+                  region = avg_trav_dist_legs_scenario_region,
+                  city = avg_trav_dist_legs_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.trav_dist_legs.csv"))
   }
-  #calculation
-  avg_eucl_dist_legs_scenario_network <- avg_eucl_distance_legs_by_mode(scenarioLegsTable)
-  avg_eucl_dist_legs_scenario_region <- avg_eucl_distance_legs_by_mode(scenario_legs_region)
-  avg_eucl_dist_legs_scenario_city <- avg_eucl_distance_legs_by_mode(scenario_legs_city)
-  #write table
-  write.csv(avg_eucl_dist_legs_scenario_network, file = paste0(outputDirectoryScenario,"/avg_eucl_dist_legs_network.csv"))
-  write.csv(avg_eucl_dist_legs_scenario_region, file = paste0(outputDirectoryScenario,"/avg_eucl_dist_legs_region.csv"))
-  write.csv(avg_eucl_dist_legs_scenario_city, file = paste0(outputDirectoryScenario,"/avg_eucl_dist_legs_city.csv"))
-}
+
 #### #3.6 Personen KM - legs based ####
 print("#### in 3.6 ####")
 if (x_personen_km_legs == 1){
   personen_km_legs <- function (x){
     x %>%
       group_by(mode) %>%
-      summarise(pers_km = sum(distance)/1000) 
+      summarise(pers_km = sum(distance)/1000) %>% 
+      pivot_wider(names_from = mode, values_from = pers_km)
     
   }
   pkm_legs_scenario_city <- personen_km_legs(scenario_legs_city)
@@ -281,6 +314,12 @@ if (x_personen_km_legs == 1){
   write.csv(pkm_legs_scenario_region, file = paste0(outputDirectoryScenario,"/legs_region_pkm.csv"))
   write.csv(pkm_legs_scenario_network, file = paste0(outputDirectoryScenario,"/legs_network_pkm.csv"))
   
+  df_list <- list(network = pkm_legs_scenario_network,
+                  region = pkm_legs_scenario_region,
+                  city = pkm_legs_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.pkm_legs_scenario.csv"))
 }
 #### #4.1 Average Travel Time - trips based #####
 print("#### in 4.1 ####")
@@ -289,7 +328,8 @@ if (x_average_traveled_distance_trips == 1){
   avg_time_trips_by_mode <- function(x){
     x %>%
       group_by(main_mode) %>%
-      summarise_at(vars(trav_time), list(name=mean))
+      summarise_at(vars(trav_time), list(name=mean)) %>% 
+      pivot_wider(names_from = main_mode, values_from = name)
   }
   #calculation
   avg_time_trips_scenario_network <- avg_time_trips_by_mode(scenarioTripsTable)
@@ -299,7 +339,14 @@ if (x_average_traveled_distance_trips == 1){
   write.csv(avg_time_trips_scenario_network, file = paste0(outputDirectoryScenario,"/avg_time_trips_network.csv"))
   write.csv(avg_time_trips_scenario_region, file = paste0(outputDirectoryScenario,"/avg_time_trips_region.csv"))
   write.csv(avg_time_trips_scenario_city, file = paste0(outputDirectoryScenario,"/avg_time_trips_city.csv"))
-}
+
+  df_list <- list(network = avg_time_trips_scenario_network,
+                  region = avg_time_trips_scenario_region,
+                  city = avg_time_trips_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.avg_time_trips_scenario.csv"))
+  }
 
 #### #4.2 Personen Stunden - trips based ####
 print("#### in 4.2 ####")
@@ -307,8 +354,9 @@ if (x_personen_h_trips == 1){
   personen_stunden_trips <- function (x){
     x %>% 
       filter(main_mode!="freight") %>%
-      group_by(mode) %>%
-      summarise(personen_stunden_trips = (sum(trav_time)))
+      group_by(main_mode) %>%
+      summarise(personen_stunden_trips = (sum(trav_time))) %>% 
+      pivot_wider(names_from = main_mode, values_from = personen_stunden_trips)
   }
   ph_trips_scenario_city <- personen_km_trips(scenario_trips_city)
   ph_trips_scenario_region <- personen_km_trips(scenario_trips_region)
@@ -318,6 +366,12 @@ if (x_personen_h_trips == 1){
   write.csv(ph_trips_scenario_region, file = paste0(outputDirectoryScenario,"/trips_region_ph.csv"))
   write.csv(ph_trips_scenario_network, file = paste0(outputDirectoryScenario,"/trips_network_ph.csv"))
   
+  df_list <- list(network = ph_trips_scenario_network,
+                  region = ph_trips_scenario_region,
+                  city = ph_trips_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.ph_trips_scenario.csv"))
 }
 
 #### #4.3 Average Travel Time - legs based #####
@@ -328,8 +382,10 @@ if (x_average_traveled_distance_legs == 1){
   avg_time_legs_by_mode <- function(x){
     x %>%
       group_by(mode) %>%
-      summarise_at(vars(trav_time), list(name=mean))
+      summarise_at(vars(trav_time), list(name=mean)) %>%
+      pivot_wider(names_from = mode, values_from = personen_stunden_legs)
   }
+  
   #calculation
   avg_time_legs_scenario_network <- avg_time_legs_by_mode(scenarioLegsTable)
   avg_time_legs_scenario_region <- avg_time_legs_by_mode(scenario_legs_region)
@@ -338,7 +394,14 @@ if (x_average_traveled_distance_legs == 1){
   write.csv(avg_time_legs_scenario_network, file = paste0(outputDirectoryScenario,"/avg_time_legs_network.csv"))
   write.csv(avg_time_legs_scenario_region, file = paste0(outputDirectoryScenario,"/avg_time_legs_region.csv"))
   write.csv(avg_time_legs_scenario_city, file = paste0(outputDirectoryScenario,"/avg_time_legs_city.csv"))
-}
+
+  df_list <- list(network = avg_time_legs_scenario_network,
+                  region = avg_time_legs_scenario_region,
+                  city = avg_time_legs_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.avg_time_legs.csv"))
+  }
 
 #### #4.4 Personen Stunden - legs based ####
 print("#### in 4.4 ####")
@@ -346,7 +409,9 @@ if (x_personen_h_legs == 1){
   personen_stunden_legs <- function (x){
     x %>%
       group_by(mode) %>%
-      summarise(personen_stunden_legs = (sum(trav_time)))
+      summarise(personen_stunden_legs = (sum(trav_time))) %>% 
+      pivot_wider(names_from = mode, values_from = personen_stunden_legs)
+    
   }
   ph_legs_scenario_city <- personen_stunden_legs(scenario_legs_city)
   ph_legs_scenario_region <- personen_stunden_legs(scenario_legs_region)
@@ -356,8 +421,33 @@ if (x_personen_h_legs == 1){
   write.csv(ph_legs_scenario_region, file = paste0(outputDirectoryScenario,"/legs_region_ph.csv"))
   write.csv(ph_legs_scenario_network, file = paste0(outputDirectoryScenario,"/legs_network_ph.csv"))
   
+  df_list <- list(network = ph_legs_scenario_network,
+                  region = ph_legs_scenario_region,
+                  city = ph_legs_scenario_city)
+  write.csv(bind_rows(df_list,
+                      .id = "id"), 
+            file = paste0(outputDirectoryScenario, "/df.ph_legs_scenario.csv"))
 }
 
+#### #4.5 Travel Time Heatmap - trips based ####
+if (x_heatmap_time_trips == 1){
+  
+  heatmap_trav_time_trips_by_mode <- function(x){
+    
+    x %>%
+      mutate(trav_time_s = as.integer(hms(x$trav_time), scientific = FALSE) ) %>% 
+      mutate(time_bin = cut(trav_time_s, breaks = time_breaks)) %>% 
+      group_by(main_mode, time_bin) %>% 
+      summarise(freq = n()) %>% 
+      pivot_wider(names_from = main_mode, values_from = freq)
+  }
+  
+
+  heatmap_trav_time_trips_city <- heatmap_trav_time_trips_by_mode(scenario_trips_city)
+  
+  write.csv(heatmap_trav_distance_trips_city,file = paste0(outputDirectoryScenario,"/heatmap_trav_distance_trips_city.csv"))
+  
+}
 #### #5.1 Average Speed ####
 print("#### in 5.1 ####")
 if (x_average_traveled_speed_trips == 1){
@@ -367,22 +457,34 @@ avg_trav_distance <- function(x){
     select(main_mode, traveled_distance) %>% 
     group_by(main_mode) %>% 
     summarise(avg_trav_distance = mean(traveled_distance)) %>% 
-    column_to_rownames(var = "main_mode")
+    pivot_wider(names_from = main_mode, values_from = avg_trav_distance)
 }
 avg_trav_time <- function(x){
   x %>%
     select(main_mode, trav_time) %>% 
     mutate(trav_time = hms(trav_time)) %>% 
     group_by(main_mode) %>%  
-    summarise(avgTime_s = mean(hour(trav_time)*3600 + minute(trav_time) *60 + second(trav_time) )) %>% 
-    column_to_rownames(var = "main_mode")
+    summarise(avgTime_s = mean(hour(trav_time)*3600 + minute(trav_time) *60 + second(trav_time) ))# %>% 
+    #pivot_wider(names_from = main_mode, values_from = avgTime_s)
 }  
+
+avg_trav_time <- function(x){
+  x %>%
+    select(main_mode, trav_time) %>% 
+    group_by(main_mode) %>%  
+    summarise(avgTime = mean(trav_time))%>%
+    mutate(avgTime = round(as.numeric(avgTime)/60)) %>% 
+    pivot_wider(names_from = main_mode, values_from = avgTime)
+}  
+
 avg_trav_dist_scenario_city <- avg_trav_distance(scenario_trips_city)
 avg_trav_dist_scenario_region <- avg_trav_distance(scenario_trips_region)
 avg_trav_dist_scenario_network <-avg_trav_distance(scenarioTripsTable)
+
 avg_trav_time_scenario_city <- avg_trav_time(scenario_trips_city)
 avg_trav_time_scenario_region <- avg_trav_time(scenario_trips_region)
 avg_trav_time_scenario_network <- avg_trav_time(scenarioTripsTable)
+
 avg_trav_speed_scenario_city = avg_trav_dist_scenario_city/avg_trav_time_scenario_city*3.6 #km/h
 avg_trav_speed_scenario_region = avg_trav_dist_scenario_region/avg_trav_time_scenario_region*3.6 #km/h
 avg_trav_speed_scenario_network = avg_trav_dist_scenario_network/avg_trav_time_scenario_network*3.6
@@ -391,6 +493,13 @@ avg_trav_speed_scenario_network = avg_trav_dist_scenario_network/avg_trav_time_s
 write.csv(avg_trav_speed_scenario_network, file = paste0(outputDirectoryScenario,"/avg_trav_speed_trips_network.csv"))
 write.csv(avg_trav_speed_scenario_region, file = paste0(outputDirectoryScenario,"/avg_trav_speed_trips_region.csv"))
 write.csv(avg_trav_speed_scenario_city, file = paste0(outputDirectoryScenario,"/avg_trav_speed_trips_city.csv"))
+
+df_list <- list(network = avg_trav_speed_scenario_network,
+                region = avg_trav_speed_scenario_region,
+                city = avg_trav_speed_scenario_city)
+write.csv(bind_rows(df_list,
+                    .id = "id"), 
+          file = paste0(outputDirectoryScenario, "/df.avg_trav_speed_scenario.csv"))
 }
 
 #### #5.2 Average Beeline Speed ####
@@ -403,7 +512,7 @@ avg_beeline_distance <- function(x){
     select(main_mode, euclidean_distance) %>% 
     group_by(main_mode) %>% 
     summarise(avg_beeline_distance = mean(euclidean_distance)) %>% 
-    column_to_rownames(var = "main_mode")
+    pivot_wider(names_from = main_mode, values_from = avg_beeline_distance)
 }
 
 avg_trav_time <- function(x){
@@ -412,7 +521,7 @@ avg_trav_time <- function(x){
     mutate(trav_time = hms(trav_time)) %>% 
     group_by(main_mode) %>%  
     summarise(avgTime_s = mean(hour(trav_time)*3600 + minute(trav_time) *60 + second(trav_time) )) %>% 
-    column_to_rownames(var = "main_mode")
+    pivot_wider(names_from = main_mode, values_from = avgTime_s)
 }  
 # average beeline distance and average travel time
 avg_beeline_dist_scenario_city <- avg_beeline_distance(scenario_trips_city)
@@ -429,6 +538,13 @@ avg_beeline_speed_scenario_network = avg_beeline_dist_scenario_network/avg_trav_
 write.csv(avg_beeline_speed_scenario_network, file = paste0(outputDirectoryScenario,"/avg_bee_speed_trips_network.csv"))
 write.csv(avg_beeline_speed_scenario_region, file = paste0(outputDirectoryScenario,"/avg_bee_speed_trips_region.csv"))
 write.csv(avg_beeline_speed_scenario_city, file = paste0(outputDirectoryScenario,"/avg_bee_speed_trips_city.csv"))
+
+df_list <- list(network = avg_beeline_speed_scenario_network,
+                region = avg_beeline_speed_scenario_region,
+                city = avg_beeline_speed_scenario_city)
+write.csv(bind_rows(df_list,
+                    .id = "id"), 
+          file = paste0(outputDirectoryScenario, "/df.avg_bee_speed_scenario.csv"))
 } 
 
 #### #6.1 Emissions ####

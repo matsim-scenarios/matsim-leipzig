@@ -16,11 +16,12 @@ library(alluvial)
 library(ggalluvial)
 library(stringr)
 library(data.table)
+library(chron)
 print("#### Libraries geladen! ####")
 ################################################################################ CASES #### please put (1=yes/0=no) for analyses 
 scenarios <- list(
 "base-case"
-,"carfree-area-90"
+#,"carfree-area-90"
 #,"carfree-area-95"
 #,"carfree-area-99"
 #,"drt-outskirts"
@@ -30,6 +31,7 @@ scenarios <- list(
 #,"combined_scenarioA"
 )
 
+scenario = "base-case"
 ################################################################################ INPUT ####
 
 for (scenario in scenarios){
@@ -87,6 +89,8 @@ print("#### Output folder geladen! ####")
   x_average_traveled_distance_trips =   1
 #### #3.2 Distances EUCLIDEAN - trips based
   x_average_euclidean_distance_trips =  1
+#### #3.3 Heatmap Distances traveled - trips based
+  x_heatmap_distance_trips = 1
 #### #3.3 PKM - trips based  
   x_personen_km_trips =                 1
 #### #3.4 Distances TRAVELED - legs based
@@ -104,11 +108,13 @@ print("#### Output folder geladen! ####")
   x_personen_h_trips =        1
 #### #4.4 ph - legs based 
   x_personen_h_legs =         1
+#### #4.5 Time Traveled Heatmap - trips based
+  x_heatmap_time_trips =      1
 
 #### #5.1 Speed TRAVELED - trips based
-  x_average_traveled_speed_trips =    0
+  x_average_traveled_speed_trips =    1
 #### #5.2 Speed BEELINE - trips based
-  x_average_beeline_speed_trips =     0
+  x_average_beeline_speed_trips =     1
 
 #### #6.1 Traffic Volumes  
   x_traffic = 0
