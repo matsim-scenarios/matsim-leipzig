@@ -35,8 +35,8 @@ public class NetworkOptions {
 	private Path parkingCostArea;
 	@CommandLine.Option(names = "--slow-speed-area", description = "Path to SHP file specifying area of adapted speed")
 	private Path slowSpeedArea;
-	@CommandLine.Option(names = "--slow-speed-relative-change", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
-	private double slowSpeedRelativeChange;
+	@CommandLine.Option(names = "--slow-speed-relative-change", description = "provide a value that is bigger than 0.0 and smaller than 1.0")
+	private Double slowSpeedRelativeChange;
 
 	/**
 	 * Return whether a car free area is defined.
@@ -63,14 +63,14 @@ public class NetworkOptions {
 	 */
 	public void prepare(Network network) {
 
-		if (isDefined(drtArea)) {
+		if (hasDrtArea()) {
 			if (!Files.exists(drtArea))
 				throw new IllegalArgumentException("Path to drt area not found: " + drtArea);
 
 			PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null), drtModes);
 		}
 
-		if (isDefined(parkingCostArea)) {
+		if (hasParkingCostArea()) {
 			if (!Files.exists(parkingCostArea))
 				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingCostArea);
 
@@ -78,8 +78,12 @@ public class NetworkOptions {
 		}
 
 		if (isDefined(slowSpeedArea)) {
-			if (!Files.exists(slowSpeedArea))
+			if (!Files.exists(slowSpeedArea)) {
 				throw new IllegalArgumentException("Path to slow speed area not found: " + slowSpeedArea);
+			} else if (slowSpeedRelativeChange==null) {
+				throw new IllegalArgumentException("No relative change value for freeSpeed defined: " + slowSpeedArea);
+			}
+
 
 			PrepareNetwork.prepareSlowSpeed(network,
 					ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(slowSpeedArea, null, null).getShapeFile().toString())),
@@ -95,7 +99,7 @@ public class NetworkOptions {
 			PrepareNetwork.prepareParkingCapacities(network, new ShpOptions(parkingCapacitiesArea, null, null), inputParkingCapacities);
 		}
 
-		if (isDefined(carFreeArea)) {
+		if (hasCarFreeArea()) {
 			if (!Files.exists(carFreeArea))
 				throw new IllegalArgumentException("Path to car free area not found: " + carFreeArea);
 

@@ -54,16 +54,16 @@ public class RunLeipzigIntegrationTest {
 	}
 
 	@Test
-	public void testSlowSpeed() {
+	public void runSlowSpeedExampleTest() {
 
-		Path output = Path.of("outputSlowSpeed/it-1pct");
+		Path output = Path.of("output/it-1pct-slowSpeed");
 		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-25pct.config.xml");
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
 		// Change input paths
 		config.plans().setInputFile(URL + "leipzig-v1.1-0.1pct.plans.xml.gz");
 		Controler controler = RunLeipzigScenario.prepare(RunLeipzigScenario.class, config,
-				"--slow-speed-area", exampleShp, "--drt-area", exampleShp,
+				"--slow-speed-area", exampleShp, "--slow-speed-relative-change", "0.5", "--drt-area", exampleShp,
 				"--drt-modes", "drtNorth,drtSoutheast", "--output=" + output + "withSlowSpeed"
 		);
 

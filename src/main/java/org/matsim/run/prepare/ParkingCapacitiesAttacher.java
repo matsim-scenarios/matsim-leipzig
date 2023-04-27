@@ -26,6 +26,7 @@ public final class ParkingCapacitiesAttacher {
 
 	private static final Logger log = LogManager.getLogger(ParkingCapacitiesAttacher.class);
 
+	private String capacityAttributeName = "parkingCapacity";
 	Network network;
 	private final ShpOptions shp;
 	Path inputParkingCapacities;
@@ -74,7 +75,7 @@ public final class ParkingCapacitiesAttacher {
 					int parkingCapacity = Integer.parseInt(linkParkingCapacities.get(link.getId().toString()));
 
 					Attributes linkAttributes = link.getAttributes();
-					linkAttributes.putAttribute("parkingCapacity", parkingCapacity);
+					linkAttributes.putAttribute(capacityAttributeName, parkingCapacity);
 
 					adaptedLinksCount++;
 				}
