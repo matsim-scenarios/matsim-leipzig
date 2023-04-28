@@ -1,7 +1,5 @@
 package org.matsim.run.prepare;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
@@ -16,8 +14,6 @@ import java.nio.file.Path;
  * Defines all options and parameters related to network modifications.
  */
 public class NetworkOptions {
-
-	private static final Logger log = LogManager.getLogger(NetworkOptions.class);
 
 	@CommandLine.Option(names = "--drt-area", description = "Path to SHP file specifying where DRT mode is allowed")
 	private Path drtArea;

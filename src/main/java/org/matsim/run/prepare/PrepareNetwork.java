@@ -161,6 +161,9 @@ public class PrepareNetwork implements MATSimAppCommand {
 		ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
 		Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
 
+		String hourlyParkingCostAttrName = "cost_h";
+		String residentialParkingCostAttrName = "resPFee";
+
 		for (var link : network.getLinks().values()) {
 
 			if (!link.getAllowedModes().contains("pt")) {
@@ -177,14 +180,14 @@ public class PrepareNetwork implements MATSimAppCommand {
 					Geometry geometry = (Geometry) feature.getDefaultGeometry();
 					boolean linkInShp = line.intersects(geometry);
 					if (linkInShp) {
-						if (feature.getAttribute("cost_h") != null) {
-							oneHourPCost = (Double) feature.getAttribute("cost_h");
-							extraHourPCost = (Double) feature.getAttribute("cost_h");
+						if (feature.getAttribute(hourlyParkingCostAttrName) != null) {
+							oneHourPCost = (Double) feature.getAttribute(hourlyParkingCostAttrName);
+							extraHourPCost = (Double) feature.getAttribute(hourlyParkingCostAttrName);
 
 						}
 
-						if (feature.getAttribute("resPFee") != null) {
-							resPFee = (Double) feature.getAttribute("resPFee");
+						if (feature.getAttribute(residentialParkingCostAttrName) != null) {
+							resPFee = (Double) feature.getAttribute(residentialParkingCostAttrName);
 						}
 
 						break;
@@ -238,11 +241,11 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 		} else {
 			log.info("reduce speed to 20 km/h");
-			carLinksInArea.forEach(link -> {
+			carLinksInArea.forEach(link ->
 				//apply 'tempo 20' to all roads but motorways
 				//20 km/h --> 5.5 m/s
-				link.setFreespeed(5.5);
-			});
+				link.setFreespeed(5.5)
+			);
 		}
 
 	}

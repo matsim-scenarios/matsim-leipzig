@@ -91,8 +91,10 @@ public class NetworkOptionsTest {
                 "--parking-capacities-area", shpPath, "--parking-capacities-input", parkingCapacities, "--output", output  + outputNetworkPath);
 
 		Network outputNetwork = NetworkUtils.readNetwork(output + outputNetworkPath);
-		Assert.assertTrue(Integer.parseInt(outputNetwork.getLinks().get(Id.createLinkId("-10424519")).getAttributes().getAttribute("parkingCapacity").toString())==capacity);
-		Assert.assertTrue(Integer.parseInt(outputNetwork.getLinks().get(Id.createLinkId("827435967#0")).getAttributes().getAttribute("parkingCapacity").toString())==capacity);
+		Assert.assertEquals(Integer.parseInt(outputNetwork.getLinks().get(Id.createLinkId("-10424519"))
+				.getAttributes().getAttribute("parkingCapacity").toString()),capacity);
+		Assert.assertEquals(Integer.parseInt(outputNetwork.getLinks().get(Id.createLinkId("827435967#0"))
+				.getAttributes().getAttribute("parkingCapacity").toString()),capacity);
 	}
 
 	@Test
@@ -116,12 +118,18 @@ public class NetworkOptionsTest {
 		Network outputNetwork = NetworkUtils.readNetwork(output + outputNetworkPath);
 
 		//parkingCost values (2.0 and 0.1) are defined in file shpPath
-		Assert.assertTrue(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("-10424519")).getAttributes().getAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName()).toString())==2.0);
-		Assert.assertTrue(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("-10424519")).getAttributes().getAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName()).toString())==2.0);
-		Assert.assertTrue(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("-10424519")).getAttributes().getAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName()).toString())==0.1);
-		Assert.assertTrue(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("827435967#0")).getAttributes().getAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName()).toString())==2.0);
-		Assert.assertTrue(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("827435967#0")).getAttributes().getAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName()).toString())==2.0);
-		Assert.assertTrue(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("827435967#0")).getAttributes().getAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName()).toString())==0.1);
+		Assert.assertEquals(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("-10424519"))
+				.getAttributes().getAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName()).toString()),2.0, 0);
+		Assert.assertEquals(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("-10424519"))
+				.getAttributes().getAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName()).toString()),2.0, 0);
+		Assert.assertEquals(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("-10424519"))
+				.getAttributes().getAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName()).toString()),0.1, 0);
+		Assert.assertEquals(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("827435967#0"))
+				.getAttributes().getAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName()).toString()),2.0, 0);
+		Assert.assertEquals(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("827435967#0"))
+				.getAttributes().getAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName()).toString()),2.0, 0);
+		Assert.assertEquals(Double.parseDouble(outputNetwork.getLinks().get(Id.createLinkId("827435967#0"))
+				.getAttributes().getAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName()).toString()),0.1, 0);
 
 	}
 
@@ -147,10 +155,10 @@ public class NetworkOptionsTest {
 
 		Network outputNetwork = NetworkUtils.readNetwork(output + outputNetworkPath);
 
-		Assert.assertTrue(outputNetwork.getLinks().get(Id.createLinkId("-10424519")).getFreespeed()
-				==12.501000000000001*Double.parseDouble(relativeSpeedChange));
-		Assert.assertTrue(outputNetwork.getLinks().get(Id.createLinkId("827435967#0")).getFreespeed()
-				==12.501000000000001*Double.parseDouble(relativeSpeedChange));
+		Assert.assertEquals(outputNetwork.getLinks().get(Id.createLinkId("-10424519")).getFreespeed(),
+				12.501000000000001*Double.parseDouble(relativeSpeedChange), 0);
+		Assert.assertEquals(outputNetwork.getLinks().get(Id.createLinkId("827435967#0")).getFreespeed(),
+				12.501000000000001*Double.parseDouble(relativeSpeedChange), 0);
 
 	}
 

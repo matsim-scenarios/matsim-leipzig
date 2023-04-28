@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  * This can be done relativly or tempo 20 on every link
  * @deprecated use {@link PrepareNetwork} instead
  */
-@Deprecated
+@Deprecated(since="04-23")
 public final class SpeedReduction {
 
 	private static final Logger log = LogManager.getLogger(SpeedReduction.class);

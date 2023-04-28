@@ -56,10 +56,8 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 	private final Map<Id<Person>, Double> personId2lastLeaveVehicleTime = new HashMap<>();
 	private final Map<Id<Person>, String> personId2previousActivity = new HashMap<>();
 	private final Map<Id<Person>, Id<Link>> personId2relevantModeLinkId = new HashMap<>();
-	private final Map<Id<Person>, Id<Link>> personId2homeLinkId = new HashMap<>();
 	private final Set<Id<Person>> ptDrivers = new HashSet<>();
 	private final Set<Id<Person>> hasAlreadyPaidDailyResidentialParkingCosts = new HashSet<>();
-	private double compensationTime = Double.NaN;
 	private boolean isInRestrictedParkingPeriod;
 	private double parkingCostTimePeriodStart;
 	private double parkingCostTimePeriodEnd;
@@ -130,7 +128,7 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 	@Override
 	public void handleEvent(ActivityEndEvent event) {
 
-		isInRestrictedParkingPeriod = checkTimeRestriction(event.getTime());
+//		isInRestrictedParkingPeriod = checkTimeRestriction(event.getTime());
 
 		if (ptDrivers.contains(event.getPersonId())) {
 			// skip pt drivers
@@ -245,7 +243,7 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 							if (costs > maxDailyParkingCosts) {
 								costs = maxDailyParkingCosts;
 							}
-							if ((parkingDurationHrs > maxParkingDurationHrs) & (costs < parkingPenalty)) {
+							if ((parkingDurationHrs > maxParkingDurationHrs) && (costs < parkingPenalty)) {
 								costs = parkingPenalty;
 							}
 
