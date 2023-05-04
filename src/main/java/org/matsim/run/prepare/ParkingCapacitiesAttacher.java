@@ -1,5 +1,6 @@
 package org.matsim.run.prepare;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
@@ -70,18 +71,16 @@ public final class ParkingCapacitiesAttacher {
 			}
 
 
-			if (isInsideParkingArea) {
-				if (linkParkingCapacities.get(link.getId().toString()) != null) {
-					int parkingCapacity = Integer.parseInt(linkParkingCapacities.get(link.getId().toString()));
+			if (isInsideParkingArea && linkParkingCapacities.get(link.getId().toString()) != null) {
+				int parkingCapacity = Integer.parseInt(linkParkingCapacities.get(link.getId().toString()));
 
-					Attributes linkAttributes = link.getAttributes();
-					linkAttributes.putAttribute(capacityAttributeName, parkingCapacity);
+				Attributes linkAttributes = link.getAttributes();
+				linkAttributes.putAttribute(capacityAttributeName, parkingCapacity);
 
-					adaptedLinksCount++;
-				}
+				adaptedLinksCount++;
 			}
 		}
-		log.info(adaptedLinksCount + " / " + networkLinksCount + " were complemented with parking information attribute.");
+		log.log(Level.INFO, "%d of %d links were complemented with parking information attribute.", adaptedLinksCount, networkLinksCount);
 	}
 
 	private Map<String, String> getLinkParkingCapacities() {

@@ -1,5 +1,6 @@
 package org.matsim.run.prepare;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.*;
@@ -112,7 +113,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
 		multimodalNetworkCleaner.run(modesToAdd);
 
-		log.info("Modes " + modes + " have been added to network.");
+		log.log(Level.INFO, "The following modes have been added to the network: %s ", modes);
 	}
 
 	/**
@@ -179,19 +180,15 @@ public class PrepareNetwork implements MATSimAppCommand {
 				for (SimpleFeature feature : features) {
 					Geometry geometry = (Geometry) feature.getDefaultGeometry();
 					boolean linkInShp = line.intersects(geometry);
-					if (linkInShp) {
-						if (feature.getAttribute(hourlyParkingCostAttrName) != null) {
-							oneHourPCost = (Double) feature.getAttribute(hourlyParkingCostAttrName);
-							extraHourPCost = (Double) feature.getAttribute(hourlyParkingCostAttrName);
 
-						}
+					if (linkInShp && feature.getAttribute(hourlyParkingCostAttrName) != null) {
 
-						if (feature.getAttribute(residentialParkingCostAttrName) != null) {
-							resPFee = (Double) feature.getAttribute(residentialParkingCostAttrName);
-						}
+						oneHourPCost = (Double) feature.getAttribute(hourlyParkingCostAttrName);
+						extraHourPCost = (Double) feature.getAttribute(hourlyParkingCostAttrName);
+					}
 
-						break;
-
+					if (linkInShp && feature.getAttribute(residentialParkingCostAttrName) != null) {
+						resPFee = (Double) feature.getAttribute(residentialParkingCostAttrName);
 					}
 				}
 

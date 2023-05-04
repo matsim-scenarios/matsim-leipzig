@@ -60,17 +60,19 @@ public class NetworkOptions {
 	public void prepare(Network network) {
 
 		if (hasDrtArea()) {
-			if (!Files.exists(drtArea))
+			if (!Files.exists(drtArea)) {
 				throw new IllegalArgumentException("Path to drt area not found: " + drtArea);
-
-			PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null), drtModes);
+			} else {
+				PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null), drtModes);
+			}
 		}
 
 		if (hasParkingCostArea()) {
-			if (!Files.exists(parkingCostArea))
+			if (!Files.exists(parkingCostArea)) {
 				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingCostArea);
-
-			PrepareNetwork.prepareParkingCost(network, new ShpOptions(parkingCostArea, null, null));
+			} else {
+				PrepareNetwork.prepareParkingCost(network, new ShpOptions(parkingCostArea, null, null));
+			}
 		}
 
 		if (isDefined(slowSpeedArea)) {
@@ -78,12 +80,11 @@ public class NetworkOptions {
 				throw new IllegalArgumentException("Path to slow speed area not found: " + slowSpeedArea);
 			} else if (slowSpeedRelativeChange==null) {
 				throw new IllegalArgumentException("No relative change value for freeSpeed defined: " + slowSpeedArea);
+			} else {
+				PrepareNetwork.prepareSlowSpeed(network,
+						ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(slowSpeedArea, null, null).getShapeFile().toString())),
+						slowSpeedRelativeChange);
 			}
-
-
-			PrepareNetwork.prepareSlowSpeed(network,
-					ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(slowSpeedArea, null, null).getShapeFile().toString())),
-					slowSpeedRelativeChange);
 		}
 
 		if (isDefined(parkingCapacitiesArea)) {
@@ -91,18 +92,18 @@ public class NetworkOptions {
 				throw new IllegalArgumentException("Path to parking capacities shape information not found: " + parkingCapacitiesArea);
 			} else if (!Files.exists(inputParkingCapacities)) {
 				throw new IllegalArgumentException("Path to parking capacities input file not found: " + inputParkingCapacities);
+			} else {
+				PrepareNetwork.prepareParkingCapacities(network, new ShpOptions(parkingCapacitiesArea, null, null), inputParkingCapacities);
 			}
-			PrepareNetwork.prepareParkingCapacities(network, new ShpOptions(parkingCapacitiesArea, null, null), inputParkingCapacities);
 		}
 
 		if (hasCarFreeArea()) {
-			if (!Files.exists(carFreeArea))
+			if (!Files.exists(carFreeArea)) {
 				throw new IllegalArgumentException("Path to car free area not found: " + carFreeArea);
-
-			PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
+			} else {
+				PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
+			}
 		}
-
-
 	}
 
 	private boolean isDefined(Path p) {
