@@ -16,7 +16,9 @@ print("#### Legs geladen! ####")
 
 ## Filters
 scenario_trips_region <- filterByRegion(scenarioTripsTable,RegionShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
- scenario_trips_area <- filterByRegion(scenarioTripsTable,AreaShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+scenario_trips_city <- filterByRegion(scenarioTripsTable,CityShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+scenario_trips_area <- filterByRegion(scenarioTripsTable,AreaShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+
 print("#### Trips gefiltert! ####")
 scenario_legs_region <- filterByRegion(scenarioLegsTable,RegionShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario_legs_city <- filterByRegion(scenarioLegsTable,CityShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
