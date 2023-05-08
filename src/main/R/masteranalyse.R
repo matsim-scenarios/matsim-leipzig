@@ -318,11 +318,19 @@ if (x_average_traveled_distance_legs == 1){
 
 #### #4.4 Personen Stunden - legs based ####
 if (x_personen_h_legs == 1){
-  personen_stunden_legs <- function (x){
-    x %>%
-      group_by(mode) %>%
-      summarise(personen_stunden_legs = (sum(trav_time))
+  
+  
+  
+  
+  
+  
+  personen_stunden_legs  <- function (x){
+    x %>% 
+      group_by(mode) %>% 
+      summarise(personen_stunden_legs = sum(trav_time))
   }
+  
+  
   ph_legs_scenario_city <- personen_stunden_legs(scenario_legs_city)
   ph_legs_scenario_region <- personen_stunden_legs(scenario_legs_region)
   ph_legs_scenario_network <- personen_stunden_legs(scenarioLegsTable)
@@ -469,15 +477,22 @@ if (x_winner_loser == 1){
 #### #8.2 Execution Scores Winner-Loser Plots ####
 
 if (x_winner_loser == 1){
-  source("~/git/matsim-leipzig/src/main/R/utils_jr.R")
   
-  shp = st_read("/Users/jakob/Downloads/Leipzig_Ortsteile_UTM33N(1)/ot.shp") %>% 
-    st_transform(CRS)
-  joined <- join_base_and_policy(base_persons, scenario_persons, shp)
+  # shp = st_read("/Users/jakob/Downloads/Leipzig_Ortsteile_UTM33N(1)/ot.shp") %>% 
+  #   st_transform(CRS)
+  persons_joined <- join_base_and_policy_persons(base_persons, scenario_persons, CityShape)
   
-  joined_hex <- create_hex_grid(joined, shp)
+  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = shp, first_act_type_filter = "home") 
   
-  st_write(joined_hex, paste0(outputDirectoryScenario,"/winners_losers_hex.shp"))
+  joined_hex <- persons_attributes_on_hex_grid(persons_joined_sf, shp, n = 50) %>% 
+    dplyr::rename(score_base = executed_score_base, score_policy = executed_score_policy)
+  
+  joined_centroids <- joined_hex %>% st_centroid()
+  
+  # st_write(joined_hex, paste0(outputDirectoryScenario,"/winners_losers_hex.shp"))
+  st_write(joined_hex, "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/carfree-area-90/analysis/analysis-R/winners_losers_hex.shp")
+  st_write(joined_centroids, "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/carfree-area-90/analysis/analysis-R/winners_losers_centroid.shp")
+  
 }
 
 

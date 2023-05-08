@@ -9,6 +9,9 @@ library(ggsci)
 library(sf)
 library(dplyr)
 library(ggplot2)
+# make sure you use winnerLoserUtils branch of matsim-r until the changes are merged 
+# devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE)
+devtools::load_all("~/git/matsim-r")
 library(matsim)
 library(purrr)
 library(networkD3)
@@ -29,7 +32,6 @@ print("#### Libraries geladen! ####")
 #combined_scenarioA = 0
 ################################################################################ INPUT ####
 publicSVN = "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
-#local = /Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV
 
 runID = "carfree-area-90"                                        
 network <- paste(publicSVN,"base-case/leipzig-25pct-base.output_network.xml.gz")
@@ -40,10 +42,9 @@ scenario_run_path <- paste0(publicSVN,runID)
 #base path nur für Sankey und Winner/Loser Analysis
 base_run_path <- "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
 
-
-region_shp_path <- "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/shapefiles/Leipzig_puffer.shp"
-city_shp_path <- "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/shapefiles/Leipzig_stadt.shp"
-area_shp_path <- "/Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV/R/shapefiles/Zonen90_update.shp"
+region_shp_path <- "~/git/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
+city_shp_path <- "~/git/shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
+area_shp_path <- "~/git/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shx"
 
 
 print("#### Inputspath definiert! ####")
