@@ -100,9 +100,9 @@ input/plans-commercialTraffic.xml.gz:
 	 --creationOption createNewCarrierFile\
 	 --landuseConfiguration useOSMBuildingsAndLanduse\
 	 --trafficType commercialTraffic\
-	 --zoneShapeFileName $(berlin)/data/input-commercialTraffic/leipzig_zones_25832.shp\
-	 --buildingsShapeFileName $(berlin)/data/input-commercialTraffic/leipzig_buildings_25832.shp\
-	 --landuseShapeFileName $(berlin)/data/input-commercialTraffic/leipzig_landuse_25832.shp\
+	 --zoneShapeFileName $(shared)/data/input-commercialTraffic/leipzig_zones_25832.shp\
+	 --buildingsShapeFileName $(shared)/data/input-commercialTraffic/leipzig_buildings_25832.shp\
+	 --landuseShapeFileName $(shared)/data/input-commercialTraffic/leipzig_landuse_25832.shp\
 	 --shapeCRS "EPSG:25832"\
 	 --resistanceFactor "0.005"\
 	 --nameOutputPopulation $(notdir $@)\

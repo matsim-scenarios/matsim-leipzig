@@ -10,6 +10,7 @@
 		</capacity>
 		<length meter="7.5"/>
 		<width meter="1.0"/>
+		<maximumVelocity meterPerSecond="38.89"/>
 		<engineInformation>
 			<attributes>
 				<attribute name="HbefaVehicleCategory" class="java.lang.String">PASSENGER_CAR</attribute>
@@ -25,11 +26,10 @@
 			</attributes>
 		</costInformation>
 		<passengerCarEquivalents pce="1.0"/>
-		<maximumVelocity meterPerSecond="38.89"/>
 		<networkMode networkMode="car"/>
 		<flowEfficiencyFactor factor="1.0"/>
 	</vehicleType>
-	
+
 	<vehicleType id="vwCaddy">
 
 		<description>VW Caddy 2.0 Maxi TDI</description>
@@ -38,6 +38,7 @@
 		</capacity>
 		<length meter="7.5"/>
 		<width meter="1.0"/>
+		<maximumVelocity meterPerSecond="38.89"/>
 		<engineInformation>
 			<attributes>
 				<attribute name="HbefaVehicleCategory" class="java.lang.String">PASSENGER_CAR</attribute>
@@ -53,7 +54,6 @@
 			</attributes>
 		</costInformation>
 		<passengerCarEquivalents pce="1.0"/>
-		<maximumVelocity meterPerSecond="38.89"/>
 		<networkMode networkMode="car"/>
 		<flowEfficiencyFactor factor="1.0"/>
 	</vehicleType>
@@ -66,6 +66,7 @@
 		</capacity>
 		<length meter="7.5"/>
 		<width meter="1.0"/>
+		<maximumVelocity meterPerSecond="38.89"/>
 		<engineInformation>
 			<attributes>
 				<attribute name="HbefaVehicleCategory" class="java.lang.String">LIGHT_COMMERCIAL_VEHICLE</attribute>
@@ -81,7 +82,6 @@
 			</attributes>
 		</costInformation>
 		<passengerCarEquivalents pce="1.0"/>
-		<maximumVelocity meterPerSecond="38.89"/>
 		<networkMode networkMode="car"/>
 		<flowEfficiencyFactor factor="1.0"/>
 	</vehicleType>
@@ -94,6 +94,7 @@
 		</capacity>
 		<length meter="7.5"/>
 		<width meter="1.0"/>
+		<maximumVelocity meterPerSecond="22.22"/>
 		<engineInformation>
 			<attributes>
 				<attribute name="HbefaVehicleCategory" class="java.lang.String">LIGHT_COMMERCIAL_VEHICLE</attribute>
@@ -109,7 +110,6 @@
 			</attributes>
 		</costInformation>
 		<passengerCarEquivalents pce="2.0"/>
-		<maximumVelocity meterPerSecond="22.22"/>
 		<networkMode networkMode="freight"/>
 		<flowEfficiencyFactor factor="1.0"/>
 	</vehicleType>
@@ -122,6 +122,7 @@
 		</capacity>
 		<length meter="7.5"/>
 		<width meter="1.0"/>
+		<maximumVelocity meterPerSecond="22.22"/>
 		<engineInformation>
 			<attributes>
 				<attribute name="HbefaVehicleCategory" class="java.lang.String">HEAVY_GOODS_VEHICLE</attribute>
@@ -137,7 +138,6 @@
 			</attributes>
 		</costInformation>
 		<passengerCarEquivalents pce="3.0"/>
-		<maximumVelocity meterPerSecond="22.22"/>
 		<networkMode networkMode="freight"/>
 		<flowEfficiencyFactor factor="1.0"/>
 	</vehicleType>
@@ -149,6 +149,7 @@
 		</capacity>
 		<length meter="7.5"/>
 		<width meter="1.0"/>
+		<maximumVelocity meterPerSecond="22.22"/>
 		<engineInformation>
 			<attributes>
 				<attribute name="HbefaVehicleCategory" class="java.lang.String">HEAVY_GOODS_VEHICLE</attribute>
@@ -164,7 +165,6 @@
 			</attributes>
 		</costInformation>
 		<passengerCarEquivalents pce="4.0"/>
-		<maximumVelocity meterPerSecond="22.22"/>
 		<networkMode networkMode="car"/>
 		<flowEfficiencyFactor factor="1.0"/>
 	</vehicleType>
