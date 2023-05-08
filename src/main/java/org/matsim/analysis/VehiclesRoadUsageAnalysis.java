@@ -61,20 +61,20 @@ public class VehiclesRoadUsageAnalysis implements MATSimAppCommand {
 
 		//writeResults
 		String vehicleRoadUsageFile = outputFolder + "/" + "allModes_vehicle_road_usage.tsv";
-		CSVPrinter vehicleRoadUsageWriter = new CSVPrinter(new FileWriter(vehicleRoadUsageFile), CSVFormat.TDF);
-		List<String> header = new ArrayList<>();
-		header.add("link_id");
-		header.add("vehicleCount");
+		try (CSVPrinter vehicleRoadUsageWriter = new CSVPrinter(new FileWriter(vehicleRoadUsageFile), CSVFormat.TDF)) {
+			List<String> header = new ArrayList<>();
+			header.add("link_id");
+			header.add("vehicleCount");
 
-		vehicleRoadUsageWriter.printRecord(header);
+			vehicleRoadUsageWriter.printRecord(header);
 
-		for (Id<Link> linkId : vehicleCount.keySet()) {
-			List<String> vehicleEntry = new ArrayList<>();
-			vehicleEntry.add(linkId.toString());
-			vehicleEntry.add(vehicleCount.get(linkId).toString());
-			vehicleRoadUsageWriter.printRecord(vehicleEntry);
+			for (Id<Link> linkId : vehicleCount.keySet()) {
+				List<String> vehicleEntry = new ArrayList<>();
+				vehicleEntry.add(linkId.toString());
+				vehicleEntry.add(vehicleCount.get(linkId).toString());
+				vehicleRoadUsageWriter.printRecord(vehicleEntry);
+			}
 		}
-		vehicleRoadUsageWriter.close();
 		return 0;
 	}
 

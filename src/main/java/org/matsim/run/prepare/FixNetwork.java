@@ -1,5 +1,6 @@
 package org.matsim.run.prepare;
 
+import com.google.common.collect.Sets;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -37,6 +38,17 @@ public class FixNetwork implements MATSimAppCommand {
 		createSchlachthofBruecke(network, "24020319", "260443657", "206313940");
 		createSchlachthofBruecke(network, "-24020319", "206313940", "260443657");
 
+		for (Link link : network.getLinks().values()) {
+			Set<String> modes = link.getAllowedModes();
+
+			// allow freight traffic together with cars
+			if (modes.contains("car")) {
+				Set<String> newModes = Sets.newHashSet(modes);
+				newModes.add("freight");
+
+				link.setAllowedModes(newModes);
+			}
+		}
 
 		NetworkUtils.writeNetwork(network, output.toString());
 
