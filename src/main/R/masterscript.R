@@ -17,6 +17,8 @@ library(ggalluvial)
 library(stringr)
 library(data.table)
 library(chron)
+library(xml2)
+library(XML)
 print("#### Libraries geladen! ####")
 ################################################################################ CASES #### please put (1=yes/0=no) for analyses 
 scenarios <- list(
@@ -127,35 +129,17 @@ for (scenario in scenarios){
   #### #9.1 DRT supply
   x_drt_supply = 1
   
-  #DRT file paths (temporary solution)
-  drt_vehicle_stats_north_path = "D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_vehicle_stats_drtNorth.csv"
-  drt_vehicle_stats_southeast_path ="D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_vehicle_stats_drtSoutheast.csv"
-  drt_stops_north_path ="D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-v1.1-drt-stops-locations-north.csv"
-  drt_stops_south_path ="D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-v1.1-drt-stops-locations-southeast.csv"
-  drt_vehicles_north_path = "D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drtNorth_vehicles.xml.gz"
-  drt_vehicles_south_path = "D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drtSoutheast_vehicles.xml.gz"
-  
   #### #9.2 DRT demand
   x_drt_demand = 1
   
-  #DRT file paths (temporary solution)
-  drt_customers_north_path = "leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_customer_stats_drtNorth.csv"
-  drt_customers_southeast_path = "leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_customer_stats_drtSoutheast.csv"
-  drt_KPI_southeast_path = "D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/drtSoutheast_KPI.tsv"
-  drt_KPI_north_path = "D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/drtNorth_KPI.tsv"
   #### #9.3 DRT performance
   x_drt_performance = 1
   
-  #DRT file paths (temporary solution)
-  drt_vehicle_stats_north_path = "D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_vehicle_stats_drtNorth.csv"
-  drt_vehicle_stats_southeast_path ="D:/VSP_Berlin/Leipzig/namav/carfree-area-90/analysis/analysis-drt/leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_vehicle_stats_drtSoutheast.csv"
-  drt_customers_north_path = "leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_customer_stats_drtNorth.csv"
-  drt_customers_southeast_path = "leipzig-flexa-25pct-scaledFleet-carfree90pct_noDepot.drt_customer_stats_drtSoutheast.csv"
-  
   #### #9.4 DRT volumes
+  x_drt_volumes = 1
   
   #### #9.5 DRT trip purposes 
-  
+  x_drt_trip_purposes = 1
   
   
   
