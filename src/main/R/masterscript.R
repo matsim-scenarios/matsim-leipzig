@@ -154,6 +154,10 @@ for (scenario in scenarios){
   ################################################################################ SOURCE ####
   
   source("D:/VSP_Berlin/Leipzig/matsim-leipzig/src/main/R/masteranalyse.R")
+  
+  if (x_drt_supply || x_drt_demand || x_drt_performance || x_drt_volumes || x_drt_trip_purposes == 1){
+    source("D:/VSP_Berlin/Leipzig/matsim-leipzig/src/main/R/master_drt.R")
+  }
   #("/Users/mkreuschnervsp/Desktop/R_Studio/mastersolver.R")
   
   print("#### Masterscript fertig! ####")
