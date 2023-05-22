@@ -34,7 +34,7 @@ import org.matsim.application.prepare.network.CreateNetworkFromSumo;
 import org.matsim.application.prepare.population.*;
 import org.matsim.application.prepare.pt.CreateTransitScheduleFromGtfs;
 import org.matsim.contrib.bicycle.BicycleConfigGroup;
-import org.matsim.contrib.bicycle.Bicycles;
+import org.matsim.contrib.bicycle.BicycleModule;
 import org.matsim.contrib.drt.fare.DrtFareParams;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
@@ -52,6 +52,7 @@ import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.config.groups.SubtourModeChoiceConfigGroup;
 import org.matsim.core.config.groups.VspExperimentalConfigGroup;
 import org.matsim.core.controler.AbstractModule;
+import org.matsim.core.controler.AllowsConfiguration;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.replanning.choosers.ForceInnovationStrategyChooser;
 import org.matsim.core.replanning.choosers.StrategyChooser;
@@ -65,9 +66,6 @@ import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTri
 import org.matsim.extensions.pt.routing.EnhancedRaptorIntermodalAccessEgress;
 import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesConfigGroup;
 import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesModule;
-import org.matsim.optDRT.MultiModeOptDrtConfigGroup;
-import org.matsim.optDRT.OptDrt;
-import org.matsim.optDRT.OptDrtConfigGroup;
 import org.matsim.run.prepare.*;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
@@ -103,11 +101,13 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
 
-	@CommandLine.Option(names = "--waiting-time-threshold-optDrt", description = "Set waitingTime Threshold fot DRT optimization and enable it. Here, enabling DRT service is mandatory.")
-	private Double waitingTimeThreshold;
+//	@CommandLine.Option(names = "--waiting-time-threshold-optDrt", description = "Set waitingTime Threshold fot DRT optimization and enable it. Here, enabling DRT service is mandatory.")
+//	private Double waitingTimeThreshold;
 
-	@CommandLine.Option(names = "--bikes", defaultValue = "true", description = "Enable qsim for bikes", negatable = true)
-	private boolean bike;
+	enum BicycleHandling{ onNetworkWithStandardMatsim, onNetworkWithBicycleContrib };
+
+	@CommandLine.Option(names = "--bikes", defaultValue = "onNetworkWithStandardMatsim", description = "Define how bicycles are handled")
+	private BicycleHandling bike;
 
 	//TODO: define adequate values for the following doubles
 	@CommandLine.Option(names = "--parking-cost-time-period-start", defaultValue = "0", description = "Start of time period for which parking cost will be charged.")
@@ -116,8 +116,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
 	private Double parkingCostTimePeriodEnd;
 
-	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
-	private boolean incomeDependent;
+//	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
+//	private boolean incomeDependent;
 
 	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
 	Double relativeSpeedChange;
@@ -138,6 +138,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	public static void main(String[] args) {
 		MATSimApplication.run(RunLeipzigScenario.class, args);
+		// This implicitly calls "call()", which then calls prepareConfig, prepareScenario, prepareControler from the class here, and then calls controler.run().
 	}
 
 	@Nullable
@@ -145,8 +146,11 @@ public class RunLeipzigScenario extends MATSimApplication {
 	protected Config prepareConfig(Config config) {
 
 		SnzActivities.addScoringParams(config);
+		// senozon activity types that are always the same.  Differentiated by typical duration.
 
 		if (sample.isSet()) {
+			// in [%].  adjust if sample size is less than 100%
+
 			config.controler().setOutputDirectory(sample.adjustName(config.controler().getOutputDirectory()));
 			config.controler().setRunId(sample.adjustName(config.controler().getRunId()));
 			config.plans().setInputFile(sample.adjustName(config.plans().getInputFile()));
@@ -156,42 +160,67 @@ public class RunLeipzigScenario extends MATSimApplication {
 		}
 
 		config.vspExperimental().setVspDefaultsCheckingLevel(VspExperimentalConfigGroup.VspDefaultsCheckingLevel.abort);
+		// ok.  :-)
 
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		// (yyyy what exactly is this doing?)
+		// walk probably is teleported.
+		// but we do not know where the facilities are.  (Facilities are not written to file.)
 
 		if (networkOpt.hasDrtArea()) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 			ConfigUtils.addOrGetModule(config, DvrpConfigGroup.class);
 			DrtConfigs.adjustMultiModeDrtConfig(multiModeDrtConfigGroup, config.planCalcScore(), config.plansCalcRoute());
 
-			if (waitingTimeThreshold != null) {
-				ConfigUtils.addOrGetModule(config, MultiModeOptDrtConfigGroup.class);
-			}
+//			if (waitingTimeThreshold != null) {
+//				ConfigUtils.addOrGetModule(config, MultiModeOptDrtConfigGroup.class);
+//			}
 		}
 
-		if (bike) {
+		config.qsim().setUsingTravelTimeCheckInTeleportation(true);
+		// checks if a teleportation is physically possible (i.e. not too fast).
 
-			log.info("Simulating with bikes on the network");
+		config.qsim().setUsePersonIdForMissingVehicleId(false);
 
-			BicycleConfigGroup bikeConfigGroup = ConfigUtils.addOrGetModule(config, BicycleConfigGroup.class);
-			bikeConfigGroup.setBicycleMode(TransportMode.bike);
+		switch( (bike) ) {
+			case onNetworkWithStandardMatsim -> {
+				// bike is routed on the network per the xml config.
 
-			config.qsim().setUsingTravelTimeCheckInTeleportation(true);
-			config.qsim().setUsePersonIdForMissingVehicleId(false);
+				log.info("Simulating with bikes on the network");
 
-			Set<String> modes = Sets.newHashSet(TransportMode.bike);
-			modes.addAll(config.qsim().getMainModes());
+				// add bike to network modes in qsim:
+ 				Set<String> modes = Sets.newHashSet(TransportMode.bike);
+				modes.addAll(config.qsim().getMainModes());
+				config.qsim().setMainModes(modes);
 
-			config.qsim().setMainModes(modes);
-			config.qsim().setLinkDynamics(QSimConfigGroup.LinkDynamics.PassingQ);
+				config.qsim().setLinkDynamics(QSimConfigGroup.LinkDynamics.PassingQ);
 
-		} else
-			log.warn("Bikes on network are disabled");
+			}
+			case onNetworkWithBicycleContrib -> {
+				// bike is routed on the network per the xml config.
+
+				log.info("Simulating with bikes on the network and bicycle contrib");
+
+				// add bike to network modes in qsim:
+				Set<String> modes = Sets.newHashSet(TransportMode.bike);
+				modes.addAll(config.qsim().getMainModes());
+				config.qsim().setMainModes(modes);
+
+				config.qsim().setLinkDynamics(QSimConfigGroup.LinkDynamics.PassingQ);
+
+				// this activates the bicycleConfigGroup.  But the module still needs to be loaded for the controler.
+				BicycleConfigGroup bikeConfigGroup = ConfigUtils.addOrGetModule(config, BicycleConfigGroup.class);
+				bikeConfigGroup.setBicycleMode(TransportMode.bike);
+			}
+			default -> throw new IllegalStateException( "Unexpected value: " + (bike) );
+		}
 
 		if (networkOpt.hasParkingCostArea()) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 		}
+		// TODO: FIXME: yyyyyy no longer supported on main branch.  "complicatedParking" will resolve this with custom code.
+		// right now TimeRestrictedParkingCostHandler depends on parkingCostConfigGroup, so we still need the cfg group.
+		//after merging complicatedParking branch: fix this!
 
 		return config;
 	}
@@ -214,8 +243,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (networkOpt.hasDrtArea()) {
 			scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class, new DrtRouteFactory());
+			// (matsim core does not know about DRT routes. This makes it possible to read them before the controler is there.)
 		}
 		networkOpt.prepare(scenario.getNetwork());
+		// (passt das Netz an aus den mitgegebenen shape files, z.B. parking area, car-free area, ...)
 	}
 
 	@Override
@@ -226,17 +257,18 @@ public class RunLeipzigScenario extends MATSimApplication {
 			@Override
 			public void install() {
 				install(new LeipzigPtFareModule());
-				install(new SwissRailRaptorModule());
+//				install(new SwissRailRaptorModule());
+				// TODO: automatically installed by schedule-based pt?
 
 				addTravelTimeBinding(TransportMode.ride).to(networkTravelTime());
 				addTravelDisutilityFactoryBinding(TransportMode.ride).to(carTravelDisutilityFactoryKey());
 
-				if (incomeDependent) {
+//				if (incomeDependent) {
 					bind(ScoringParametersForPerson.class).to(IncomeDependentUtilityOfMoneyPersonScoringParameters.class).asEagerSingleton();
-				}
+//				}
 
 				bind(AnalysisMainModeIdentifier.class).to(LeipzigMainModeIdentifier.class);
-				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
+				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class); // analysis
 
 				if (networkOpt.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
@@ -244,27 +276,34 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 				if (networkOpt.hasParkingCostArea()) {
 					addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
+					// TODO: FIXME: yyyyyy: remove (replace by custom written handler)
+
 					install(new PersonMoneyEventsAnalysisModule());
 				}
 
-				addControlerListenerBinding().to(StrategyWeightFadeout.class).in(Singleton.class);
+				// TODO FIXME yyyyyy replace by config option
+				{
+					addControlerListenerBinding().to( StrategyWeightFadeout.class ).in( Singleton.class );
 
-				Multibinder<StrategyWeightFadeout.Schedule> schedules = StrategyWeightFadeout.getBinder(binder());
+					Multibinder<StrategyWeightFadeout.Schedule> schedules = StrategyWeightFadeout.getBinder( binder() );
 
-				// Mode-choice fades out earlier than the other strategies
-				// Given a fixed mode, the "less disruptive" choice dimensions will be weighted higher during the end
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice, "person", 0.65, 0.80));
+					// Mode-choice fades out earlier than the other strategies
+					// Given a fixed mode, the "less disruptive" choice dimensions will be weighted higher during the end
+					schedules.addBinding().toInstance( new StrategyWeightFadeout.Schedule( DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice, "person", 0.65, 0.80 ) );
 
-				// Fades out until 0.9 (innovation switch off)
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute, "person", 0.75));
-				schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.75));
+					// Fades out until 0.9 (innovation switch off)
+					schedules.addBinding().toInstance( new StrategyWeightFadeout.Schedule( DefaultPlanStrategiesModule.DefaultStrategy.ReRoute, "person", 0.75 ) );
+					schedules.addBinding().toInstance( new StrategyWeightFadeout.Schedule( DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.75 ) );
 
-				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {
-				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
+				}
+				bind( new TypeLiteral<StrategyChooser<Plan, Person>>(){
+				} ).toInstance( new ForceInnovationStrategyChooser<>( 10, ForceInnovationStrategyChooser.Permute.yes ) );
 			}
 		});
 
 		if (networkOpt.hasDrtArea()) {
+			// FIXME yyyyyy move above into prepareConfig
+
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 
 			//set fare params; flexa has the same prices as leipzig PT: Values taken out of LeipzigPtFareModule -sm0522
@@ -293,27 +332,27 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 			//here we need to set optDrt parameters for each drt mode; especially the wished fleetSizeAdjustmentWaitingTimeThreshold
 			//my idea is to a waitingTime calculated by some manually configured drt fleet and see if optDrt suggests the same fleet size -sm0922
-			if (waitingTimeThreshold != null) {
-				MultiModeOptDrtConfigGroup multiModeOptDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeOptDrtConfigGroup.class);
-				multiModeOptDrtConfigGroup.setUpdateInterval(20);
+//			if (waitingTimeThreshold != null) {
+//				MultiModeOptDrtConfigGroup multiModeOptDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeOptDrtConfigGroup.class);
+//				multiModeOptDrtConfigGroup.setUpdateInterval(20);
+//
+//				multiModeDrtConfigGroup.getModalElements().forEach(drtConfigGroup -> {
+//					OptDrtConfigGroup optDrtConfigGroup = new OptDrtConfigGroup();
+//
+//					optDrtConfigGroup.setOptDrtMode(drtConfigGroup.getMode());
+//					optDrtConfigGroup.setFleetSizeAdjustmentApproach(OptDrtConfigGroup.FleetSizeAdjustmentApproach.WaitingTimeThreshold);
+//					optDrtConfigGroup.setWaitingTimeThresholdForFleetSizeAdjustment(waitingTimeThreshold);
+//					optDrtConfigGroup.setFleetSizeAdjustmentPercentage(0.5);
+//
+//					multiModeOptDrtConfigGroup.addParameterSet(optDrtConfigGroup);
+//				});
 
-				multiModeDrtConfigGroup.getModalElements().forEach(drtConfigGroup -> {
-					OptDrtConfigGroup optDrtConfigGroup = new OptDrtConfigGroup();
-
-					optDrtConfigGroup.setOptDrtMode(drtConfigGroup.getMode());
-					optDrtConfigGroup.setFleetSizeAdjustmentApproach(OptDrtConfigGroup.FleetSizeAdjustmentApproach.WaitingTimeThreshold);
-					optDrtConfigGroup.setWaitingTimeThresholdForFleetSizeAdjustment(waitingTimeThreshold);
-					optDrtConfigGroup.setFleetSizeAdjustmentPercentage(0.5);
-
-					multiModeOptDrtConfigGroup.addParameterSet(optDrtConfigGroup);
-				});
-
-				OptDrt.addAsOverridingModule(controler, multiModeOptDrtConfigGroup);
-			}
+//				OptDrt.addAsOverridingModule(controler, multiModeOptDrtConfigGroup);
+//			}
 		}
 
-		if (bike) {
-			Bicycles.addAsOverridingModule(controler);
+		if ( bike==BicycleHandling.onNetworkWithBicycleContrib ) {
+			controler.addOverridingModule(new BicycleModule() );
 		}
 	}
 
