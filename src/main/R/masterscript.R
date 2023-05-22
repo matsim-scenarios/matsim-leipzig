@@ -38,7 +38,7 @@ scenario = "carfree-area-90"
 
 for (scenario in scenarios){
   
-  publicSVN = "D:/VSP_Berlin/Leipzig/namav/"
+  publicSVN = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
   #"/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
   #local = /Users/mkreuschnervsp/Desktop/VSP_projects/02_NaMAV
   
@@ -47,15 +47,15 @@ for (scenario in scenarios){
   CRS <- 25832
   
   scenario_run_path <- paste0(publicSVN,runID)
-  
+
   #comaprison path nur für Sankey und Winner/Loser Analysis (normalerweise base case)
   base_run_path <- "D:/VSP_Berlin/Leipzig/namav/base-case/"
   "/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
   
-  
-  region_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
-  city_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_stadt.shp"
-  area_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
+
+  region_shp_path <- "C:/Users/Simon/Documents/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
+  city_shp_path <- "C:/Users/Simon/Documents/shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
+  area_shp_path <- "C:/Users/Simon/Documents/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
   #other carfree area shapefiles here
   #area_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_medeium/Zonen95_update.shp"
   #area_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_small/Zonen99_update.shp"
@@ -65,6 +65,11 @@ for (scenario in scenarios){
   
   #/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/",runID,"/analysis/analysis-R
   outputDirectoryScenario <-  paste0(scenario_run_path, "analysis/analysis-R") # the plots are going to be saved here
+
+  if(!file.exists(paste0(scenario_run_path,"analysis"))) {
+    print("creating general analysis sub-directory")
+    dir.create(paste0(scenario_run_path,"analysis"))
+  }
   if(!file.exists(outputDirectoryScenario)){
     print("creating analysis sub-directory")
     dir.create(outputDirectoryScenario)  
@@ -152,11 +157,11 @@ for (scenario in scenarios){
   
   print("#### Auswahl getroffen! ####")
   ################################################################################ SOURCE ####
-  
-  source("D:/VSP_Berlin/Leipzig/matsim-leipzig/src/main/R/masteranalyse.R")
-  
+
+  source("https://raw.githubusercontent.com/matsim-scenarios/matsim-leipzig/masterscript_r/src/main/R/masteranalyse.R")
+
   if (x_drt_supply || x_drt_demand || x_drt_performance || x_drt_volumes || x_drt_trip_purposes == 1){
-    source("D:/VSP_Berlin/Leipzig/matsim-leipzig/src/main/R/master_drt.R")
+    source("https://raw.githubusercontent.com/matsim-scenarios/matsim-leipzig/masterscript_r/src/main/R/master_drt.R")
   }
   #("/Users/mkreuschnervsp/Desktop/R_Studio/mastersolver.R")
   
