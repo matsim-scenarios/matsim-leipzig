@@ -419,105 +419,21 @@ if (x_emissions == 1){
 #### #7.1 Traffic ####
 if (x_traffic == 1){
 }
-#### #8.1 Execution Scores Winner-Loser ####
 
-if (x_winner_loser == 1){
-  base_scenario_persons <- inner_join(base_persons, scenario_persons, by = "person") %>% 
-    select(person, executed_score.x, executed_score.y, income.x, sex.x, age.x, carAvail.x, first_act_x.x, first_act_y.x) %>% 
-    mutate(score_change = format((executed_score.y - executed_score.x), scientific = FALSE), person = as.character(person))
-  
-  home_trips <- baseTripsTable %>% 
-    filter(grepl("home", start_activity_type)) %>% 
-    distinct(person, .keep_all = TRUE) %>% 
-    select(person, start_link, start_x, start_y)
-  
-  base_scenario_persons <-  full_join(base_scenario_persons, home_trips, by = "person") %>% 
-    mutate(home_x = ifelse(is.na(start_x), first_act_x.x, start_x),
-           home_y = ifelse(is.na(start_y), first_act_y.x, start_y)) %>% 
-    select(person, executed_score.x, executed_score.y, score_change, income.x, sex.x, age.x, carAvail.x, home_x, home_y)
-  
-  write.csv(base_scenario_persons, file = paste0(outputDirectoryBase,"/ScoreTable.csv"))
-  
-  
-  AgentsInNetwork <- nrow(base_scenario_persons)
-  MaxScoreNetworkBase <- max(base_scenario_persons$executed_score.x)
-  MinScoreNetworkBase <- min(base_scenario_persons$executed_score.x)
-  AvgScoreNetworkBase <- mean(base_scenario_persons$executed_score.x)
-  MaxScoreNetworkScenario <- max(base_scenario_persons$executed_score.y)
-  MinScoreNetworkScenario <- min(base_scenario_persons$executed_score.y)
-  AvgScoreNetworkScenario <- mean(base_scenario_persons$executed_score.y)
-  BiggestLoserNetwork <- min(base_scenario_persons$score_change)
-  GoodOrBadForNetwork =  AvgScoreNetworkScenario - AvgScoreNetworkBase
-  BiggestWinnerNetwork <- max(base_scenario_persons$score_change)
-  
-  AgentsInRegion <- nrow(base_scenario_persons)
-  MaxScoreRegionBase <- max(base_scenario_persons$executed_score.x)
-  MinScoreRegionBase <- min(base_scenario_persons$executed_score.x)
-  AvgScoreRegionBase <- mean(base_scenario_persons$executed_score.x)
-  MaxScoreRegionScenario <- max(base_scenario_persons$executed_score.y)
-  MinScoreRegionScenario <- min(base_scenario_persons$executed_score.y)
-  AvgScoreRegionScenario <- mean(base_scenario_persons$executed_score.y)
-  BiggestLoserRegion <- min(base_scenario_persons$score_change)
-  GoodOrBadForRegion =  AvgScoreRegionScenario - AvgScoreRegionBase
-  BiggestWinnerRegion <- max(base_scenario_persons$score_change)
-  
-  AgentsInCity <- nrow(base_scenario_persons)
-  MaxScoreCityBase <- max(base_scenario_persons$executed_score.x)
-  MinScoreCityBase <- min(base_scenario_persons$executed_score.x)
-  AvgScoreCityBase <- mean(base_scenario_persons$executed_score.x)
-  MaxScoreCityScenario <- max(base_scenario_persons$executed_score.y)
-  MinScoreCityScenario <- min(base_scenario_persons$executed_score.y)
-  AvgScoreCityScenario <- mean(base_scenario_persons$executed_score.y)
-  BiggestLoserCity <- min(base_scenario_persons$score_change)
-  GoodOrBadForCity =  AvgScoreCityScenario - AvgScoreCityBase
-  BiggestWinnerCity <- max(base_scenario_persons$score_change) 
-  
-  
-} 
-
-#### #8.2 Execution Scores Winner-Loser Plots ####
-
+#### #8.1 Equity / Winner-Loser Analysis ####
 if (x_winner_loser == 1){
   
-  remove_outliers <- function(df, variable)  {
-    
-    df <- df %>% st_drop_geometry()
-    
-    list_quantiles <- tapply(df$score_pct_change, df[,variable], quantile)
-    
-    Q1s <- sapply(1:length(list_quantiles), function(i) list_quantiles[[i]][2])
-    Q3s <- sapply(1:length(list_quantiles), function(i) list_quantiles[[i]][4])
-    
-    IQRs <- tapply(df$score_pct_change, df[,variable], IQR)
-    
-    
-    Lowers <- Q1s - 1.5*IQRs
-    Uppers <- Q3s + 1.5*IQRs
-    
-    datas <- split(df, df[,variable])
-    
-    
-    data_no_outlier <- NULL
-    for (i in 1:length(list_quantiles)){
-      out <- subset(datas[[i]], datas[[i]]$score_pct_change > Lowers[i] & datas[[i]]$score_pct_change < Uppers[i])
-      data_no_outlier <- rbind(data_no_outlier, out)
-    }
-    return(data_no_outlier)
-  }
-  
-  #get data ready
+  # Data Prep
   persons_joined <- join_base_and_policy_persons(base_persons, scenario_persons, CityShape)
   
   persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = CityShape, first_act_type_filter = "home") %>% 
-    mutate(score_pct_change = score_diff/executed_score_base * 100) %>% 
+    mutate(score_diff = executed_score_policy - executed_score_base,
+           score_pct_change = score_diff/executed_score_base * 100) %>% 
     drop_na(score_pct_change)
   
-  # SCORE
-  persons_joined_sf %>% 
-    pivot_longer(starts_with("executed_score"), names_to = "scenario", values_to = "score") %>% 
-    ggplot() +
-    geom_density(aes(score, col = scenario))
-  
+  # 8.1.1. SCORE
+  # a) Score Plot - Base vs. Policy Case
+
   persons_joined_sf %>% 
     st_drop_geometry() %>% 
     select(executed_score_base,executed_score_policy) %>% 
@@ -528,8 +444,9 @@ if (x_winner_loser == 1){
     ungroup() %>% 
     pivot_wider(names_from = scenario, values_from = count, values_fill = NA) %>% 
     arrange(score) %>%
-    write.csv(file = paste0(outputDirectoryScenario,"/equity_score_distribution.csv"), quote = FALSE, row.names = FALSE)
+    write.csv(file = paste0(outputDirectoryScenario,"/chart.equity.score_distrib.csv"), quote = FALSE, row.names = FALSE)
   
+  # b) Score Summary Stats Table
   
   pct_change_mean <-  (mean(persons_joined_sf$executed_score_policy) - mean(persons_joined_sf$executed_score_base)) / mean(persons_joined_sf$executed_score_base) * 100
   pct_change_median <-  (median(persons_joined_sf$executed_score_policy) - median(persons_joined_sf$executed_score_base)) / median(persons_joined_sf$executed_score_base) * 100
@@ -544,24 +461,20 @@ if (x_winner_loser == 1){
     sd_score = c(sd(persons_joined_sf$executed_score_base),sd(persons_joined_sf$executed_score_policy)))
   
   
-  
-  write.csv(score_stats_table,file = paste0(outputDirectoryScenario,"/equity_score_stats.csv"), quote = FALSE, row.names = FALSE)
+  write.csv(score_stats_table,file = paste0(outputDirectoryScenario,"/df.equity.score_stats.csv"), quote = FALSE, row.names = FALSE)
 
 
-
-  # Maps
-
-    # mutate(score_diff_norm = (score_diff2 - mean(score_diff2, na.rm = TRUE))/sd(score_diff2, na.rm = TRUE))
+  # c) Score Maps
   
   joined_hex <- persons_attributes_on_hex_grid(persons_joined_sf, CityShape, n = 50) %>% 
     dplyr::rename(score_base = executed_score_base, score_policy = executed_score_policy) 
   
   joined_centroids <- joined_hex %>% st_centroid()
   
-  st_write(joined_hex, paste0(outputDirectoryScenario, "/winners_losers_hex.shp"), append = FALSE)
-  st_write(joined_centroids, paste0(outputDirectoryScenario, "/winners_losers_centroid.shp"), append = FALSE)
+  st_write(joined_hex, paste0(outputDirectoryScenario, "/shp.equity.hex.shp"), append = FALSE)
+  st_write(joined_centroids, paste0(outputDirectoryScenario, "/shp.equity.centroid.shp"), append = FALSE)
   
-  # who is using modes in base case
+  # 8.1.2. MAIN MODE
   main_modes <- unique(base_trips_city$main_mode)
   mode_user_cnt <- c()
   mode_score_pct_change_mean <- c(length(main_modes))
@@ -602,9 +515,9 @@ if (x_winner_loser == 1){
                                      "Score_Pct_Change_sd" = mode_score_pct_change_sd)
   
   mode_user_score_diff
-  write.csv(mode_user_score_diff, file = paste0(outputDirectoryScenario,"/mode_user_score_diff.csv"), quote = FALSE, row.names = FALSE)
+  write.csv(mode_user_score_diff, file = paste0(outputDirectoryScenario,"/df.equity.mode.csv"), quote = FALSE, row.names = FALSE)
   
-  # Sex
+  # 8.1.3. SEX
   sex_diff <- persons_joined_sf %>%
     st_drop_geometry() %>%
     group_by(sex) %>%
@@ -613,26 +526,9 @@ if (x_winner_loser == 1){
               "Median_Percent_Change_Score" = round(median(score_pct_change),3),
               "sd" = sd(score_pct_change))
   
-  sex_diff
-  
-  write.csv(sex_diff, file = paste0(outputDirectoryScenario,"/equity_sex.csv"), quote = FALSE, row.names = FALSE)
-  
-  
-  sex_no_outlier <- remove_outliers(persons_joined_sf, "sex")
-  
-  # sex_no_outlier %>% 
-  #   transmute(ascore_pct_change
-  #   group_by(scenario, score) %>% 
-  #   summarise(count = n()) %>%
-  #   ungroup() %>% 
-  #   pivot_wider(names_from = scenario, values_from = count, values_fill = NA) %>% 
-  #   arrange(score) %>%
-  #   write.csv(file = paste0(outputDirectoryScenario,"/equity_score_distribution.csv"), quote = FALSE, row.names = FALSE)
-  
-  ggplot(sex_no_outlier) + 
-    geom_density(aes(score_pct_change, col = sex))
+  write.csv(sex_diff, file = paste0(outputDirectoryScenario,"/df.equity.sex.csv"), quote = FALSE, row.names = FALSE)
 
-  # Income Group
+  # 8.1.4. INCOME GROUP
   income_diff <- persons_joined_sf %>%
     st_drop_geometry() %>% 
     dplyr::rename("Income_Group" = "MiD.hheink_gr2") %>% 
@@ -644,15 +540,10 @@ if (x_winner_loser == 1){
   
   income_diff
   
-  write.csv(income_diff, file = paste0(outputDirectoryScenario,"/equity_income.csv"), quote = FALSE, row.names = FALSE)
+  write.csv(income_diff, file = paste0(outputDirectoryScenario,"/df.equity.income.csv"), quote = FALSE, row.names = FALSE)
   
   
-  income_no_outlier <- remove_outliers(persons_joined_sf,"MiD.hheink_gr2")
-  
-  ggplot(income_no_outlier) + 
-    geom_density(aes(score_pct_change, col = as.factor(MiD.hheink_gr2)))
-  
-  # HH Size
+  # 8.1.5. HH Size
   householdsize_diff <- persons_joined_sf %>%
     st_drop_geometry() %>%
     dplyr::rename("Household_Size" = "MiD.hhgr_gr") %>% 
@@ -663,15 +554,10 @@ if (x_winner_loser == 1){
               "sd" = sd(score_pct_change))
   householdsize_diff
   
-  write.csv(householdsize_diff, file = paste0(outputDirectoryScenario,"/equity_hhsize.csv"), quote = FALSE, row.names = FALSE)
+  write.csv(householdsize_diff, file = paste0(outputDirectoryScenario,"/df.equity.hh_size.csv"), quote = FALSE, row.names = FALSE)
   
-  hh_no_outlier <- remove_outliers(persons_joined_sf,"MiD.hhgr_gr")
-  
-  ggplot(income_no_outlier) + 
-    geom_density(aes(score_pct_change, col = as.factor(MiD.hhgr_gr)))
 
-  # pt_abo available
-  
+  # 8.1.6 PT ABO AVAILABLE
   pt_subscription_diff <- persons_joined_sf %>%
     st_drop_geometry() %>%
     group_by(sim_ptAbo) %>%
@@ -682,14 +568,9 @@ if (x_winner_loser == 1){
   
   pt_subscription_diff
   
-  write.csv(pt_subscription_diff, file = paste0(outputDirectoryScenario,"/equity_pt_abo.csv"), quote = FALSE, row.names = FALSE)
+  write.csv(pt_subscription_diff, file = paste0(outputDirectoryScenario,"/df.equity.pt_abo.csv"), quote = FALSE, row.names = FALSE)
   
-  pt_no_outlier <- remove_outliers(persons_joined_sf,"sim_ptAbo")
-  
-  ggplot(pt_no_outlier) + 
-    geom_density(aes(score_pct_change, col = sim_ptAbo))
-  
-  # car available
+  # 8.1.7 CAR AVAILABLE
   car_avail_diff <- persons_joined_sf %>%
     st_drop_geometry() %>%
     group_by(carAvail) %>%
@@ -700,12 +581,8 @@ if (x_winner_loser == 1){
   
   car_avail_diff
   
-  write.csv(car_avail_diff, file = paste0(outputDirectoryScenario,"/equity_car_avail.csv"), quote = FALSE, row.names = FALSE)
+  write.csv(car_avail_diff, file = paste0(outputDirectoryScenario,"/df.equity.car_avail.csv"), quote = FALSE, row.names = FALSE)
   
-  car_no_outlier <- remove_outliers(persons_joined_sf,"carAvail")
-  
-  ggplot(pt_no_outlier) + 
-    geom_density(aes(score_pct_change, col = carAvail))
 }
 
 
