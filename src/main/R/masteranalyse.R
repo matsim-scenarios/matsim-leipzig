@@ -7,6 +7,7 @@ print("#### Shapes geladen! ####")
 #### reading trips/legs files ####
 
 ## Trip File
+baseTripsTable <- readTripsTable(base_run_path)
 scenarioTripsTable <- readTripsTable(scenario_run_path)
 print("#### Trips geladen! ####")
 
@@ -16,6 +17,10 @@ scenariolegsTable <- read_delim(paste0(scenario_run_path,"/",list.files(path = s
 print("#### Legs geladen! ####")
 
 ## Filters
+base_trips_region <- filterByRegion(baseTripsTable,RegionShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+base_trips_city <- filterByRegion(baseTripsTable,CityShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+base_trips_area <- filterByRegion(baseTripsTable,AreaShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+
 scenario_trips_region <- filterByRegion(scenarioTripsTable,RegionShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario_trips_city <- filterByRegion(scenarioTripsTable,CityShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario_trips_area <- filterByRegion(scenarioTripsTable,AreaShape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
@@ -318,11 +323,7 @@ if (x_average_traveled_distance_legs == 1){
 
 #### #4.4 Personen Stunden - legs based ####
 if (x_personen_h_legs == 1){
-  
-  
-  
-  
-  
+
   
   personen_stunden_legs  <- function (x){
     x %>% 
@@ -478,21 +479,233 @@ if (x_winner_loser == 1){
 
 if (x_winner_loser == 1){
   
-  # shp = st_read("/Users/jakob/Downloads/Leipzig_Ortsteile_UTM33N(1)/ot.shp") %>% 
-  #   st_transform(CRS)
+  remove_outliers <- function(df, variable)  {
+    
+    df <- df %>% st_drop_geometry()
+    
+    list_quantiles <- tapply(df$score_pct_change, df[,variable], quantile)
+    
+    Q1s <- sapply(1:length(list_quantiles), function(i) list_quantiles[[i]][2])
+    Q3s <- sapply(1:length(list_quantiles), function(i) list_quantiles[[i]][4])
+    
+    IQRs <- tapply(df$score_pct_change, df[,variable], IQR)
+    
+    
+    Lowers <- Q1s - 1.5*IQRs
+    Uppers <- Q3s + 1.5*IQRs
+    
+    datas <- split(df, df[,variable])
+    
+    
+    data_no_outlier <- NULL
+    for (i in 1:length(list_quantiles)){
+      out <- subset(datas[[i]], datas[[i]]$score_pct_change > Lowers[i] & datas[[i]]$score_pct_change < Uppers[i])
+      data_no_outlier <- rbind(data_no_outlier, out)
+    }
+    return(data_no_outlier)
+  }
+  
+  #get data ready
   persons_joined <- join_base_and_policy_persons(base_persons, scenario_persons, CityShape)
   
-  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = shp, first_act_type_filter = "home") 
+  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = CityShape, first_act_type_filter = "home") %>% 
+    mutate(score_pct_change = score_diff/executed_score_base * 100) %>% 
+    drop_na(score_pct_change)
   
-  joined_hex <- persons_attributes_on_hex_grid(persons_joined_sf, shp, n = 50) %>% 
-    dplyr::rename(score_base = executed_score_base, score_policy = executed_score_policy)
+  # SCORE
+  persons_joined_sf %>% 
+    pivot_longer(starts_with("executed_score"), names_to = "scenario", values_to = "score") %>% 
+    ggplot() +
+    geom_density(aes(score, col = scenario))
+  
+  persons_joined_sf %>% 
+    st_drop_geometry() %>% 
+    select(executed_score_base,executed_score_policy) %>% 
+    pivot_longer(starts_with("executed_score"), names_to = "scenario", values_to = "score") %>% 
+    transmute(scenario = scenario, score = as.factor(round(score))) %>% 
+    group_by(scenario, score) %>% 
+    summarise(count = n()) %>%
+    ungroup() %>% 
+    pivot_wider(names_from = scenario, values_from = count, values_fill = NA) %>% 
+    arrange(score) %>%
+    write.csv(file = paste0(outputDirectoryScenario,"/equity_score_distribution.csv"), quote = FALSE, row.names = FALSE)
+  
+  
+  pct_change_mean <-  (mean(persons_joined_sf$executed_score_policy) - mean(persons_joined_sf$executed_score_base)) / mean(persons_joined_sf$executed_score_base) * 100
+  pct_change_median <-  (median(persons_joined_sf$executed_score_policy) - median(persons_joined_sf$executed_score_base)) / median(persons_joined_sf$executed_score_base) * 100
+  
+  
+  score_stats_table <- data.frame(
+    scenario = c("base", "policy"), 
+    mean_score = c(mean(persons_joined_sf$executed_score_base),mean(persons_joined_sf$executed_score_policy)),
+    pct_change_mean = c(NA,pct_change_mean),
+    median_score = c(median(persons_joined_sf$executed_score_base),median(persons_joined_sf$executed_score_policy)),
+    pct_change_median = c(NA,pct_change_median),
+    sd_score = c(sd(persons_joined_sf$executed_score_base),sd(persons_joined_sf$executed_score_policy)))
+  
+  
+  
+  write.csv(score_stats_table,file = paste0(outputDirectoryScenario,"/equity_score_stats.csv"), quote = FALSE, row.names = FALSE)
+
+
+
+  # Maps
+
+    # mutate(score_diff_norm = (score_diff2 - mean(score_diff2, na.rm = TRUE))/sd(score_diff2, na.rm = TRUE))
+  
+  joined_hex <- persons_attributes_on_hex_grid(persons_joined_sf, CityShape, n = 50) %>% 
+    dplyr::rename(score_base = executed_score_base, score_policy = executed_score_policy) 
   
   joined_centroids <- joined_hex %>% st_centroid()
   
-  # st_write(joined_hex, paste0(outputDirectoryScenario,"/winners_losers_hex.shp"))
-  st_write(joined_hex, "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/carfree-area-90/analysis/analysis-R/winners_losers_hex.shp")
-  st_write(joined_centroids, "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/carfree-area-90/analysis/analysis-R/winners_losers_centroid.shp")
+  st_write(joined_hex, paste0(outputDirectoryScenario, "/winners_losers_hex.shp"), append = FALSE)
+  st_write(joined_centroids, paste0(outputDirectoryScenario, "/winners_losers_centroid.shp"), append = FALSE)
   
+  # who is using modes in base case
+  main_modes <- unique(base_trips_city$main_mode)
+  mode_user_cnt <- c()
+  mode_score_pct_change_mean <- c(length(main_modes))
+  mode_score_pct_change_median <- c(length(main_modes))
+  mode_score_pct_change_sd <- c(length(main_modes))
+  
+  for(i in seq(length(main_modes))){
+    
+    user_ids <- base_trips_city %>%
+      filter(main_mode == main_modes[i]) %>% 
+      pull(person) %>% 
+      unique()
+    
+    users_score_pct_changes <- persons_joined_sf %>%
+      filter(person %in% user_ids) %>% 
+      pull(score_pct_change)
+    
+    mode_user_cnt[i] <- length(user_ids)
+    
+    mode_score_pct_change_mean[i] <- users_score_pct_changes %>% 
+      mean(na.rm = TRUE) %>% 
+      round(3)
+    
+    mode_score_pct_change_median[i] <- users_score_pct_changes %>% 
+      median(na.rm = TRUE) %>% 
+      round(3)
+    
+    mode_score_pct_change_sd[i] <- users_score_pct_changes %>% 
+      sd(na.rm = TRUE) %>% 
+      round(3)
+    
+  }
+  
+  mode_user_score_diff <- data.frame("Main_Mode" = main_modes,
+                                     "Count" = mode_user_cnt, 
+                                     "Score_Pct_Change_Mean" = mode_score_pct_change_mean,
+                                     "Score_Pct_Change_Median" = mode_score_pct_change_median,
+                                     "Score_Pct_Change_sd" = mode_score_pct_change_sd)
+  
+  mode_user_score_diff
+  write.csv(mode_user_score_diff, file = paste0(outputDirectoryScenario,"/mode_user_score_diff.csv"), quote = FALSE, row.names = FALSE)
+  
+  # Sex
+  sex_diff <- persons_joined_sf %>%
+    st_drop_geometry() %>%
+    group_by(sex) %>%
+    summarise(Count = n(), 
+              "Mean_Percent_Change_Score" = round(mean(score_pct_change),3),
+              "Median_Percent_Change_Score" = round(median(score_pct_change),3),
+              "sd" = sd(score_pct_change))
+  
+  sex_diff
+  
+  write.csv(sex_diff, file = paste0(outputDirectoryScenario,"/equity_sex.csv"), quote = FALSE, row.names = FALSE)
+  
+  
+  sex_no_outlier <- remove_outliers(persons_joined_sf, "sex")
+  
+  # sex_no_outlier %>% 
+  #   transmute(ascore_pct_change
+  #   group_by(scenario, score) %>% 
+  #   summarise(count = n()) %>%
+  #   ungroup() %>% 
+  #   pivot_wider(names_from = scenario, values_from = count, values_fill = NA) %>% 
+  #   arrange(score) %>%
+  #   write.csv(file = paste0(outputDirectoryScenario,"/equity_score_distribution.csv"), quote = FALSE, row.names = FALSE)
+  
+  ggplot(sex_no_outlier) + 
+    geom_density(aes(score_pct_change, col = sex))
+
+  # Income Group
+  income_diff <- persons_joined_sf %>%
+    st_drop_geometry() %>% 
+    dplyr::rename("Income_Group" = "MiD.hheink_gr2") %>% 
+    group_by(Income_Group) %>%
+    summarise(Count = n(), 
+              "Mean_Percent_Change_Score" = round(mean(score_pct_change),3),
+              "Median_Percent_Change_Score" = round(median(score_pct_change),3),
+              "sd" = sd(score_pct_change))
+  
+  income_diff
+  
+  write.csv(income_diff, file = paste0(outputDirectoryScenario,"/equity_income.csv"), quote = FALSE, row.names = FALSE)
+  
+  
+  income_no_outlier <- remove_outliers(persons_joined_sf,"MiD.hheink_gr2")
+  
+  ggplot(income_no_outlier) + 
+    geom_density(aes(score_pct_change, col = as.factor(MiD.hheink_gr2)))
+  
+  # HH Size
+  householdsize_diff <- persons_joined_sf %>%
+    st_drop_geometry() %>%
+    dplyr::rename("Household_Size" = "MiD.hhgr_gr") %>% 
+    group_by(Household_Size) %>%
+    summarise(Count = n(), 
+              "Mean_Percent_Change_Score" = round(mean(score_pct_change),3),
+              "Median_Percent_Change_Score" = round(median(score_pct_change),3),
+              "sd" = sd(score_pct_change))
+  householdsize_diff
+  
+  write.csv(householdsize_diff, file = paste0(outputDirectoryScenario,"/equity_hhsize.csv"), quote = FALSE, row.names = FALSE)
+  
+  hh_no_outlier <- remove_outliers(persons_joined_sf,"MiD.hhgr_gr")
+  
+  ggplot(income_no_outlier) + 
+    geom_density(aes(score_pct_change, col = as.factor(MiD.hhgr_gr)))
+
+  # pt_abo available
+  
+  pt_subscription_diff <- persons_joined_sf %>%
+    st_drop_geometry() %>%
+    group_by(sim_ptAbo) %>%
+    summarise(Count = n(), 
+              "Mean_Percent_Change_Score" = round(mean(score_pct_change),3),
+              "Median_Percent_Change_Score" = round(median(score_pct_change),3),
+              "sd" = sd(score_pct_change))
+  
+  pt_subscription_diff
+  
+  write.csv(pt_subscription_diff, file = paste0(outputDirectoryScenario,"/equity_pt_abo.csv"), quote = FALSE, row.names = FALSE)
+  
+  pt_no_outlier <- remove_outliers(persons_joined_sf,"sim_ptAbo")
+  
+  ggplot(pt_no_outlier) + 
+    geom_density(aes(score_pct_change, col = sim_ptAbo))
+  
+  # car available
+  car_avail_diff <- persons_joined_sf %>%
+    st_drop_geometry() %>%
+    group_by(carAvail) %>%
+    summarise(Count = n(), 
+              "Mean_Percent_Change_Score" = round(mean(score_pct_change),3),
+              "Median_Percent_Change_Score" = round(median(score_pct_change),3),
+              "sd" = sd(score_pct_change))
+  
+  car_avail_diff
+  
+  write.csv(car_avail_diff, file = paste0(outputDirectoryScenario,"/equity_car_avail.csv"), quote = FALSE, row.names = FALSE)
+  
+  car_no_outlier <- remove_outliers(persons_joined_sf,"carAvail")
+  
+  ggplot(pt_no_outlier) + 
+    geom_density(aes(score_pct_change, col = carAvail))
 }
 
 

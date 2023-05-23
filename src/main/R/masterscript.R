@@ -33,7 +33,7 @@ print("#### Libraries geladen! ####")
 ################################################################################ INPUT ####
 publicSVN = "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
 
-runID = "carfree-area-90"                                        
+runID = "carfree-area-large"                                        
 network <- paste(publicSVN,"base-case/leipzig-25pct-base.output_network.xml.gz")
 CRS <- 25832
 
@@ -55,9 +55,8 @@ if(!file.exists(outputDirectoryBase)){
   print("creating analysis sub-directory")
   dir.create(outputDirectoryBase)  
 }
-#/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/",runID,"/analysis/analysis-R
-outputDirectoryScenario <-  "~/git/simwrapper-example-project/data/matsim-leipzig/policy"
-  #paste(scenario_run_path, "analysis/analysis-R", sep = "") # the plots are going to be saved here
+
+outputDirectoryScenario <- paste0(scenario_run_path, "/analysis/analysis-R") # the plots are going to be saved here
 if(!file.exists(outputDirectoryScenario)){
   print("creating analysis sub-directory")
   dir.create(outputDirectoryScenario)  
