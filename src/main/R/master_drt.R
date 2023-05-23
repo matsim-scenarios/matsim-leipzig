@@ -23,11 +23,12 @@ drt.KPI <- read_tsv(paste0(scenario.drt.path, str_subset(drt.files, pattern = "K
 #temporary solution: drt stops file do not follow same naming pattern
 
 if (drt == "drtNorth"){
-  stop_pattern = "drt.*north"
+  stop.pattern = "drt.*north"
 } else {
-  stop_pattern = "drt.*south"
+  stop.pattern = "drt.*southeast"
 }
 
+drt.stops <- read.csv(paste0(scenario.drt.path, str_subset(list.files(path = scenario.drt.path), pattern = stop.pattern)))
 
 ### XML files ###
 drt.vehicles <- xmlParse(paste0(scenario.drt.path, str_subset(drt.files, pattern = "vehicles"))) %>%
@@ -35,11 +36,13 @@ drt.vehicles <- xmlParse(paste0(scenario.drt.path, str_subset(drt.files, pattern
 drt.vehicles <- data.frame(do.call(rbind.data.frame,drt.vehicles))
 names(drt.vehicles) <- c("vehicle", "start_link", "t_0", "t_1", "capacity")
 
-#drt_stops <- read_xml("D:/VSP_Berlin/Leipzig/leipzig-v1.1-drt-stops-caseNamav.xml") %>% 
- # xmlToList(stopFacility)
-#drt_stops <- data.frame(do.call(rbind.data.frame,drt_stops)) %>% 
- # pivot
- 
+# DRT stops files can now be read as XML - the correct ones just need to be put into the folder on public svn & the code un-commented
+# drt.stops.raw <- xmlParse(paste0(scenario.drt.path, str_subset(list.files(path = scenario.drt.path), pattern = stop.pattern)))  
+# drt.stops <- xmlToList(drt_stops_raw)
+# drt.stops <- data.frame(do.call(cbind.data.frame,drt.stops))
+# drt.stops <- data.frame(t(drt.stops[-1]))
+
+
 #### DRT supply ####
 
 if (x_drt_supply ==1){
