@@ -1,30 +1,32 @@
 #Masterscript
 ################################################################################ Libraries ####
-library(gridExtra)
-library(tidyr)
 library(tidyverse)
-library(lubridate)
-library(viridis)
-library(ggsci)
 library(sf)
-library(dplyr)
-library(ggplot2)
 library(matsim)
-library(purrr)
-library(networkD3)
 library(alluvial)
-library(ggalluvial)
-library(stringr)
-library(data.table)
-library(chron)
-library(xml2)
+library(lubridate)
 library(XML)
+
+#pretty sure we don't need these
+# library(gridExtra)
+# library(tidyr)
+# library(viridis)
+# library(ggsci)
+# library(dplyr)
+# library(ggplot2)
+# library(purrr)
+# library(networkD3)
+# library(ggalluvial)
+# library(stringr)
+# library(data.table)
+# library(chron)
+# library(xml2)
+
 print("#### Libraries geladen! ####")
 ################################################################################ CASES #### please put (1=yes/0=no) for analyses 
 scenarios <- list(
   "base-case"
-  #,
-  #,"carfree-area-95"
+  ,"carfree-area-95"
   #,"carfree-area-99"
   #,"drt-outskirts"
   #,"drt-whole-city"
@@ -33,7 +35,6 @@ scenarios <- list(
   #,"combined_scenarioA"
 )
 
-scenario = "carfree-area-90"
 ################################################################################ INPUT ####
 
 for (scenario in scenarios){
@@ -46,16 +47,19 @@ for (scenario in scenarios){
   network <- paste(publicSVN,"base-case/leipzig-25pct-base.output_network.xml.gz")
   CRS <- 25832
   
-  scenario_run_path <- paste0(publicSVN,runID)
+  scenario.run.path <- paste0(publicSVN,runID)
   
   #comaprison path nur für Sankey und Winner/Loser Analysis (normalerweise base case)
-  base_run_path <- "D:/VSP_Berlin/Leipzig/namav/base-case/"
-  "/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
+  base.run.path <- "D:/VSP_Berlin/Leipzig/namav/base-case/"
+  #"/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
   
   
-  region_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
-  city_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_stadt.shp"
-  area_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
+  region.shp.path <- "D:/VSP_Berlin/Leipzig/Car_free_areas/shapefiles/Leipzig_puffer.shp"
+    #"https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
+  city.shp.path <- "D:/VSP_Berlin/Leipzig/Car_free_areas/shapefiles/Leipzig_stadt.shp"
+    #"https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_stadt.shp"
+  area.shp.path <- "D:/VSP_Berlin/Leipzig/Car_free_areas/shapefiles/Zonen90_update.shp"
+    #"https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
   #other carfree area shapefiles here
   #area_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_medeium/Zonen95_update.shp"
   #area_shp_path <- "https://svn.vsp.tu-berlin.de/repos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_small/Zonen99_update.shp"
@@ -64,7 +68,7 @@ for (scenario in scenarios){
   ################################################################################ OUTPUT ####
   
   #/Users/mkreuschnervsp/Desktop/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/",runID,"/analysis/analysis-R
-  outputDirectoryScenario <-  paste0(scenario_run_path, "analysis/analysis-R") # the plots are going to be saved here
+  outputDirectoryScenario <-  paste0(scenario.run.path, "analysis/analysis-R") # the plots are going to be saved here
   if(!file.exists(outputDirectoryScenario)){
     print("creating analysis sub-directory")
     dir.create(outputDirectoryScenario)  
@@ -97,7 +101,7 @@ for (scenario in scenarios){
   #### #3.4 Distances TRAVELED - legs based
   x_average_traveled_distance_legs =    1
   #### #3.5 Distances EUCLIDEAN - legs based  
-  x_average_euclidean_distance_legs =   0
+  x_average_euclidean_distance_legs =   1
   #### #3.6 PKM - legs based
   x_personen_km_legs =                  1
   
@@ -118,13 +122,13 @@ for (scenario in scenarios){
   x_average_beeline_speed_trips =     1
   
   #### #6.1 Traffic Volumes  
-  x_traffic = 0
+  x_traffic = 1
   
   #### #7.1 Emissions Analysis  
-  x_emissions = 0  
+  x_emissions = 1  
   
   #### #8.1 Winner/Loser Analysis
-  x_winner_loser = 0
+  x_winner_loser = 1
   
   #### #9.1 DRT supply
   x_drt_supply = 1
