@@ -6,9 +6,9 @@ library(alluvial)
 library(lubridate)
 library(XML)
 # make sure you use winnerLoserUtils branch of matsim-r until the changes are merged
-# devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE) 
-devtools::load_all("~/git/matsim-r", reset = TRUE)
-# library(matsim)
+devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE)
+# devtools::load_all("~/git/matsim-r", reset = TRUE)
+library(matsim)
 
 
 print("#### Libraries geladen! ####")
