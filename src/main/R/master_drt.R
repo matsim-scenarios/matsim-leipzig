@@ -1,11 +1,11 @@
 #### DRT paths ####
 
-scenario.drt.path = paste0(scenario_run_path, "analysis/analysis-drt/" )
+scenario.drt.path = paste0(scenario.run.path, "analysis/analysis-drt/" )
 
 
 #### counting DRT services ####
 
-drt.services <- unique(scenarioTripsTable$main_mode) %>% 
+drt.services <- unique(scenario.trips.table$main_mode) %>% 
   str_subset(pattern ="^drt") %>% 
   as.list()
 

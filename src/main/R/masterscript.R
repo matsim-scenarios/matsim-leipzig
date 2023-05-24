@@ -6,27 +6,15 @@ library(alluvial)
 library(lubridate)
 library(XML)
 # make sure you use winnerLoserUtils branch of matsim-r until the changes are merged
-devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE)
-# devtools::load_all("~/git/matsim-r")
+# devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE) 
+devtools::load_all("~/git/matsim-r", reset = TRUE)
+# library(matsim)
 
-#pretty sure we don't need these
-# library(gridExtra)
-# library(tidyr)
-# library(viridis)
-# library(ggsci)
-# library(dplyr)
-# library(ggplot2)
-# library(purrr)
-# library(networkD3)
-# library(ggalluvial)
-# library(stringr)
-# library(data.table)
-# library(chron)
-# library(xml2)
 
 print("#### Libraries geladen! ####")
 ################################################################################ CASES #### please put (1=yes/0=no) for analyses 
 scenarios <- list(
+  #TODO: so we're comparing the base-case to the base-case? -jr May'23
   "base-case"
   ,"carfree-area-large"
   # ,"carfree-area-95"
@@ -82,7 +70,7 @@ for (scenario in scenarios){
   x_ms_legs_distance =        1
 
   #### #2.1 Modal Shift - trips based
-  x_sankey_diagram = 0
+  x_sankey_diagram = 1
 
   #### #3.1 Distances TRAVELED - trips based
   x_average_traveled_distance_trips =   1
@@ -150,7 +138,7 @@ for (scenario in scenarios){
 
   source("~/git/matsim-leipzig/src/main/R/masteranalyse.R")
 
-  if (x_drt_supply || x_drt_demand || x_drt_performance || x_drt_volumes || x_drt_trip_purposes == 1){
+  if (x_drt_supply == 1 || x_drt_demand == 1|| x_drt_performance == 1 || x_drt_volumes == 1|| x_drt_trip_purposes == 1){
     source("~/git/matsim-leipzig/src/main/R/master_drt.R")
   }
 

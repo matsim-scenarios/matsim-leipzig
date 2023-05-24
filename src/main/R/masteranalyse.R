@@ -7,7 +7,6 @@ print("#### Shapes geladen! ####")
 #### reading trips/legs files ####
 
 ## Trip File
-base.trips.table <- readTripsTable(pathToMATSimOutputDirectory = base.run.path)
 scenario.trips.table <- readTripsTable(pathToMATSimOutputDirectory = scenario.run.path)
 print("#### Trips geladen! ####")
 
@@ -18,11 +17,6 @@ scenario.legs.table <- read_delim(paste0(scenario.run.path,"/",list.files(path =
 print("#### Legs geladen! ####")
 
 ## Filters
-
-base.trips.region <- filterByRegion(base.trips.table,region.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
-base.trips.city <- filterByRegion(base.trips.table,city.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
-base.trips.area <- filterByRegion(base.trips.table,area.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
-
 scenario.trips.region <- filterByRegion(scenario.trips.table,region.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario.trips.city <- filterByRegion(scenario.trips.table,city.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario.trips.area <- filterByRegion(scenario.trips.table,area.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
@@ -34,23 +28,24 @@ scenario.legs.area <- filterByRegion(scenario.legs.table,area.shape,crs=CRS,star
 print("#### Legs gefiltert! ####")
 
 #### reading persons ####
-base.persons <- readPersonsTable(base_run_path)
-scenario.persons <- readPersonsTable(scenario_run_path)
+scenario.persons <- readPersonsTable(scenario.run.path)
 print("#### Personen geladen! ####")
 
 #### files/filters for comparisons ####
 
 if (x_sankey_diagram == 1){
-  base.trips.table <- readTripsTable(pathToMATSimOutputDirectory = paste0(base.run.path,list.files(path = base.run.path, pattern = "output_trips")))
-
+  base.trips.table <- readTripsTable(pathToMATSimOutputDirectory = base.run.path)
+  
   base.trips.region <- filterByRegion(base.trips.table,region.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
   base.trips.city <- filterByRegion(base.trips.table,city.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
   base.trips.area <- filterByRegion(base.trips.table,area.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
+  
 }
 
 if (x_winner_loser == 1){
-  base.persons <- read_delim(paste0(base.run.path,list.files(path = base.run.path, pattern = "output_persons")), delim = ";")
+  base.persons <- readPersonsTable(base.run.path)
 }
+
 
 #### 0. Parameters ####
 
@@ -78,12 +73,12 @@ if (x_ms_trips_count == 1){
   ms.main_mode.trips.city <- modal_split.trips.main_mode(scenario.trips.city)
   ms.main_mode.trips.city <- t(ms.main_mode.trips.city)
   colnames(ms.main_mode.trips.city) <- ms.main_mode.trips.city[1, ]
-  write.csv(ms.main_mode.trips.city,file = paste0(outputDirectoryScenario,"/ms.main_mode.trips.city.csv"))
+  write.csv(ms.main_mode.trips.city, file = paste0(outputDirectoryScenario, "/ms.main_mode.trips.city.csv"))
   
   ms.main_mode.trips.region <- modal_split.trips.main_mode(scenario.trips.region)
-  ms.main_mode.trips.region <- t(ms.main.mode.trips.region)
+  ms.main_mode.trips.region <- t(ms.main_mode.trips.region)
   colnames(ms.main_mode.trips.region) <- ms.main_mode.trips.region[1, ]
-  write.csv(ms.main_mode.trips.region,file = paste0(outputDirectoryScenario,"/ms.main_mode.trips.regio.csv"))
+  write.csv(ms.main_mode.trips.region, file = paste0(outputDirectoryScenario, "/ms.main_mode.trips.regio.csv"))
 }
 
 #### #1.2 Modal Split - trips based - distance ####
@@ -98,12 +93,12 @@ if (x_ms_trips_distance == 1){
   ms.dist.trips.city <- modal_split.trips.distance(scenario.trips.city)
   ms.dist.trips.city <- t(ms.dist.trips.city)
   colnames(ms.dist.trips.city) <- ms.dist.trips.city[1, ]
-  write.csv(ms.dist.trips.city,file = paste0(outputDirectoryScenario,"/ms.dist.trips.city.csv"))
+  write.csv(ms.dist.trips.city, file = paste0(outputDirectoryScenario, "/ms.dist.trips.city.csv"))
   
   ms.dist.trips.region <- modal_split.trips.distance(scenario.trips.region)
   ms.dist.trips.region <- t(ms.dist.trips.region)
   colnames(ms.dist.trips.region) <- ms.dist.trips.region[1, ]
-  write.csv(ms.dist.trips.region,file = paste0(outputDirectoryScenario,"/ms.dist.trips.region.csv"))
+  write.csv(ms.dist.trips.region, file = paste0(outputDirectoryScenario, "/ms.dist.trips.region.csv"))
 }
 
 
@@ -155,34 +150,20 @@ print("#### in 2.1 ####")
 if (x_sankey_diagram == 1){
   sankey_dataframe <- function(x, y){
     inner_join(x, y, by = "trip_id") %>%
-      select(trip_id, main_mode.x, longest_distance_mode.x, main_mode.y, longest_distance_mode.y) %>%
+      select(main_mode.x, main_mode.y) %>%
       group_by(main_mode.x, main_mode.y) %>%
       summarise(Freq = n())
   }
   
   #Base Case > Policy Case CITY
-  Base_city_to_Scenario_city <- sankey_dataframe(base_trips_city, scenario_trips_city)
+  base_city_to_scenario_city <- sankey_dataframe(base.trips.city, scenario.trips.city)
   
-  sankey_city <- alluvial(Base_city_to_Scenario_city[1:2],
-                          freq= Base_city_to_Scenario_city$Freq,
-                          border = NA,
-                          axis_labels = c("Base Case", "Scenario Case"))
-  
-  sankey_city <- as_tibble(t(sankey_city))
-  #TODO: fix csv
-  #write.csv(sankey_city, file = paste0(outputDirectoryScenario,"/sankey_city.csv"))
+  write.csv(base_city_to_scenario_city, file = paste0(outputDirectoryScenario,"/sankey.shift.city.csv"))
   
   #Base Case > Policy Case REGION
-  Base_region_to_Scenario_region <- sankey_dataframe(base_trips_region, scenario_trips_region)
+  base_region_to_scenario_region <- sankey_dataframe(base.trips.region, scenario.trips.region)
   
-  sankey_region <- alluvial(Base_region_to_Scenario_region[1:2],
-                            freq= Base_region_to_Scenario_region$Freq,
-                            border = NA,
-                            axis_labels = c("Base Case", "Scenario Case"))
-  
-  sankey_region <- as_tibble(t(sankey_region))
-  #TODO: fix csv
-  #write.csv(sankey_region, file = paste0(outputDirectoryScenario,"/sankey_region.csv"))
+  write.csv(base_region_to_scenario_region, file = paste0(outputDirectoryScenario,"/sankey.shift.region.csv"))
 }
 
 #### #3.1 Average Traveled Distance - trips based####
@@ -197,7 +178,7 @@ if (x_average_traveled_distance_trips == 1){
       pivot_wider(names_from = main_mode, values_from = name)
   }
   #calculation
-  avg.trav_dist.trips.scenario.network <- avg.trav_distance.trips.by.mode(scenarioTripsTable)
+  avg.trav_dist.trips.scenario.network <- avg.trav_distance.trips.by.mode(scenario.trips.table)
   avg.trav_dist.trips.scenario.region <- avg.trav_distance.trips.by.mode(scenario.trips.region)
   avg.trav_dist.trips.scenario.city <- avg.trav_distance.trips.by.mode(scenario.trips.city)
   
@@ -209,11 +190,12 @@ if (x_average_traveled_distance_trips == 1){
   df.list <- list(network = avg.trav_dist.trips.scenario.network,
                   region = avg.trav_dist.trips.scenario.region,
                   city = avg.trav_dist.trips.scenario.city)
-  write.csv(bind_rows(df_list,
+  write.csv(bind_rows(df.list,
                       .id = "id"),
             file = paste0(outputDirectoryScenario, "/df.trav_dist.trips.csv"))
 
-  }
+}
+
 #### #3.2 Average Euclidean Distance - trips based####
 print("#### in 3.2 ####")
 if (x_average_euclidean_distance_trips == 1){
@@ -225,7 +207,7 @@ if (x_average_euclidean_distance_trips == 1){
       pivot_wider(names_from = main_mode, values_from = name)
   }
   #calculation
-  avg.eucl_dist.trips.scenario.network <- avg.eucl_distance.trips.by.mode(scenario.trips)
+  avg.eucl_dist.trips.scenario.network <- avg.eucl_distance.trips.by.mode(scenario.trips.table)
   avg.eucl_dist.trips.scenario.region <- avg.eucl_distance.trips.by.mode(scenario.trips.region)
   avg.eucl_dist.trips.scenario.city <- avg.eucl_distance.trips.by.mode(scenario.trips.city)
   #write table
@@ -261,7 +243,7 @@ if (x_heatmap_distance_trips == 1){
 #### #3.4 Personen KM - trips based ####
 print("#### in 3.3 ####")
 if (x_personen_km_trips == 1){
-  personen_km.trips <- function (x){
+  personen.km.trips <- function (x){
     x %>%
       filter(main_mode!="freight") %>%
       group_by(main_mode) %>%
@@ -280,7 +262,7 @@ if (x_personen_km_trips == 1){
   df.list <- list(network = pkm.trips.network,
                   region = pkm.trips.region,
                   city = pkm.trips.city)
-  write.csv(bind_rows(df_list,
+  write.csv(bind_rows(df.list,
                       .id = "id"),
             file = paste0(outputDirectoryScenario, "/df.pkm.trips.csv"))
 }
@@ -297,7 +279,7 @@ if (x_average_traveled_distance_legs == 1){
 
   }
   #calculation
-  avg.trav_dist.legs.scenario.network <- avg.trav_distance.legs.by.mode(scenario.legs)
+  avg.trav_dist.legs.scenario.network <- avg.trav_distance.legs.by.mode(scenario.legs.table)
   avg.trav_dist.legs.scenario.region <- avg.trav_distance.legs.by.mode(scenario.legs.region)
   avg.trav_dist.legs.scenario.city <- avg.trav_distance.legs.by.mode(scenario.legs.city)
   #write table
@@ -334,7 +316,7 @@ if (x_personen_km_legs == 1){
   df.list <- list(network = pkm.legs.network,
                   region = pkm.legs.region,
                   city = pkm.legs.city)
-  write.csv(bind_rows(df_list,
+  write.csv(bind_rows(df.list,
                       .id = "id"),
             file = paste0(outputDirectoryScenario, "/df.pkm.legs.csv"))
 }
@@ -503,9 +485,9 @@ write.csv(avg_trav_speed.network, file = paste0(outputDirectoryScenario,"/df.avg
 write.csv(avg_trav_speed.region, file = paste0(outputDirectoryScenario,"/df.avg_trav_speed.trips.region.csv"))
 write.csv(avg_trav_speed.city, file = paste0(outputDirectoryScenario,"/df.avg_trav_speed.trips.city.csv"))
 
-df.list <- list(network = avg.trav_speed.network,
-                region = avg.trav_speed.region,
-                city = avg.trav_speed.city)
+df.list <- list(network = avg_trav_speed.network,
+                region = avg_trav_speed.region,
+                city = avg_trav_speed.city)
 write.csv(bind_rows(df.list,
                     .id = "id"),
           file = paste0(outputDirectoryScenario, "/df.avg_trav_speed.csv"))
@@ -569,9 +551,9 @@ if (x_traffic == 1){
 if (x_winner_loser == 1){
   
   # Data Prep
-  persons_joined <- join_base_and_policy_persons(base_persons, scenario_persons, CityShape)
+  persons_joined <- join_base_and_policy_persons(base.persons, scenario.persons, city.shape)
   
-  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = CityShape, first_act_type_filter = "home") %>%
+  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = city.shape, first_act_type_filter = "home") %>% 
     mutate(score_diff = executed_score_policy - executed_score_base,
            score_pct_change = score_diff/executed_score_base * 100) %>%
     drop_na(score_pct_change)
@@ -605,13 +587,14 @@ if (x_winner_loser == 1){
     pct_change_median = c(NA,pct_change_median),
     sd_score = c(sd(persons_joined_sf$executed_score_base),sd(persons_joined_sf$executed_score_policy)))
 
+  score_stats_table$mean_score %>% round(3) %>% print()
 
   write.csv(score_stats_table,file = paste0(outputDirectoryScenario,"/df.equity.score_stats.csv"), quote = FALSE, row.names = FALSE)
 
 
   # c) Score Maps
 
-  joined_hex <- persons_attributes_on_hex_grid(persons_joined_sf, CityShape, n = 50) %>%
+  joined_hex <- persons_attributes_on_hex_grid(persons_joined_sf, city.shape, n = 50) %>%
     dplyr::rename(score_base = executed_score_base, score_policy = executed_score_policy)
 
   joined_centroids <- joined_hex %>% st_centroid()
@@ -620,7 +603,7 @@ if (x_winner_loser == 1){
   st_write(joined_centroids, paste0(outputDirectoryScenario, "/shp.equity.centroid.shp"), append = FALSE)
 
   # 8.1.2. MAIN MODE
-  main_modes <- unique(base_trips_city$main_mode)
+  main_modes <- unique(base.trips.city$main_mode)
   mode_user_cnt <- c()
   mode_score_pct_change_mean <- c(length(main_modes))
   mode_score_pct_change_median <- c(length(main_modes))
@@ -628,7 +611,7 @@ if (x_winner_loser == 1){
 
   for(i in seq(length(main_modes))){
 
-    user_ids <- base_trips_city %>%
+    user_ids <- base.trips.city %>%
       filter(main_mode == main_modes[i]) %>%
       pull(person) %>%
       unique()
