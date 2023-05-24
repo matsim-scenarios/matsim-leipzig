@@ -143,7 +143,7 @@ if (x_ms_legs_distance == 1){
 print("#### in 2.1 ####")
 
 if (x_sankey_diagram == 1){
-  sankey_dataframe <- function(x, y){
+  sankey.dataframe <- function(x, y){
     inner_join(x, y, by = "trip_id") %>%
       select(trip_id, main_mode.x, longest_distance_mode.x, main_mode.y, longest_distance_mode.y) %>%
       group_by(main_mode.x, main_mode.y) %>%
@@ -151,26 +151,26 @@ if (x_sankey_diagram == 1){
   }
   
   #Base Case > Policy Case CITY
-  Base_city_to_Scenario_city <- sankey_dataframe(base_trips_city, scenario_trips_city)
+  Base.city.to.Scenario.city <- sankey.dataframe(base.trips.city, scenario.trips.city)
   
-  sankey_city <- alluvial(Base_city_to_Scenario_city[1:2],
-                          freq= Base_city_to_Scenario_city$Freq,
+  sankey.city <- alluvial(Base.city.to.Scenario.city[1:2],
+                          freq= Base.city.to.Scenario.city$Freq,
                           border = NA,
                           axis_labels = c("Base Case", "Scenario Case"))
   
-  sankey_city <- as_tibble(t(sankey_city)) 
-  #write.csv(sankey_city, file = paste0(outputDirectoryScenario,"/sankey_city.csv"))
+  
+  write.csv(Base.city.to.Scenario.city, file = paste0(outputDirectoryScenario,"/sankey.city.csv"))
   
   #Base Case > Policy Case REGION
-  Base_region_to_Scenario_region <- sankey_dataframe(base_trips_region, scenario_trips_region)
+  Base.region.to.Scenario.region <- sankey.dataframe(base.trips.region, scenario.trips.region)
   
-  sankey_region <- alluvial(Base_region_to_Scenario_region[1:2],
-                            freq= Base_region_to_Scenario_region$Freq,
+  sankey.region <- alluvial(Base.region.to.Scenario.region[1:2],
+                            freq= Base.region.to.Scenario.region$Freq,
                             border = NA,
                             axis_labels = c("Base Case", "Scenario Case"))
   
-  sankey_region <- as_tibble(t(sankey_region)) 
-  #write.csv(sankey_region, file = paste0(outputDirectoryScenario,"/sankey_region.csv"))
+   
+  write.csv(Base.region.to.Scenario.region, file = paste0(outputDirectoryScenario,"/sankey.region.csv"))
 }
 
 #### #3.1 Average Traveled Distance - trips based####
