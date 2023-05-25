@@ -73,12 +73,12 @@ if (x_ms_trips_count == 1){
   ms.main_mode.trips.city <- modal_split.trips.main_mode(scenario.trips.city)
   ms.main_mode.trips.city <- t(ms.main_mode.trips.city)
   colnames(ms.main_mode.trips.city) <- ms.main_mode.trips.city[1, ]
-  write.csv(ms.main_mode.trips.city, file = paste0(outputDirectoryScenario, "/ms.main_mode.trips.city.csv"))
+  write.csv(ms.main_mode.trips.city, file = paste0(outputDirectoryScenario, "/pie.ms.counts.trips.city.csv"))
   
   ms.main_mode.trips.region <- modal_split.trips.main_mode(scenario.trips.region)
   ms.main_mode.trips.region <- t(ms.main_mode.trips.region)
   colnames(ms.main_mode.trips.region) <- ms.main_mode.trips.region[1, ]
-  write.csv(ms.main_mode.trips.region, file = paste0(outputDirectoryScenario, "/ms.main_mode.trips.regio.csv"))
+  write.csv(ms.main_mode.trips.region, file = paste0(outputDirectoryScenario, "/pie.ms.counts.trips.regio.csv"))
 }
 
 #### #1.2 Modal Split - trips based - distance ####
@@ -93,12 +93,12 @@ if (x_ms_trips_distance == 1){
   ms.dist.trips.city <- modal_split.trips.distance(scenario.trips.city)
   ms.dist.trips.city <- t(ms.dist.trips.city)
   colnames(ms.dist.trips.city) <- ms.dist.trips.city[1, ]
-  write.csv(ms.dist.trips.city, file = paste0(outputDirectoryScenario, "/ms.dist.trips.city.csv"))
+  write.csv(ms.dist.trips.city, file = paste0(outputDirectoryScenario, "/pie.ms.dist.trips.city.csv"))
   
   ms.dist.trips.region <- modal_split.trips.distance(scenario.trips.region)
   ms.dist.trips.region <- t(ms.dist.trips.region)
   colnames(ms.dist.trips.region) <- ms.dist.trips.region[1, ]
-  write.csv(ms.dist.trips.region, file = paste0(outputDirectoryScenario, "/ms.dist.trips.region.csv"))
+  write.csv(ms.dist.trips.region, file = paste0(outputDirectoryScenario, "/pie.ms.dist.trips.region.csv"))
 }
 
 
@@ -116,12 +116,12 @@ if (x_ms_legs_count == 1){
   ms.mode.legs.city <- modal_split.legs.mode(scenario.legs.city)
   ms.mode.legs.city <- t(ms.mode.legs.city)
   colnames(ms.mode.legs.city) <- ms.mode.legs.city[1, ]
-  write.csv(ms.mode.legs.city,file = paste0(outputDirectoryScenario,"/ms.mode.legs.city.csv"))
+  write.csv(ms.mode.legs.city,file = paste0(outputDirectoryScenario,"/pie.ms.counts.legs.city.csv"))
   
   ms.mode.legs.region <- modal_split.legs.mode(scenario.legs.region)
   ms.mode.legs.region <- t(ms.mode.legs.region)
   colnames(ms.mode.legs.region) <- ms.mode.legs.region[1, ]
-  write.csv(ms.mode.legs.region,file = paste0(outputDirectoryScenario,"/ms.mode.legs.region.csv"))
+  write.csv(ms.mode.legs.region,file = paste0(outputDirectoryScenario,"/pie.ms.counts.legs.region.csv"))
 }
 
 #### #1.4 Modal Split - legs based - distance ####
@@ -136,12 +136,12 @@ if (x_ms_legs_distance == 1){
   ms.dist.legs.city <- modal_split.legs.distance(scenario.legs.city)
   ms.dist.legs.city <- t(ms.dist.legs.city)
   colnames(ms.dist.legs.city) <- ms.dist.legs.city[1, ]
-  write.csv(ms.dist.legs.city,file = paste0(outputDirectoryScenario,"/ms.dist.legs.city.csv"))
+  write.csv(ms.dist.legs.city,file = paste0(outputDirectoryScenario,"/pie.ms.dist.legs.city.csv"))
   
   ms.dist.legs.region <- modal_split.legs.distance(scenario.legs.region)
   ms.dist.legs.region <- t(ms.dist.legs.region)
   colnames(ms.dist.legs.region) <- ms.dist.legs.region[1, ]
-  write.csv(ms.dist.legs.region,file = paste0(outputDirectoryScenario,"/ms.dist.legs.region.csv"))
+  write.csv(ms.dist.legs.region,file = paste0(outputDirectoryScenario,"/pie.ms.dist.legs.region.csv"))
 }
 
 #### #2.1 Sankey Modal Shift ####
@@ -183,9 +183,9 @@ if (x_average_traveled_distance_trips == 1){
   avg.trav_dist.trips.scenario.city <- avg.trav_distance.trips.by.mode(scenario.trips.city)
   
   #write table
-  write.csv(avg.trav_dist.trips.scenario.network, file = paste0(outputDirectoryScenario,"/avg.trav_dist.trips.network.csv"))
-  write.csv(avg.trav_dist.trips.scenario.region, file = paste0(outputDirectoryScenario,"/avg.trav_dist.trips.region.csv"))
-  write.csv(avg.trav_dist.trips.scenario.city, file = paste0(outputDirectoryScenario,"/avg.trav_dist.trips.city.csv"))
+  write.csv(avg.trav_dist.trips.scenario.network, file = paste0(outputDirectoryScenario,"/df.avg_trav_dist.trips.network.csv"))
+  write.csv(avg.trav_dist.trips.scenario.region, file = paste0(outputDirectoryScenario,"/df.avg_trav_dist.trips.region.csv"))
+  write.csv(avg.trav_dist.trips.scenario.city, file = paste0(outputDirectoryScenario,"/df.avg_trav_dist.trips.city.csv"))
 
   df.list <- list(network = avg.trav_dist.trips.scenario.network,
                   region = avg.trav_dist.trips.scenario.region,
@@ -211,9 +211,9 @@ if (x_average_euclidean_distance_trips == 1){
   avg.eucl_dist.trips.scenario.region <- avg.eucl_distance.trips.by.mode(scenario.trips.region)
   avg.eucl_dist.trips.scenario.city <- avg.eucl_distance.trips.by.mode(scenario.trips.city)
   #write table
-  write.csv(avg.eucl_dist.trips.scenario.network, file = paste0(outputDirectoryScenario,"/avg.eucl_dist.trips.network.csv"))
-  write.csv(avg.eucl_dist.trips.scenario.region, file = paste0(outputDirectoryScenario,"/avg.eucl_dist.trips.region.csv"))
-  write.csv(avg.eucl_dist.trips.scenario.city, file = paste0(outputDirectoryScenario,"/avg.eucl_dist.trips.city.csv"))
+  write.csv(avg.eucl_dist.trips.scenario.network, file = paste0(outputDirectoryScenario,"/df.avg_eucl_dist.trips.network.csv"))
+  write.csv(avg.eucl_dist.trips.scenario.region, file = paste0(outputDirectoryScenario,"/df.avg_eucl_dist.trips.region.csv"))
+  write.csv(avg.eucl_dist.trips.scenario.city, file = paste0(outputDirectoryScenario,"/df.avg_eucl_dist.trips.city.csv"))
 
   df.list <- list(network = avg.eucl_dist.trips.scenario.network,
                   region = avg.eucl_dist.trips.scenario.region,
@@ -283,9 +283,9 @@ if (x_average_traveled_distance_legs == 1){
   avg.trav_dist.legs.scenario.region <- avg.trav_distance.legs.by.mode(scenario.legs.region)
   avg.trav_dist.legs.scenario.city <- avg.trav_distance.legs.by.mode(scenario.legs.city)
   #write table
-  write.csv(avg.trav_dist.legs.scenario.network, file = paste0(outputDirectoryScenario,"/avg.trav_dist.legs.network.csv"))
-  write.csv(avg.trav_dist.legs.scenario.region, file = paste0(outputDirectoryScenario,"/avg.trav_dist.legs.region.csv"))
-  write.csv(avg.trav_dist.legs.scenario.city, file = paste0(outputDirectoryScenario,"/avg.trav_dist.legs.city.csv"))
+  write.csv(avg.trav_dist.legs.scenario.network, file = paste0(outputDirectoryScenario,"/df.avg_trav_dist.legs.network.csv"))
+  write.csv(avg.trav_dist.legs.scenario.region, file = paste0(outputDirectoryScenario,"/df.avg_trav_dist.legs.region.csv"))
+  write.csv(avg.trav_dist.legs.scenario.city, file = paste0(outputDirectoryScenario,"/df.avg_trav_dist.legs.city.csv"))
 
   df.list <- list(network = avg.trav_dist.legs.scenario.network,
                   region = avg.trav_dist.legs.scenario.region,
