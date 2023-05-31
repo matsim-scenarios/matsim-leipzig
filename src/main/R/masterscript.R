@@ -6,8 +6,8 @@ library(alluvial)
 library(lubridate)
 library(XML)
 # make sure you use winnerLoserUtils branch of matsim-r until the changes are merged
-devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE)
-# devtools::load_all("~/git/matsim-r", reset = TRUE)
+#devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE)
+devtools::load_all("~/git/matsim-r", reset = TRUE)
 library(matsim)
 
 
@@ -24,13 +24,16 @@ scenarios <- list(
   #,"slow-speed-absolute"
   #,"slow-speed-relative"
   #,"combined_scenarioA"
+  #,"combined_scenarioB"
+  #,"combined_scenarioC"
+  #,"combined_scenarioD"
 )
 
 ################################################################################ INPUT ####
 
 for (scenario in scenarios){
 
-  publicSVN <- "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
+  publicSVN <- "../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
 
   runID <- paste0(scenario, "/")
   network <- paste(publicSVN,"base-case/leipzig-25pct-base.output_network.xml.gz")
@@ -39,12 +42,12 @@ for (scenario in scenarios){
   scenario.run.path <- paste0(publicSVN,runID)
 
   #base path nur für Sankey und Winner/Loser Analysis
-  base.run.path <- "~/git/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
+  base.run.path <- "../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
 
 
-  region.shp.path <- "~/git/shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
-  city.shp.path <- "~/git/shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
-  area.shp.path <- "~/git/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
+  region.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
+  city.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
+  area.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
 
 
   print("#### Inputspath definiert! ####")
@@ -136,10 +139,10 @@ for (scenario in scenarios){
   print("#### Auswahl getroffen! ####")
   ################################################################################ SOURCE ####
 
-  source("~/git/matsim-leipzig/src/main/R/masteranalyse.R")
+  source("../matsim-leipzig/src/main/R/masteranalyse.R")
 
   if (x_drt_supply == 1 || x_drt_demand == 1|| x_drt_performance == 1 || x_drt_volumes == 1|| x_drt_trip_purposes == 1){
-    source("~/git/matsim-leipzig/src/main/R/master_drt.R")
+    source("../matsim-leipzig/src/main/R/master_drt.R")
   }
 
   print("#### Masterscript fertig! ####")
