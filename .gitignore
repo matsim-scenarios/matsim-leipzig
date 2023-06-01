@@ -8,6 +8,7 @@ scenarios/output
 test/output
 
 *.gz
+!leipzig-v1.1-network.xml.gz
 *.pbf
 
 *.iml

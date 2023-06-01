@@ -40,7 +40,7 @@ mode <- opt$mode
 # mode <- "drtNorth"
 
 
-outputDir <- paste(runDirectory, "analysis-stop-2-stop", sep = "") # the plots are going to be saved here
+outputDir <- paste(runDirectory, "analysis/analysis-drt", sep = "") # the plots are going to be saved here
 if(!file.exists(outputDir)){
   print("creating analysis sub-directory")
   dir.create(outputDir)  
@@ -99,7 +99,7 @@ movements <- movements[, col_order]
 movementsSmall <- select(movements, fromstopIds,tostopIds,anzahlFahrten) %>%
   filter(!is.na(fromstopIds) & !is.na(tostopIds))
 
-print(paste( "writing to ", outputDir, "/stop-2-stop-", mode, ".csv", sep=""))
-write.csv2(movementsSmall,paste(outputDir, "/stop-2-stop-", mode, ".csv", sep=""),quote=FALSE, row.names=FALSE)
-print(paste( "writing to ", outputDir, "/stop-2-stop-", mode, ".tsv", sep=""))
-write.table(movements,paste(outputDir, "/stop-2-stop-", mode, "-detailed.tsv", sep=""),quote=FALSE, sep="\t",col.names = NA,row.names = TRUE)
+print(paste( "writing to ", outputDir, "/drt_stop-2-stop_", mode, ".csv", sep=""))
+write.csv2(movementsSmall,paste(outputDir, "/drt_stop-2-stop_", mode, ".csv", sep=""),quote=FALSE, row.names=FALSE)
+print(paste( "writing to ", outputDir, "/drt_stop-2-stop_", mode, ".tsv", sep=""))
+write.table(movements,paste(outputDir, "/drt_stop-2-stop_", mode, "-detailed.tsv", sep=""),quote=FALSE, sep="\t",col.names = NA,row.names = TRUE)

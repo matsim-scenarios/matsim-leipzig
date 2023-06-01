@@ -106,26 +106,26 @@ public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
 
 		Map<Id<Node>, Node> filteredNodes = filterDistance(minDistance, stopNodes);
 
-		FileWriter csvWriter = new FileWriter(stopsData);
-		csvWriter.append("name");
-		csvWriter.append(";");
-		csvWriter.append("ort");
-		csvWriter.append(";");
-		csvWriter.append("x");
-		csvWriter.append(";");
-		csvWriter.append("y");
+		try (FileWriter csvWriter = new FileWriter(stopsData)) {
+			csvWriter.append("name");
+			csvWriter.append(";");
+			csvWriter.append("ort");
+			csvWriter.append(";");
+			csvWriter.append("x");
+			csvWriter.append(";");
+			csvWriter.append("y");
 
-		for (Id<Node> nodeId : filteredNodes.keySet()) {
-			csvWriter.append("\n");
-			csvWriter.append(nodeId.toString());
-			csvWriter.append(";");
-			csvWriter.append("matsimNetworkNode");
-			csvWriter.append(";");
-			csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getX()));
-			csvWriter.append(";");
-			csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getY()));
+			for (Id<Node> nodeId : filteredNodes.keySet()) {
+				csvWriter.append("\n");
+				csvWriter.append(nodeId.toString());
+				csvWriter.append(";");
+				csvWriter.append("matsimNetworkNode");
+				csvWriter.append(";");
+				csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getX()));
+				csvWriter.append(";");
+				csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getY()));
+			}
 		}
-		csvWriter.close();
 
 		MATSimAppCommand prepareDrtStops = new PrepareDrtStops();
 		String outputNet = outputFolder + "/" + mode + "networkForDrtStopCreation.xml.gz";

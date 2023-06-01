@@ -1,5 +1,6 @@
 package org.matsim.run.prepare;
 
+import com.google.common.collect.Sets;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
@@ -20,7 +21,7 @@ import java.util.Set;
 public class FixNetwork implements MATSimAppCommand {
 
 	@CommandLine.Parameters(paramLabel = "INPUT", arity = "1", description = "Input network")
-	private List<Path> input;
+	private List<String> input;
 
 	@CommandLine.Option(names = "--output", description = "Output path")
 	private Path output;
@@ -32,11 +33,22 @@ public class FixNetwork implements MATSimAppCommand {
 	@Override
 	public Integer call() throws Exception {
 
-		Network network = NetworkUtils.readNetwork(input.get(0).toString());
+		Network network = NetworkUtils.readNetwork(input.get(0));
 
 		createSchlachthofBruecke(network, "24020319", "260443657", "206313940");
 		createSchlachthofBruecke(network, "-24020319", "206313940", "260443657");
 
+		for (Link link : network.getLinks().values()) {
+			Set<String> modes = link.getAllowedModes();
+
+			// allow freight traffic together with cars
+			if (modes.contains("car")) {
+				Set<String> newModes = Sets.newHashSet(modes);
+				newModes.add("freight");
+
+				link.setAllowedModes(newModes);
+			}
+		}
 
 		NetworkUtils.writeNetwork(network, output.toString());
 

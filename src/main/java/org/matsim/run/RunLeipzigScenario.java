@@ -59,7 +59,6 @@ import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
-import org.matsim.core.utils.io.IOUtils;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorConfigGroup;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsConfigGroup;
 import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsModule;
@@ -70,11 +69,10 @@ import org.matsim.optDRT.MultiModeOptDrtConfigGroup;
 import org.matsim.optDRT.OptDrt;
 import org.matsim.optDRT.OptDrtConfigGroup;
 import org.matsim.run.prepare.*;
-import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
+import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
-import playground.vsp.simpleParkingCostHandler.ParkingCostModule;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -82,13 +80,15 @@ import java.util.*;
 
 /**
  * Run the Leipzig scenario.  All the upstream stuff (network generation, initial demand generation) is in the Makefile.
+ * For the simulation of policy cases input parameters from {@link org.matsim.run.prepare.NetworkOptions} are needed
  */
 @CommandLine.Command(header = ":: Open Leipzig Scenario ::", version = RunLeipzigScenario.VERSION)
 @MATSimApplication.Prepare({
 		CreateNetworkFromSumo.class, CreateTransitScheduleFromGtfs.class, TrajectoryToPlans.class, GenerateShortDistanceTrips.class,
 		MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, PrepareNetwork.class, CleanNetwork.class,
 		CreateLandUseShp.class, ResolveGridCoordinates.class, PreparePopulation.class, CleanPopulation.class, AdjustActivityToLinkDistances.class,
-		SplitActivityTypesDuration.class, ExtractHomeCoordinates.class, FixSubtourModes.class, FixNetwork.class, PrepareTransitSchedule.class
+		SplitActivityTypesDuration.class, ExtractHomeCoordinates.class, FixSubtourModes.class, FixNetwork.class, PrepareTransitSchedule.class,
+		CreateSmallScaleCommercialTrafficDemand.class
 })
 @MATSimApplication.Analysis({
 		CheckPopulation.class, TravelTimeAnalysis.class, LinkStats.class, SubTourAnalysis.class, DrtServiceQualityAnalysis.class,
@@ -103,23 +103,21 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
 
-	@CommandLine.Option(names = "--with-drt", defaultValue = "false", description = "Enable DRT service")
-	private boolean drt;
-
 	@CommandLine.Option(names = "--waiting-time-threshold-optDrt", description = "Set waitingTime Threshold fot DRT optimization and enable it. Here, enabling DRT service is mandatory.")
 	private Double waitingTimeThreshold;
 
 	@CommandLine.Option(names = "--bikes", defaultValue = "true", description = "Enable qsim for bikes", negatable = true)
 	private boolean bike;
 
-	@CommandLine.Option(names = "--parking-cost", defaultValue = "false", description = "Enable parking costs on network", negatable = true)
-	private boolean parkingCost;
+	//TODO: define adequate values for the following doubles
+	@CommandLine.Option(names = "--parking-cost-time-period-start", defaultValue = "0", description = "Start of time period for which parking cost will be charged.")
+	private Double parkingCostTimePeriodStart;
+
+	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
+	private Double parkingCostTimePeriodEnd;
 
 	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
 	private boolean incomeDependent;
-
-	@CommandLine.Option(names = "--tempo30Zone", defaultValue = "false", description = "measures to reduce car speed")
-	boolean tempo30Zone;
 
 	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
 	Double relativeSpeedChange;
@@ -128,7 +126,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	private ShpOptions shp;
 
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
-	private final NetworkOptions network = new NetworkOptions();
+	private final NetworkOptions networkOpt = new NetworkOptions();
 
 	public RunLeipzigScenario(@Nullable Config config) {
 		super(config);
@@ -162,7 +160,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		config.plansCalcRoute().setAccessEgressType(PlansCalcRouteConfigGroup.AccessEgressType.accessEgressModeToLink);
 		// (yyyy what exactly is this doing?)
 
-		if (drt) {
+		if (networkOpt.hasDrtArea()) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 			ConfigUtils.addOrGetModule(config, DvrpConfigGroup.class);
 			DrtConfigs.adjustMultiModeDrtConfig(multiModeDrtConfigGroup, config.planCalcScore(), config.plansCalcRoute());
@@ -191,7 +189,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		} else
 			log.warn("Bikes on network are disabled");
 
-		if (parkingCost) {
+		if (networkOpt.hasParkingCostArea()) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 		}
 
@@ -201,7 +199,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@Override
 	protected void prepareScenario(Scenario scenario) {
 
-
+		// TODO: can be removed once v1.2 is done, because this is done in the preparation phase
 		for (Link link : scenario.getNetwork().getLinks().values()) {
 			Set<String> modes = link.getAllowedModes();
 
@@ -214,15 +212,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 			}
 		}
 
-		if (drt) {
+		if (networkOpt.hasDrtArea()) {
 			scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class, new DrtRouteFactory());
 		}
-
-		network.prepare(scenario.getNetwork());
-
-		if (tempo30Zone) {
-			SpeedReduction.implementPushMeasuresByModifyingNetworkInArea(scenario.getNetwork(), ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(shp.getShapeFile().toString())), relativeSpeedChange);
-		}
+		networkOpt.prepare(scenario.getNetwork());
 	}
 
 	@Override
@@ -245,12 +238,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 				bind(AnalysisMainModeIdentifier.class).to(LeipzigMainModeIdentifier.class);
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
-				if (network.hasCarFreeArea()) {
+				if (networkOpt.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
 				}
 
-				if (parkingCost) {
-					install(new ParkingCostModule());
+				if (networkOpt.hasParkingCostArea()) {
+					addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
 					install(new PersonMoneyEventsAnalysisModule());
 				}
 
@@ -271,7 +264,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 			}
 		});
 
-		if (drt) {
+		if (networkOpt.hasDrtArea()) {
 			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
 
 			//set fare params; flexa has the same prices as leipzig PT: Values taken out of LeipzigPtFareModule -sm0522

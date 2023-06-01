@@ -4,6 +4,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.events.LinkEnterEvent;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
@@ -60,7 +61,7 @@ public class DrtVehiclesRoadUsageAnalysis implements MATSimAppCommand {
 		Path configPath = globFile(directory, "*output_config.*");
 		Path networkPath = globFile(directory, "*output_network.*");
 		Path eventsFilePath = globFile(directory, "*output_events.*");
-		Path outputFolder = Path.of(directory.toString() + "/analysis-road-usage");
+		Path outputFolder = Path.of(directory.toString() + "/analysis/analysis-drt");
 
 		if (!Files.exists(outputFolder)) {
 			Files.createDirectory(outputFolder);
@@ -93,8 +94,8 @@ public class DrtVehiclesRoadUsageAnalysis implements MATSimAppCommand {
 			Map<String, Map<Integer, MutableInt>> vehicleRoadUsageRecordMap = handlerMap.get(mode).getVehicleRoadUsageRecordMap();
 			Map<String, Map<Integer, MutableInt>> passengerRoadUsageMap = handlerMap.get(mode).getPassengerRoadUsageMap();
 
-			String vehicleRoadUsageFile = outputFolder + "/" + mode + "_vehicle_road_usage.tsv";
-			String passengerRoadUsageFile = outputFolder + "/" + mode + "_passenger_road_usage.tsv";
+			String vehicleRoadUsageFile = outputFolder + "/" + TransportMode.drt + "_vehicle_road_usage_" + mode + ".tsv";
+			String passengerRoadUsageFile = outputFolder + "/" + TransportMode.drt + "_passenger_road_usage_" + mode + ".tsv";
 			CSVPrinter vehicleRoadUsageWriter = new CSVPrinter(new FileWriter(vehicleRoadUsageFile), CSVFormat.TDF);
 			CSVPrinter passengerRoadUsageWriter = new CSVPrinter(new FileWriter(passengerRoadUsageFile), CSVFormat.TDF);
 

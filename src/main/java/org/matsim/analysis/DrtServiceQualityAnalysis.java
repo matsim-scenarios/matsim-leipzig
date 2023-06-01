@@ -76,7 +76,7 @@ public class DrtServiceQualityAnalysis implements MATSimAppCommand {
 		Path configPath = globFile(directory, "*output_config.*");
 		Path networkPath = globFile(directory, "*output_network.*");
 		Path eventPath = globFile(directory, "*output_events.*");
-		Path outputFolder = Path.of(directory.toString() + "/analysis-drt-service-quality");
+		Path outputFolder = Path.of(directory.toString() + "/analysis/analysis-drt");
 
 		if (!Files.exists(outputFolder)) {
 			Files.createDirectory(outputFolder);
@@ -111,8 +111,8 @@ public class DrtServiceQualityAnalysis implements MATSimAppCommand {
 
 		for (String mode : modes) {
 			Path tripsFile = globFile(folderOfLastIteration, "*drt_legs_" + mode + ".*");
-			Path outputTripsPath = Path.of(outputFolder + "/" + mode + "_trips.tsv");
-			Path outputStatsPath = Path.of(outputFolder + "/" + mode + "_KPI.tsv");
+			Path outputTripsPath = Path.of(outputFolder + "/" + TransportMode.drt + "_trips_" + mode + ".tsv");
+			Path outputStatsPath = Path.of(outputFolder + "/" + TransportMode.drt + "_KPI_" + mode + ".tsv");
 
 			List<Double> allWaitingTimes = new ArrayList<>();
 
@@ -254,7 +254,7 @@ public class DrtServiceQualityAnalysis implements MATSimAppCommand {
 						feature.setAttribute(FEATURE_95PCT_WAIT_ATTRIBUTE_NAME, StatUtils.percentile(waitingTimes.stream().mapToDouble(t -> t).toArray(), 95));
 					}
 			);
-			ShapeFileWriter.writeGeometries(shpWaitingTimes.keySet(), outputFolder + "/" + mode + "_serviceZones_waitStats.shp");
+			ShapeFileWriter.writeGeometries(shpWaitingTimes.keySet(), outputFolder + "/" + TransportMode.drt + "_serviceZones_waitStats_" + mode + ".shp");
 		}
 		return 0;
 	}

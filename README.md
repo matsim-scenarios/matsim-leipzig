@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/matsim-scenarios/matsim-leipzig/workflows/build/badge.svg?branch=main)
 ![license](https://img.shields.io/github/license/matsim-scenarios/matsim-leipzig.svg)
-![JDK](https://img.shields.io/badge/JDK-11+-green.svg)
+![JDK](https://img.shields.io/badge/JDK-17+-green.svg)
 
 ![Leipzig MATSim network and agents](input/visualization-leipzig.png "Leipzig MATSim network and agents")
 
@@ -11,7 +11,7 @@
 
 This repository provides an open MATSim transport model for Leipzig, provided by the [Transport Systems Planning and Transport Telematics group](https://www.vsp.tu-berlin.de) of [Technische Universität Berlin](http://www.tu-berlin.de).
 
-<a rel="TU Berlin" href="https://www.vsp.tu-berlin.de"><img src="https://svn.vsp.tu-berlin.de/repos/public-svn/ueber_uns/logo/TUB_Logo.png" width="15%" height="15%"/></a>
+<a rel="TU Berlin" href="https://www.vsp.tu-berlin.de"><img src="https://svn.vsp.tu-berlin.de/repos/public-svn/ueber_uns/logo/TU_BERLIN_Logo_Lang_RGB_SR_rot.svg" width="25%"/></a>
 
 This scenario contains a 25pct sample of Leipzig and its surrounding area; road capacities are accordingly reduced. The scenario is calibrated taking into consideration the traffic counts, modal split and mode-specific trip distance distributions.
 

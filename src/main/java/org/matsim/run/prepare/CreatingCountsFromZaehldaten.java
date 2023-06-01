@@ -81,8 +81,7 @@ public class CreatingCountsFromZaehldaten implements MATSimAppCommand {
 
 		List<LeipzigCounts> leipzigCountsList = new ArrayList<>();
 
-		try {
-			XSSFWorkbook wb = new XSSFWorkbook(excel.toFile());
+		try (XSSFWorkbook wb = new XSSFWorkbook(excel.toFile())) {
 			Sheet sheet = wb.getSheetAt(0);
 			handleSheet(sheet, leipzigCountsList);
 		} catch (IOException | InvalidFormatException e) {
@@ -223,7 +222,7 @@ public class CreatingCountsFromZaehldaten implements MATSimAppCommand {
 		v1[1] = toCoord.getY() - fromCoord.getY();
 
 		v2[0] = countLink.getToNode().getCoord().getX() - countLink.getFromNode().getCoord().getX();
-		v2[1] = countLink.getFromNode().getCoord().getY() - countLink.getFromNode().getCoord().getY();
+		v2[1] = countLink.getToNode().getCoord().getY() - countLink.getFromNode().getCoord().getY();
 
 		double scalarP = v1[0] * v2[0] - v1[1] * v2[1];
 		double amountV1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]);

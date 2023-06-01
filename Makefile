@@ -9,6 +9,7 @@ osmosis := osmosis/bin/osmosis
 
 NETWORK := germany-220327.osm.pbf
 germany := ../shared-svn/projects/matsim-germany
+shared := ../shared-svn/projects/NaMAV
 
 .PHONY: prepare
 
@@ -81,9 +82,9 @@ input/$V/leipzig-$V-network-with-pt.xml.gz: input/$V/leipzig-$V-network.xml.gz i
 	$(sc) prepare prepare-transit-schedule\
 	 --input input/$V/leipzig-$V-transitSchedule.xml.gz\
 	 --output input/$V/leipzig-$V-transitSchedule.xml.gz\
-	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp
+	 --shp $(shared)/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp
 
-input/freight-trips.xml.gz: input/$V/leipzig-$V-network.xml.gz
+input/plans-longHaulFreight.xml.gz: input/$V/leipzig-$V-network.xml.gz
 	$(sc) prepare extract-freight-trips ../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/german_freight.25pct.plans.xml.gz\
 	 --network ../public-svn/matsim/scenarios/countries/de/german-wide-freight/v2/germany-europe-network.xml.gz\
 	 --input-crs $(CRS)\
@@ -91,13 +92,31 @@ input/freight-trips.xml.gz: input/$V/leipzig-$V-network.xml.gz
 	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/freight-area/freight-area.shp\
 	 --output $@
 
-input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/freight-trips.xml.gz
+input/plans-commercialTraffic.xml.gz:
+	$(sc) prepare generate-small-scale-commercial-traffic\
+	  input/commercialTraffic\
+	 --sample 0.25\
+	 --jspritIterations 1\
+	 --creationOption createNewCarrierFile\
+	 --landuseConfiguration useOSMBuildingsAndLanduse\
+	 --trafficType commercialTraffic\
+	 --zoneShapeFileName $(shared)/data/input-commercialTraffic/leipzig_zones_25832.shp\
+	 --buildingsShapeFileName $(shared)/data/input-commercialTraffic/leipzig_buildings_25832.shp\
+	 --landuseShapeFileName $(shared)/data/input-commercialTraffic/leipzig_landuse_25832.shp\
+	 --shapeCRS "EPSG:25832"\
+	 --resistanceFactor "0.005"\
+	 --nameOutputPopulation $(notdir $@)\
+	 --PathOutput output/commercialTraffic
+
+	mv output/commercialTraffic/$(notdir $@) $@
+
+input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/plans-commercialTraffic.xml.gz
 	$(sc) prepare trajectory-to-plans\
 	 --name prepare --sample-size 0.25\
 	 --max-typical-duration 0\
 	 --output input/\
-	 --population ../shared-svn/projects/NaMAV/matsim-input-files/senozon/20210520_leipzig/population.xml.gz\
-	 --attributes  ../shared-svn/projects/NaMAV/matsim-input-files/senozon/20210520_leipzig/personAttributes.xml.gz
+	 --population $(shared)/matsim-input-files/senozon/20210520_leipzig/population.xml.gz\
+	 --attributes $(shared)/matsim-input-files/senozon/20210520_leipzig/personAttributes.xml.gz
 
 	$(sc) prepare population input/prepare-25pct.plans.xml.gz\
 	 --output input/prepare-25pct.plans.xml.gz
@@ -111,11 +130,11 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/freight-trips.xml.gz
 	$(sc) prepare generate-short-distance-trips\
  	 --population input/prepare-25pct.plans.xml.gz\
  	 --input-crs $(CRS)\
- 	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
+ 	 --shp $(shared)/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
  	 --num-trips 67395
 
 	$(sc) prepare adjust-activity-to-link-distances input/prepare-25pct.plans-with-trips.xml.gz\
-	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
+	 --shp $(shared)/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
 	 --scale 1.15\
 	 --input-crs $(CRS)\
 	 --network input/$V/leipzig-$V-network.xml.gz\
@@ -133,12 +152,12 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/freight-trips.xml.gz
 
 	$(sc) prepare downsample-population $@\
     	 --sample-size 0.25\
-    	 --samples 0.1 0.01\
+    	 --samples 0.1 0.01 0.001\
 
 counts:
 	java -cp $(JAR) org.matsim.run.prepare.CreatingCountsFromZaehldaten\
 		--network input/leipzig-$V-network.xml.gz\
-		--excel ../shared-svn/projects//NaMAV/data/Zaehldaten/Zaehldaten.xlsx\
+		--excel $(shared)/NaMAV/data/Zaehldaten/Zaehldaten.xlsx\
 		-i input/ignored_counts.csv -m input/manuallyMatsimLinkShift.csv\
 		--output input/$V/leipzig-$V-counts
 

@@ -1,10 +1,10 @@
 package org.matsim.run.prepare;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
+import org.matsim.core.utils.io.IOUtils;
+import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import picocli.CommandLine;
 
 import java.nio.file.Files;
@@ -15,8 +15,6 @@ import java.nio.file.Path;
  */
 public class NetworkOptions {
 
-	private static final Logger log = LogManager.getLogger(NetworkOptions.class);
-
 	@CommandLine.Option(names = "--drt-area", description = "Path to SHP file specifying where DRT mode is allowed")
 	private Path drtArea;
 	@CommandLine.Option(names = "--drt-modes", description = "List of modes to add. Use comma as delimiter", defaultValue = TransportMode.drt)
@@ -25,16 +23,16 @@ public class NetworkOptions {
 	private Path carFreeArea;
 	@CommandLine.Option(names = "--car-free-modes", description = "List of modes to remove. Use comma as delimiter", defaultValue = TransportMode.car)
 	private String carFreeModes;
-	@CommandLine.Option(names = "--parking-area", description = "Path to SHP file specifying parking area")
-	private Path parkingArea;
-	@CommandLine.Option(names = "--parking-capacities", description = "Path to csv file containing parking capacity data per link")
+	@CommandLine.Option(names = "--parking-capacities-area", description = "Path to SHP file specifying parking area for adding parking capacities")
+	private Path parkingCapacitiesArea;
+	@CommandLine.Option(names = "--parking-capacities-input", description = "Path to csv file containing parking capacity data per link")
 	private Path inputParkingCapacities;
-	@CommandLine.Option(names = "--parking-cost-first-hour", description = "Parking cost for first hour. Needed for ParkingCostModule", defaultValue = "0.0")
-	private String firstHourParkingCost;
-	@CommandLine.Option(names = "--parking-cost-extra-hour", description = "Parking cost for every extra hour. Needed for ParkingCostModule", defaultValue = "0.0")
-	private String extraHourParkingCost;
-	@CommandLine.Option(names = "--city-area", description = "Path to SHP file specifying city area")
-	private Path cityArea;
+	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking cost area")
+	private Path parkingCostArea;
+	@CommandLine.Option(names = "--slow-speed-area", description = "Path to SHP file specifying area of adapted speed")
+	private Path slowSpeedArea;
+	@CommandLine.Option(names = "--slow-speed-relative-change", description = "provide a value that is bigger than 0.0 and smaller than 1.0")
+	private Double slowSpeedRelativeChange;
 
 	/**
 	 * Return whether a car free area is defined.
@@ -43,44 +41,69 @@ public class NetworkOptions {
 		return isDefined(carFreeArea);
 	}
 
+	/**
+	 * Return whether a drt area is defined.
+	 */
+	public boolean hasDrtArea() {
+		return isDefined(drtArea); }
+
+	/**
+	 * Return whether a parkingCost area is defined.
+	 */
+	public boolean hasParkingCostArea() {
+		return isDefined(parkingCostArea); }
+
 
 	/**
 	 * Prepare network with given options.
 	 */
 	public void prepare(Network network) {
 
-		if (isDefined(drtArea)) {
-			if (!Files.exists(drtArea))
+		if (hasDrtArea()) {
+			if (!Files.exists(drtArea)) {
 				throw new IllegalArgumentException("Path to drt area not found: " + drtArea);
-
-			PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null), drtModes);
+			} else {
+				PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null), drtModes);
+			}
 		}
 
-		if (isDefined(carFreeArea)) {
-			if (!Files.exists(carFreeArea))
+		if (hasParkingCostArea()) {
+			if (!Files.exists(parkingCostArea)) {
+				throw new IllegalArgumentException("Path to parking cost shape information not found: " + parkingCostArea);
+			} else {
+				PrepareNetwork.prepareParkingCost(network, new ShpOptions(parkingCostArea, null, null));
+			}
+		}
+
+		if (isDefined(slowSpeedArea)) {
+			if (!Files.exists(slowSpeedArea)) {
+				throw new IllegalArgumentException("Path to slow speed area not found: " + slowSpeedArea);
+			} else if (slowSpeedRelativeChange==null) {
+				throw new IllegalArgumentException("No relative change value for freeSpeed defined: " + slowSpeedArea);
+			} else {
+				PrepareNetwork.prepareSlowSpeed(network,
+						ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(slowSpeedArea, null, null).getShapeFile().toString())),
+						slowSpeedRelativeChange);
+			}
+		}
+
+		if (isDefined(parkingCapacitiesArea)) {
+			if (!Files.exists(parkingCapacitiesArea)) {
+				throw new IllegalArgumentException("Path to parking capacities shape information not found: " + parkingCapacitiesArea);
+			} else if (!Files.exists(inputParkingCapacities)) {
+				throw new IllegalArgumentException("Path to parking capacities input file not found: " + inputParkingCapacities);
+			} else {
+				PrepareNetwork.prepareParkingCapacities(network, new ShpOptions(parkingCapacitiesArea, null, null), inputParkingCapacities);
+			}
+		}
+
+		if (hasCarFreeArea()) {
+			if (!Files.exists(carFreeArea)) {
 				throw new IllegalArgumentException("Path to car free area not found: " + carFreeArea);
-
-			PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
+			} else {
+				PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
+			}
 		}
-
-		if (isDefined(inputParkingCapacities)) {
-			if (parkingArea == null)
-				log.warn("No shp file of parking area was defined. Attributes are added for all network links.");
-			if (!Files.exists(inputParkingCapacities))
-				throw new IllegalArgumentException("Path to parking capacities information not found: " + inputParkingCapacities);
-
-			PrepareNetwork.prepareParking(network, new ShpOptions(parkingArea, null, null),
-					inputParkingCapacities, Double.parseDouble(firstHourParkingCost), Double.parseDouble(extraHourParkingCost));
-		}
-
-		if (isDefined(cityArea)) {
-			if (!Files.exists(cityArea))
-				throw new IllegalArgumentException("Path to city area not found: " + cityArea);
-
-			PrepareNetwork.prepareCityArea(network, new ShpOptions(cityArea, null, null));
-		}
-
-
 	}
 
 	private boolean isDefined(Path p) {
