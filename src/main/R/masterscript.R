@@ -59,15 +59,15 @@ for (scenario in scenarios){
   #base path nur für Sankey und Winner/Loser Analysis
   base.run.path <- "../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
 
-
+  #TODO: rename area to carfreearea
   region.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
   city.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
   area.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
-
+  #TODO: "if clause" carfree area shapefile ändern wenn oben Scenario geändert wird
 
   print("#### Inputspath definiert! ####")
   ################################################################################ OUTPUT ####
-  
+
   outputDirectoryScenario <-  paste0(scenario_run_path, "analysis/analysis-R") # the plots are going to be saved here
 
   if(!file.exists(paste0(scenario_run_path,"analysis"))) {

@@ -1,3 +1,5 @@
+# TODO: 1) adding carfreearea analysis tab
+# TODO: 2) adding text to yaml file which clarifies that carfreearea analysis is only valid for carfree area scenarios
 #### reading shp files ####
 region.shape <- st_read(region.shp.path, crs=CRS) #study area
 city.shape <- st_read(city.shp.path, crs=CRS) #city of Leipzig
@@ -27,10 +29,6 @@ scenario.legs.city <- filterByRegion(scenario.legs.table,city.shape,crs=CRS,star
 scenario.legs.area <- filterByRegion(scenario.legs.table,area.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 print("#### Legs gefiltert! ####")
 
-#### reading persons ####
-scenario.persons <- readPersonsTable(scenario.run.path)
-print("#### Personen geladen! ####")
-
 #### files/filters for comparisons ####
 
 if (x_sankey_diagram == 1){
@@ -44,13 +42,18 @@ if (x_sankey_diagram == 1){
 
 if (x_winner_loser == 1){
   base.persons <- readPersonsTable(base.run.path)
+  #### reading persons #### just needed for winner-loser-analysis
+  scenario.persons <- readPersonsTable(scenario.run.path)
+  print("#### Personen geladen! ####")
 }
 
 
 #### 0. Parameters ####
 
 #BREAKING DIFFERENT DISTANCES IN M
+# for modal split
 breaks <- c(0, 1000, 2000, 5000, 10000, 20000, Inf)
+# for heatmap TODO refactor naming breaks2 to dist_breaks
 breaks2 <- c(0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000, Inf)
 time_breaks <- c(-Inf,  0, 1200, 2400,3600,4800,6000,7200,8400,9600,10800,12000,13200,14400,15600,16800,18000,Inf)
 time_labels <- c("0 mins", "<20 mins","<40 mins", "<60 mins","<80 mins","<100 mins","<120 mins",
@@ -79,6 +82,8 @@ if (x_ms_trips_count == 1){
   ms.main_mode.trips.region <- t(ms.main_mode.trips.region)
   colnames(ms.main_mode.trips.region) <- ms.main_mode.trips.region[1, ]
   write.csv(ms.main_mode.trips.region, file = paste0(outputDirectoryScenario, "/pie.ms.counts.trips.regio.csv"))
+
+  #TODO adding modal split for carfree area
 }
 
 #### #1.2 Modal Split - trips based - distance ####
@@ -276,7 +281,7 @@ if (x_personen_km_trips == 1){
 }
 
 #### #3.5 Average Traveled Distance - legs based#####
-print("#### in 3.4 ####")
+print("#### in 3.5 ####")
 if (x_average_traveled_distance_legs == 1){
   
   avg.trav_distance.legs.by.mode <- function(x){
