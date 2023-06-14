@@ -23,7 +23,6 @@ import org.matsim.application.analysis.CheckPopulation;
 import org.matsim.application.analysis.noise.NoiseAnalysis;
 import org.matsim.application.analysis.population.SubTourAnalysis;
 import org.matsim.application.analysis.traffic.LinkStats;
-import org.matsim.application.analysis.travelTimeValidation.TravelTimeAnalysis;
 import org.matsim.application.options.SampleOptions;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
@@ -87,7 +86,7 @@ import java.util.*;
 	CreateSmallScaleCommercialTrafficDemand.class
 })
 @MATSimApplication.Analysis({
-	CheckPopulation.class, TravelTimeAnalysis.class, LinkStats.class, SubTourAnalysis.class, DrtServiceQualityAnalysis.class,
+	CheckPopulation.class, LinkStats.class, SubTourAnalysis.class, DrtServiceQualityAnalysis.class,
 	DrtVehiclesRoadUsageAnalysis.class, ParkedVehiclesAnalysis.class, NoiseAnalysis.class
 })
 public class RunLeipzigScenario extends MATSimApplication {
