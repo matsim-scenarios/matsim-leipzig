@@ -119,6 +119,7 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.
 	 --attributes $(shared)/matsim-input-files/senozon/20210520_leipzig/personAttributes.xml.gz
 
 	$(sc) prepare population input/prepare-25pct.plans.xml.gz\
+ 	 --shp $(shared)/matsim-input-files/senozon/20210520_leipzig/dilutionArea.shp --shp-crs $(CRS)\
 	 --output input/prepare-25pct.plans.xml.gz
 
 	$(sc) prepare resolve-grid-coords input/prepare-25pct.plans.xml.gz\
