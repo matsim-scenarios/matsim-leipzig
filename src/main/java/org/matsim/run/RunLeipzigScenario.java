@@ -23,7 +23,6 @@ import org.matsim.application.analysis.CheckPopulation;
 import org.matsim.application.analysis.noise.NoiseAnalysis;
 import org.matsim.application.analysis.population.SubTourAnalysis;
 import org.matsim.application.analysis.traffic.LinkStats;
-import org.matsim.application.analysis.travelTimeValidation.TravelTimeAnalysis;
 import org.matsim.application.options.SampleOptions;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
@@ -65,6 +64,7 @@ import org.matsim.extensions.pt.routing.EnhancedRaptorIntermodalAccessEgress;
 import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesConfigGroup;
 import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesModule;
 import org.matsim.run.prepare.*;
+import org.matsim.simwrapper.SimWrapperModule;
 import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
@@ -92,8 +92,15 @@ import java.util.*;
 })
 public class RunLeipzigScenario extends MATSimApplication {
 
-	static final String VERSION = "1.1";
+	/**
+	 * Coordinate system used in the scenario.
+	 */
+	public static final String CRS = "EPSG:25832";
+   
+  static final String VERSION = "1.1";
+  
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
+
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
@@ -232,6 +239,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@Override
 	protected void prepareControler(Controler controler) {
 		Config config = controler.getConfig();
+
+		controler.addOverridingModule(new SimWrapperModule());
 
 		controler.addOverridingModule(new AbstractModule() {
 			@Override

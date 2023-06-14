@@ -2,20 +2,30 @@ package org.matsim.run.prepare;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Population;
+import org.matsim.api.core.v01.Coord;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.population.*;
 import org.matsim.application.MATSimAppCommand;
+import org.matsim.application.options.ShpOptions;
 import org.matsim.core.population.PersonUtils;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.router.TripStructureUtils;
+import org.matsim.core.scenario.ProjectionUtils;
+import org.matsim.run.RunLeipzigScenario;
 import picocli.CommandLine;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.SplittableRandom;
 
 @CommandLine.Command(
-		name = "population",
-		description = "Set the car availability attribute in the population"
+	name = "population",
+	description = "Prepares person attributes and plans."
 )
 public class PreparePopulation implements MATSimAppCommand {
 
@@ -29,6 +39,17 @@ public class PreparePopulation implements MATSimAppCommand {
 	@CommandLine.Option(names = "--output", description = "Path to output population", required = true)
 	private Path output;
 
+	@CommandLine.Mixin
+	private ShpOptions shp;
+
+	public static void main(String[] args) {
+		new PreparePopulation().execute(args);
+	}
+
+	private static double round(double x) {
+		return BigDecimal.valueOf(x).setScale(2, RoundingMode.HALF_UP).doubleValue();
+	}
+
 	@Override
 	public Integer call() throws Exception {
 
@@ -37,9 +58,37 @@ public class PreparePopulation implements MATSimAppCommand {
 			return 2;
 		}
 
+		if (!shp.isDefined()) {
+			log.error("Shp file is required to prepare relevant area.");
+			return 2;
+		}
+
 		Population population = PopulationUtils.readPopulation(input.toString());
+		ProjectionUtils.putCRS(population, RunLeipzigScenario.CRS);
+
+		ShpOptions.Index index = shp.createIndex(RunLeipzigScenario.CRS, "_");
+
+		Set<Id<Person>> toRemove = new HashSet<>();
 
 		for (Person person : population.getPersons().values()) {
+
+			List<Activity> activities = TripStructureUtils.getActivities(person.getSelectedPlan(), TripStructureUtils.StageActivityHandling.ExcludeStageActivities);
+			for (Activity act : activities) {
+				// Remove persons having activities after 27hours
+
+				if (act.getStartTime().isDefined() && act.getStartTime().seconds() > 27 * 3600)
+					toRemove.add(person.getId());
+
+				// Reduce unnecessary precision
+				if (act.getCoord() != null) {
+					act.setCoord(new Coord(round(act.getCoord().getX()), round(act.getCoord().getY())));
+				}
+			}
+
+			Coord home = setHomeCoordinate(person);
+			if (home == null || !index.contains(home)) {
+				PopulationUtils.putSubpopulation(person, "outside_person");
+			}
 
 			// Set car availability to "never" for agents below 18 years old
 			// Standardize the attribute "age"
@@ -102,9 +151,36 @@ public class PreparePopulation implements MATSimAppCommand {
 			PersonUtils.setIncome(person, income);
 		}
 
+		log.info("Removing {} out of {} persons with activities outside valid range", toRemove.size(), population.getPersons().size());
+		toRemove.forEach(population::removePerson);
 
 		PopulationUtils.writePopulation(population, output.toString());
 
 		return 0;
 	}
+
+	/**
+	 * Set and return home coordinate of this person. Can be null if no home activity is known.
+	 */
+	private Coord setHomeCoordinate(Person person) {
+		for (Plan plan : person.getPlans()) {
+			for (PlanElement planElement : plan.getPlanElements()) {
+				if (planElement instanceof Activity) {
+					String actType = ((Activity) planElement).getType();
+					if (actType.startsWith("home")) {
+						Coord homeCoord = ((Activity) planElement).getCoord();
+
+						person.getAttributes().putAttribute("home_x", homeCoord.getX());
+						person.getAttributes().putAttribute("home_y", homeCoord.getY());
+
+						return homeCoord;
+					}
+				}
+			}
+
+		}
+
+		return null;
+	}
+
 }
