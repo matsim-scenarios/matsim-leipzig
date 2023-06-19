@@ -9,6 +9,21 @@ library(XML)
 #devtools::install_github("matsim-vsp/matsim-r", ref="winnerLoserUtils", force = TRUE)
 devtools::load_all("~/git/matsim-r", reset = TRUE)
 library(matsim)
+library(ggalluvial)
+
+#pretty sure we don't need these
+# library(gridExtra)
+# library(tidyr)
+# library(viridis)
+# library(ggsci)
+# library(dplyr)
+# library(ggplot2)
+# library(purrr)
+# library(networkD3)
+# library(stringr)
+# library(data.table)
+# library(chron)
+# library(xml2)
 
 
 print("#### Libraries geladen! ####")
@@ -52,8 +67,13 @@ for (scenario in scenarios){
 
   print("#### Inputspath definiert! ####")
   ################################################################################ OUTPUT ####
+  
+  outputDirectoryScenario <-  paste0(scenario_run_path, "analysis/analysis-R") # the plots are going to be saved here
 
-  outputDirectoryScenario <- paste0(scenario.run.path, "/analysis/analysis-R") # the plots are going to be saved here
+  if(!file.exists(paste0(scenario_run_path,"analysis"))) {
+    print("creating general analysis sub-directory")
+    dir.create(paste0(scenario_run_path,"analysis"))
+  }
   if(!file.exists(outputDirectoryScenario)){
     print("creating analysis sub-directory")
     dir.create(outputDirectoryScenario)

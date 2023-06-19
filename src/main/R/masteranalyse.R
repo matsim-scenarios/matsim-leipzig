@@ -35,11 +35,11 @@ print("#### Personen geladen! ####")
 
 if (x_sankey_diagram == 1){
   base.trips.table <- readTripsTable(pathToMATSimOutputDirectory = base.run.path)
-  
+
   base.trips.region <- filterByRegion(base.trips.table,region.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
   base.trips.city <- filterByRegion(base.trips.table,city.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
   base.trips.area <- filterByRegion(base.trips.table,area.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
-  
+
 }
 
 if (x_winner_loser == 1){
@@ -148,7 +148,7 @@ if (x_ms_legs_distance == 1){
 print("#### in 2.1 ####")
 
 if (x_sankey_diagram == 1){
-  sankey_dataframe <- function(x, y){
+  sankey.dataframe <- function(x, y){
     inner_join(x, y, by = "trip_id") %>%
       select(main_mode.x, main_mode.y) %>%
       group_by(main_mode.x, main_mode.y) %>%
@@ -158,12 +158,20 @@ if (x_sankey_diagram == 1){
   #Base Case > Policy Case CITY
   base_city_to_scenario_city <- sankey_dataframe(base.trips.city, scenario.trips.city)
   
-  write.csv(base_city_to_scenario_city, file = paste0(outputDirectoryScenario,"/sankey.shift.city.csv"))
-  
+  write.csv(base_city_to_scenario_city, file = paste0(outputDirectoryScenario,"/sankey_shift_city.csv"))
+  sankey_city <- alluvial(base_city_to_scenario_city[1:2],
+                          freq= base_city_to_scenario_city$Freq,
+                          border = NA,
+                          axis_labels = c("Base Case", "Scenario Case"))
+
   #Base Case > Policy Case REGION
   base_region_to_scenario_region <- sankey_dataframe(base.trips.region, scenario.trips.region)
   
   write.csv(base_region_to_scenario_region, file = paste0(outputDirectoryScenario,"/sankey.shift.region.csv"))
+  sankey_region <- alluvial(base_region_to_scenario_region[1:2],
+                            freq= base_region_to_scenario_region$Freq,
+                            border = NA,
+                            axis_labels = c("Base Case", "Scenario Case"))
 }
 
 #### #3.1 Average Traveled Distance - trips based####
@@ -553,7 +561,7 @@ if (x_winner_loser == 1){
   # Data Prep
   persons_joined <- join_base_and_policy_persons(base.persons, scenario.persons, city.shape)
   
-  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = city.shape, first_act_type_filter = "home") %>% 
+  persons_joined_sf <- transform_persons_sf(persons_joined, filter_shp = city.shape, first_act_type_filter = "home") %>%
     mutate(score_diff = executed_score_policy - executed_score_base,
            score_pct_change = score_diff/executed_score_base * 100) %>%
     drop_na(score_pct_change)
