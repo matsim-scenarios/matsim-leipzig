@@ -30,10 +30,12 @@ print("#### Libraries geladen! ####")
 ################################################################################ CASES #### please put (1=yes/0=no) for analyses 
 scenarios <- list(
   #TODO: so we're comparing the base-case to the base-case? -jr May'23
-  "base-case"
+  # edit: I dont know if base-case here is necessary for some other stuff. Hence, Ill try to comment it out and run the script
+  #if this does work we can delete base case here -sme0623
+  #"base-case"
   ,"carfree-area-large"
-  # ,"carfree-area-95"
-  #,"carfree-area-99"
+  # ,"carfree-area-medium"
+  #,"carfree-area-small"
   #,"drt-outskirts"
   #,"drt-whole-city"
   #,"slow-speed-absolute"
@@ -48,31 +50,38 @@ scenarios <- list(
 
 for (scenario in scenarios){
 
-  publicSVN <- "../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
+  publicSVN <- "../../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/"
 
   runID <- paste0(scenario, "/")
-  network <- paste(publicSVN,"base-case/leipzig-25pct-base.output_network.xml.gz")
+
+  #base path nur für Sankey und Winner/Loser Analysis
+  base.run.path <- "../../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
+
+  region.shp.path <- "../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
+  city.shp.path <- "../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
+
+  # choose shp path for carfree-area-scenarios, choose carfree_area_large for all other scenarios to avoid errors
+  if (scenario == "carfree-area-small") {
+    carfree.area.shp.path <- paste0("../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_",scenario,"/Zonen99_update.shp")
+  } else if (scenario == "carfree-area-medium") {
+    carfree.area.shp.path <- paste0("../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_",scenario,"/Zonen95_update.shp")
+  } else {
+    carfree.area.shp.path <- "../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
+  }
+
+  network <- Sys.glob(file.path(base.run.path, "*output_network.xml.gz"))
   CRS <- 25832
 
   scenario.run.path <- paste0(publicSVN,runID)
 
-  #base path nur für Sankey und Winner/Loser Analysis
-  base.run.path <- "../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/base-case/"
-
-  #TODO: rename area to carfreearea
-  region.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_region/Leipzig_puffer.shp"
-  city.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_stadt/Leipzig_stadt.shp"
-  area.shp.path <- "../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
-  #TODO: "if clause" carfree area shapefile ändern wenn oben Scenario geändert wird
-
-  print("#### Inputspath definiert! ####")
+  print("#### Input paths definiert! ####")
   ################################################################################ OUTPUT ####
 
-  outputDirectoryScenario <-  paste0(scenario_run_path, "analysis/analysis-R") # the plots are going to be saved here
+  outputDirectoryScenario <-  paste0(scenario.run.path, "analysis/analysis-R") # the plots are going to be saved here
 
-  if(!file.exists(paste0(scenario_run_path,"analysis"))) {
+  if(!file.exists(paste0(scenario.run.path,"analysis"))) {
     print("creating general analysis sub-directory")
-    dir.create(paste0(scenario_run_path,"analysis"))
+    dir.create(paste0(scenario.run.path,"analysis"))
   }
   if(!file.exists(outputDirectoryScenario)){
     print("creating analysis sub-directory")
@@ -132,8 +141,9 @@ for (scenario in scenarios){
   #### #7.1 Emissions Analysis
   x_emissions = 1
 
+  # this analysis should stay inactive as it is not finished yet -sme0623
   #### #8.1 Winner/Loser Analysis
-  x_winner_loser = 1
+  x_winner_loser = 0
 
   #### #9.1 DRT supply
   x_drt_supply = 1
