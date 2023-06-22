@@ -36,7 +36,7 @@ interactiveMode <-FALSE
 
 ##################################################################################################################################
 ##output directory is automatically set and created
-outputDir <- paste(runDirectory, "analysis-trip-purposes", sep = "") # the plots are going to be saved here
+outputDir <- paste(runDirectory, "analysis/analysis-drt/analysis-trip-purposes", sep = "") # the plots are going to be saved here
 if(!file.exists(outputDir)){
   print("creating analysis sub-directory")
   dir.create(outputDir)  
