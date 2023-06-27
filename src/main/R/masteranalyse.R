@@ -15,6 +15,7 @@ print("#### Trips geladen! ####")
 ## Leg Files
 #TODO: do you really only want 3000 legs? -jr April'23
 # I removed the n_max = 3000 for now -jr May'23
+# TODO delete n_max=3000
 scenario.legs.table <- read_delim(paste0(scenario.run.path,"/",list.files(path = scenario.run.path, pattern = "output_legs")), delim= ";", n_max = 3000)
 print("#### Legs geladen! ####")
 

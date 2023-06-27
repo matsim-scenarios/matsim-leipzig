@@ -52,6 +52,8 @@ for (drtMode in drt.modes){
   names(drt.vehicles) <- c("vehicle", "start_link", "t_0", "t_1", "capacity")
 
   # TODO talk about omitting this analysis as it is rather useless anyways, we can just use a hexagon plot..
+  # result of discussion: lets use hexagon plots
+  #mb use this: https://vsp.berlin/avoev/v/aggregate-od/gladbeck/output-snzDrtO444l/viz-od-2.yml
   # DRT stops files can now be read as XML - the correct ones just need to be put into the folder on public svn & the code un-commented
   # drt.stops.raw <- xmlParse(paste0(outputDirectoryScenarioDrt, str_subset(list.files(path = outputDirectoryScenarioDrt), pattern = stop.pattern)))
   # drt.stops <- xmlToList(drt_stops_raw)
