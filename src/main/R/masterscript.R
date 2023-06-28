@@ -19,12 +19,12 @@ print("#### Libraries loaded! ####")
 scenarios <- list(
   #so we're comparing the base-case to the base-case? -jr May'23
   # I guess well use base-case for analyzing the base case here. All the diffplots / comparisons are rather useless then, but thats normal I guess -sme0623
-  #"base-case,"
+  # "base-case",
   "carfree-area-large"
-  # ,"carfree-area-medium"
-  #,"carfree-area-small"
-  #,"drt-outskirts"
-  #,"drt-whole-city"
+  # "carfree-area-medium"
+  # "carfree-area-small"
+  # "drt-outskirts"
+  # "drt-whole-city"
   #,"slow-speed-absolute"
   #,"slow-speed-relative"
   #,"combined_scenarioA"
@@ -49,9 +49,9 @@ for (scenario in scenarios){
 
   # choose shp path for carfree-area-scenarios, choose carfree_area_large for all other scenarios to avoid errors
   if (scenario == "carfree-area-small") {
-    carfree.area.shp.path <- paste0("../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_",scenario,"/Zonen99_update.shp")
+    carfree.area.shp.path <- "../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_small/Zonen99_update.shp"
   } else if (scenario == "carfree-area-medium") {
-    carfree.area.shp.path <- paste0("../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_",scenario,"/Zonen95_update.shp")
+    carfree.area.shp.path <- "../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_medium/Zonen95_update.shp"
   } else {
     carfree.area.shp.path <- "../../shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_large/Zonen90_update.shp"
   }
@@ -60,6 +60,14 @@ for (scenario in scenarios){
   CRS <- 25832
 
   scenario.run.path <- paste0(publicSVN,runID)
+  # if you want to run the masterscript on your mounted cluster, you have to define the scenario.run.path here
+  ################################################################################################################################################################################################################
+  # somehow there are problem when readTripsTable() has to handle a path that is too long. I could not resolve said issue.
+  # you might have to re-name your dirs in order to run the masterscript
+  # the following example is a path which apparently is just too long
+  # scenario.run.path <- "Y:/net/ils/matsim-leipzig/run-drt/namav-output/runsScaledFleet3-2/drtDemandExperiments/ASC0.00837001732397158-dist0.0-travel0.0-intermodal-leipzig-flexa-25pct-scaledFlee/"
+  ################################################################################################################################################################################################################
+  # scenario.run.path <- "Y:/net/ils/matsim-leipzig/run-drt/namav-output/runsScaledFleet3-2/drtDemandExperiments/wholeCity-210veh/"
 
   print("#### Input paths defined! ####")
   ################################################################################ OUTPUT ####
