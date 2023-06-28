@@ -38,7 +38,7 @@ interactiveMode <-FALSE
 
 ##################################################################################################################################
 ##output directory is automatically set and created
-outputDir <- paste(runDirectory, "analysis/analysis-drt/analysis-trip-purposes", sep = "") # the plots are going to be saved here
+outputDir <- paste(runDirectory, "analysis/analysis-trip-purposes", sep = "") # the plots are going to be saved here
 if(!file.exists(outputDir)){
   print("creating analysis sub-directory")
   dir.create(outputDir)  
@@ -115,7 +115,7 @@ drtAnalysis <- TripDataframe %>%
 plot <-ggplot(drtAnalysis,aes(x=end_activity_type,y=stat(count),group=factor(main_mode),fill=factor(main_mode)))+
   geom_bar()+
   xlab("Trip purpose")+
-  ggtitle("Trip purposes of rides with conventional Flexa")+
+  ggtitle("Trip purposes of rides with conventional DRT")+
   ylab("Number of trips ")+
   theme(axis.text.x = element_text(angle = 45,hjust=1))+
   theme(plot.title = element_text(hjust = 0.5))+
@@ -139,7 +139,7 @@ plot1 <-ggplot(drtAnalysis,aes(x=main_mode,y=stat(count), group=factor(end_activ
   geom_bar()+
   xlab("Trip purpose")+
   ylab("Traveling mode")+
-  ggtitle("Trip purposes of trips with conventional Flexa")+
+  ggtitle("Trip purposes of trips with conventional DRT")+
   scale_fill_manual(values = c("#A6CEE3", "#6EAACF", "#3687BC", "#4190AA" ,"#7EBA98" ,"#AADB84" ,"#76C15D", "#41A737", "#6D9E4C", "#C09B78", "#F88A8A", "#EE5656", "#E42123", "#EC5439", "#F6985B", "#FDB35B" ,"#FE992D", "#FF7F00")) +
   #theme_ipsum()+
   theme(text=element_text(size=20))+
@@ -161,55 +161,60 @@ if(interactiveMode){
 #analyze av mode
 avAnalysis <- TripDataframe %>%
   filter(main_mode=="av")
-print(length(avAnalysis$main_mode))
 
-####################
-#av Balkendiagramm
-plot <-ggplot(avAnalysis,aes(x=end_activity_type))+
-  geom_bar(fill= "steelblue")+
-  xlab("Trip purpose")+
-  ggtitle("Trip purposes of rides with Flexa AV")+
-  ylab("Number of trips ")+
-  theme(axis.text.x = element_text(angle = 45,hjust=1))+
-  theme(plot.title = element_text(hjust = 0.5))+
-  #theme_ipsum()+
-  theme(text=element_text(size=20))+
-  geom_text(aes(label=stat(count)),stat="count",position = position_stack(vjust = 0.5),text=element_text(size=20),color="white")
+if (length(avAnalysis$main_mode) > 0 ) {
+
+  print(length(avAnalysis$main_mode))
+
+  ####################
+  #av Balkendiagramm
+  plot <-ggplot(avAnalysis,aes(x=end_activity_type))+
+    geom_bar(fill= "steelblue")+
+    xlab("Trip purpose")+
+    ggtitle("Trip purposes of rides with AV")+
+    ylab("Number of trips ")+
+    theme(axis.text.x = element_text(angle = 45,hjust=1))+
+    theme(plot.title = element_text(hjust = 0.5))+
+    #theme_ipsum()+
+    theme(text=element_text(size=20))+
+    geom_text(aes(label=stat(count)),stat="count",position = position_stack(vjust = 0.5),text=element_text(size=20),color="white")
 
 
-plotFile <-paste(outputDir,"/av_trip_purposes.png",sep="")
-paste("printing plot to ", plotFile)
-png(plotFile, width = 1100, height = 800)
-plot
-dev.off()
-if(interactiveMode){
-  ggplotly(plot)
+  plotFile <-paste(outputDir,"/av_trip_purposes.png",sep="")
+  paste("printing plot to ", plotFile)
+  png(plotFile, width = 1100, height = 800)
+  plot
+  dev.off()
+  if(interactiveMode){
+    ggplotly(plot)
+  }
+
+  ##############
+  #av Stackbalkendiagramm
+  plot1 <-ggplot(avAnalysis,aes(x=main_mode,y=stat(count), group=factor(end_activity_type), fill=factor(end_activity_type)))+
+    geom_bar()+
+    xlab("Trip purpose")+
+    ylab("Traveling mode")+
+    ggtitle("Trip purposes of trips with AV")+
+    scale_fill_manual(values = c("#A6CEE3", "#6EAACF", "#3687BC", "#4190AA" ,"#7EBA98" ,"#AADB84" ,"#76C15D", "#41A737", "#6D9E4C", "#C09B78", "#F88A8A", "#EE5656", "#E42123", "#EC5439", "#F6985B", "#FDB35B" ,"#FE992D", "#FF7F00")) +
+    #theme_ipsum()+
+    theme(text=element_text(size=20))+
+    theme(plot.title = element_text(hjust = 0.5))+
+    #theme(axis.text.x = element_text(angle = 45,hjust=1))+
+    geom_text(aes(label=stat(count)),stat="count",position = position_stack(vjust = 0.5))
+
+
+  plotFile <-paste(outputDir,"/av_trip_purposes_stacked.png",sep="")
+  paste("printing plot to ", plotFile)
+  #ggsave(plotFile)
+  png(plotFile, width = 1200, height = 800)
+  plot1
+  dev.off()
+  if(interactiveMode){
+    ggplotly(plot1)
+  }
 }
 
-##############
-#av Stackbalkendiagramm
-plot1 <-ggplot(avAnalysis,aes(x=main_mode,y=stat(count), group=factor(end_activity_type), fill=factor(end_activity_type)))+
-  geom_bar()+
-  xlab("Trip purpose")+
-  ylab("Traveling mode")+
-  ggtitle("Trip purposes of trips with Flexa AV")+
-  scale_fill_manual(values = c("#A6CEE3", "#6EAACF", "#3687BC", "#4190AA" ,"#7EBA98" ,"#AADB84" ,"#76C15D", "#41A737", "#6D9E4C", "#C09B78", "#F88A8A", "#EE5656", "#E42123", "#EC5439", "#F6985B", "#FDB35B" ,"#FE992D", "#FF7F00")) +
-  #theme_ipsum()+
-  theme(text=element_text(size=20))+
-  theme(plot.title = element_text(hjust = 0.5))+
-  #theme(axis.text.x = element_text(angle = 45,hjust=1))+
-  geom_text(aes(label=stat(count)),stat="count",position = position_stack(vjust = 0.5))
-
-
-plotFile <-paste(outputDir,"/av_trip_purposes_stacked.png",sep="")
-paste("printing plot to ", plotFile)
-#ggsave(plotFile)
-png(plotFile, width = 1200, height = 800)
-plot1
-dev.off()
-if(interactiveMode){
-  ggplotly(plot1)
-}
 
 #analyze car mode
 carAnalysis <- TripDataframe %>%
