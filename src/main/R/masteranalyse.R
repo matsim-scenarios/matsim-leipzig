@@ -1,34 +1,32 @@
-# TODO: 1) adding carfreearea analysis tab
-# TODO: 2) adding text to yaml file which clarifies that carfreearea analysis is only valid for carfree area scenarios
 #### reading shp files ####
 region.shape <- st_read(region.shp.path, crs=CRS) #study area = leipzig + surroundings
 city.shape <- st_read(city.shp.path, crs=CRS) #city of Leipzig
 carfree.area.shape <- st_read(carfree.area.shp.path, crs=CRS)# carfree area
-print("#### Shapes geladen! ####")
+print("#### Shape files loaded! ####")
 
 #### reading trips/legs files ####
 
 ## Trip File
 scenario.trips.table <- readTripsTable(pathToMATSimOutputDirectory = scenario.run.path)
-print("#### Trips geladen! ####")
+print("#### Trips loaded! ####")
 
 ## Leg Files
-#TODO: do you really only want 3000 legs? -jr April'23
+#do you really only want 3000 legs? -jr April'23
 # I removed the n_max = 3000 for now -jr May'23
-# TODO delete n_max=3000
-scenario.legs.table <- read_delim(paste0(scenario.run.path,"/",list.files(path = scenario.run.path, pattern = "output_legs")), delim= ";", n_max = 3000)
-print("#### Legs geladen! ####")
+# n_max = 3000 is useful for testing / debugging so it is just commented out now - sme0623
+scenario.legs.table <- read_delim(paste0(scenario.run.path,"/",list.files(path = scenario.run.path, pattern = "output_legs")), delim= ";")#, n_max = 3000)
+print("#### Legs loaded! ####")
 
 ## Filters
 scenario.trips.region <- filterByRegion(scenario.trips.table,region.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario.trips.city <- filterByRegion(scenario.trips.table,city.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario.trips.carfree.area <- filterByRegion(scenario.trips.table, carfree.area.shape, crs=CRS, start.inshape = TRUE, end.inshape = TRUE)
 
-print("#### Trips gefiltert! ####")
+print("#### Trips filtered! ####")
 scenario.legs.region <- filterByRegion(scenario.legs.table,region.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario.legs.city <- filterByRegion(scenario.legs.table,city.shape,crs=CRS,start.inshape = TRUE,end.inshape = TRUE)
 scenario.legs.carfree.area <- filterByRegion(scenario.legs.table, carfree.area.shape, crs=CRS, start.inshape = TRUE, end.inshape = TRUE)
-print("#### Legs gefiltert! ####")
+print("#### Legs filtered! ####")
 
 #### files/filters for comparisons ####
 
@@ -45,7 +43,7 @@ if (x_winner_loser == 1){
   base.persons <- readPersonsTable(base.run.path)
   #### reading persons #### just needed for winner-loser-analysis
   scenario.persons <- readPersonsTable(scenario.run.path)
-  print("#### Personen geladen! ####")
+  print("#### Population loaded! ####")
 }
 
 
@@ -62,7 +60,7 @@ time_labels <- c("0 mins", "<20 mins","<40 mins", "<60 mins","<80 mins","<100 mi
                 "<260 mins", "<280 mins", "<300 mins", ">= 300 mins")
 #NAMES OF THE CASES
 cases <- c("base", "scenario")
-print("#### Parameter spezifiziert! ####")
+print("#### Parameters specified! ####")
 
 #### #1.1 Modal Split - trips based - main mode (count) ####
 if (x_ms_trips_count == 1){

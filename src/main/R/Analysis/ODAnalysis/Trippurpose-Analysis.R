@@ -12,9 +12,7 @@ require(readr)
 
 ##################################################################################################################################
 ##INPUTS
-
-#  !!!INCLUDE TRAILING SLASH!!!
-#the output_trips file should be there
+print("###### Starting trip purpose analysis #####")
 
 option_list <- list(
   make_option(c("-d", "--runDir"), type="character", default=NULL,
@@ -29,6 +27,10 @@ if (is.null(opt$runDir)){
 }
 
 runDirectory <- opt$runDir
+
+if (endsWith(runDirectory, "/") == FALSE) {
+  runDirectory <- paste0(runDirectory,"/");
+}
 
 interactiveMode <-FALSE
 

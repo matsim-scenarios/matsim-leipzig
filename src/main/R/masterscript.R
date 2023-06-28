@@ -12,28 +12,13 @@ library(XML)
 # devtools::load_all("~/git/matsim-r", reset = TRUE)
 library(matsim)
 library(ggalluvial)
+library(getopt)
 
-#pretty sure we don't need these
-# library(gridExtra)
-# library(tidyr)
-# library(viridis)
-# library(ggsci)
-# library(dplyr)
-# library(ggplot2)
-# library(purrr)
-# library(networkD3)
-# library(stringr)
-# library(data.table)
-# library(chron)
-# library(xml2)
-
-
-print("#### Libraries geladen! ####")
+print("#### Libraries loaded! ####")
 ################################################################################ CASES #### please put (1=yes/0=no) for analyses 
 scenarios <- list(
-  #TODO: so we're comparing the base-case to the base-case? -jr May'23
-  # edit: I dont know if base-case here is necessary for some other stuff. Hence, Ill try to comment it out and run the script
-  #if this does work we can delete base case here -sme0623
+  #so we're comparing the base-case to the base-case? -jr May'23
+  # I guess well use base-case for analyzing the base case here. All the diffplots / comparisons are rather useless then, but thats normal I guess -sme0623
   #"base-case,"
   "carfree-area-large"
   # ,"carfree-area-medium"
@@ -75,10 +60,8 @@ for (scenario in scenarios){
   CRS <- 25832
 
   scenario.run.path <- paste0(publicSVN,runID)
-  # scenario.run.path <- "Y:/net/ils/matsim-leipzig/run-drt/namav-output/runsScaledFleet3-2/drtDemandExperiments/ASC0.00837001732397158-dist0.0-travel0.0-intermodal-leipzig-flexa-25pct-scaledFleet-caseNamav-randomFleet-wholeCity-400veh/"
-  # scenario.run.path <- "Y:/net/ils/matsim-leipzig/run-drt/namav-output/runsScaledFleet3-2/ASC0.00837001732397158-dist0.0-travel-2.0-intermodal-leipzig-flexa-25pct-scaledFleet-caseNamav-randomFleet/"
 
-  print("#### Input paths definiert! ####")
+  print("#### Input paths defined! ####")
   ################################################################################ OUTPUT ####
 
   outputDirectoryScenario <-  paste0(scenario.run.path, "analysis/analysis-R") # the plots are going to be saved here
@@ -97,50 +80,50 @@ for (scenario in scenarios){
   # PLEASE put (1=yes/0=no) for certain analysis
 
   #### #1.1 Modal Split COUNTS - trips based
-    x_ms_trips_count = 0
+    x_ms_trips_count = 1
   #### #1.2 Modal Split DISTANCE - trips based
-    x_ms_trips_distance = 0
+    x_ms_trips_distance = 1
   #### #1.3 Modal Split COUNTS- legs based
-  x_ms_legs_count = 0
+  x_ms_legs_count = 1
   #### #1.4 Modal Split DISTANCE - legs based
-  x_ms_legs_distance = 0
+  x_ms_legs_distance = 1
 
   #### #2.1 Modal Shift - trips based
-  x_sankey_diagram = 0
+  x_sankey_diagram = 1
 
   #### #3.1 Distances TRAVELED - trips based
-  x_average_traveled_distance_trips = 0
+  x_average_traveled_distance_trips = 1
   #### #3.2 Distances EUCLIDEAN - trips based
-  x_average_euclidean_distance_trips = 0
+  x_average_euclidean_distance_trips = 1
   #### #3.3 Heatmap Distances traveled - trips based
-  x_heatmap_distance_trips = 0
+  x_heatmap_distance_trips = 1
   #### #3.3 PKM - trips based
-  x_personen_km_trips = 0
+  x_personen_km_trips = 1
   #### #3.4 Distances TRAVELED - legs based
-  x_average_traveled_distance_legs = 0
+  x_average_traveled_distance_legs = 1
   #### #3.5 Distances EUCLIDEAN - legs based
-  x_average_euclidean_distance_legs = 0
+  x_average_euclidean_distance_legs = 1
   #### #3.6 PKM - legs based
-  x_personen_km_legs = 0
+  x_personen_km_legs = 1
 
   #### #4.1 Time Traveled - trips based
-  x_average_time_trips = 0
+  x_average_time_trips = 1
   #### #4.2 Time Traveled - legs based
-  x_average_time_legs = 0
+  x_average_time_legs = 1
   #### #4.3 ph - trips based
-  x_personen_h_trips = 0
+  x_personen_h_trips = 1
   #### #4.4 ph - legs based
-    x_personen_h_legs = 0
+    x_personen_h_legs = 1
   #### #4.5 Time Traveled Heatmap - trips based
-  x_heatmap_time_trips = 0
+  x_heatmap_time_trips = 1
 
   #### #5.1 Speed TRAVELED - trips based
-    x_average_traveled_speed_trips = 0
+    x_average_traveled_speed_trips = 1
   #### #5.2 Speed BEELINE - trips based
-    x_average_beeline_speed_trips = 0
+    x_average_beeline_speed_trips = 1
 
   #### #6.1 Traffic Volumes
-  x_traffic = 0
+  x_traffic = 1
 
   #### #7.1 Emissions Analysis
   x_emissions = 0
@@ -161,7 +144,7 @@ for (scenario in scenarios){
   #### #9.4 DRT trip purposes
   x_drt_trip_purposes = 1
 
-  print("#### Auswahl getroffen! ####")
+  print("#### Analysis choice succesful! ####")
   ################################################################################ SOURCE ####
 
   source("../matsim-leipzig/src/main/R/masteranalyse.R")
@@ -170,15 +153,8 @@ for (scenario in scenarios){
 
     outputDirectoryScenarioDrt <- paste0(scenario.run.path, "analysis/analysis-drt/")
 
-    print("HERE3")
-
-    # this dir should already exist as it is created by java analysis before running this analysis -sm30623
-    # if(!file.exists(outputDirectoryScenarioDrt)) {
-    #   print("creating drt-analysis sub-directory")
-    #   dir.create(outputDirectoryScenarioDrt)
-    # }
     source("../matsim-leipzig/src/main/R/master_drt.R")
   }
 
-  print("#### Masterscript fertig! ####")
+  print("#### Masterscript done! ####")
 }
