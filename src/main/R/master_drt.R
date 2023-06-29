@@ -71,7 +71,7 @@ for (drtMode in drt.modes){
 
     df.supply.drtMode <- data.frame(Title, Value)
     colnames(df.supply.drtMode)[2] <- drtMode
-    write.csv(df.supply.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.supply.", drtMode, ".csv"))
+    write.csv(df.supply.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.supply.", drtMode, ".csv"), quote=FALSE)
 
     df.supply <- cbind(df.supply, df.supply.drtMode[2])
   }
@@ -90,7 +90,7 @@ for (drtMode in drt.modes){
 
     df.demand.drtMode <- data.frame(Title, Value)
     colnames(df.demand.drtMode)[2] <- drtMode
-    write.csv(df.demand.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.demand.", drtMode, ".csv"))
+    write.csv(df.demand.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.demand.", drtMode, ".csv"), quote=FALSE)
 
     df.demand <- cbind(df.demand, df.demand.drtMode[2])
   }
@@ -114,7 +114,7 @@ for (drtMode in drt.modes){
 
     df.performance.drtMode <- data.frame(Title, Value)
     colnames(df.performance.drtMode)[2] <- drtMode
-    write.csv(df.performance.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.performance.", drtMode, ".csv"))
+    write.csv(df.performance.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.performance.", drtMode, ".csv"), quote=FALSE)
 
     df.performance <- cbind(df.performance, df.performance.drtMode[2])
 
@@ -129,7 +129,7 @@ for (drtMode in drt.modes){
 
     df.waiting.time.drtMode <- data.frame(Title, Value)
     colnames(df.waiting.time.drtMode)[2] <- drtMode
-    write.csv(df.waiting.time.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.waitingtime.", drtMode, ".csv"))
+    write.csv(df.waiting.time.drtMode, file = paste0(outputDirectoryScenarioDrt, "/table.waitingtime.", drtMode, ".csv"), quote=FALSE)
 
     df.waiting.time <- cbind(df.waiting.time, df.waiting.time.drtMode[2])
   }
@@ -138,20 +138,20 @@ for (drtMode in drt.modes){
 ##### Step 2: print the joined tables for supply, demand and performance #####
 #### DRT supply ####
 if (x_drt_supply == 1){
-  write.csv(df.supply, file = paste0(outputDirectoryScenarioDrt, "/table.supply.csv"))
+  write.csv(df.supply, file = paste0(outputDirectoryScenarioDrt, "/table.supply.csv"), quote=FALSE)
 }
   
   
 #### DRT demand ####
   
 if (x_drt_demand == 1) {
-  write.csv(df.demand, file = paste0(outputDirectoryScenarioDrt, "/table.demand.csv"))
+  write.csv(df.demand, file = paste0(outputDirectoryScenarioDrt, "/table.demand.csv"), quote=FALSE)
 }
 
 #### DRT performance ####
 if (x_drt_performance == 1) {
-  write.csv(df.performance, file = paste0(outputDirectoryScenarioDrt, "/table.performance.csv"))
-  write.csv(df.waiting.time, file = paste0(outputDirectoryScenarioDrt, "/table.waitingtime.csv"))
+  write.csv(df.performance, file = paste0(outputDirectoryScenarioDrt, "/table.performance.csv"), quote=FALSE)
+  write.csv(df.waiting.time, file = paste0(outputDirectoryScenarioDrt, "/table.waitingtime.csv"), quote=FALSE)
 }
 
 #### DRT volumes ####

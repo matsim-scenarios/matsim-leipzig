@@ -141,18 +141,19 @@ for (scenario in scenarios){
   x_winner_loser = 0
 
   #### #9.1 DRT supply
-  x_drt_supply = 1
+  x_drt_supply = 0
 
   #### #9.2 DRT demand
-  x_drt_demand = 1
+  x_drt_demand = 0
 
   #### #9.3 DRT performance
-  x_drt_performance = 1
+  x_drt_performance = 0
 
   #### #9.4 DRT trip purposes
-  x_drt_trip_purposes = 1
+  x_drt_trip_purposes = 0
 
   print("#### Analysis choice succesful! ####")
+  print(paste0("#### Starting to analyze output for dir: ", scenario.run.path, " ####"))
   ################################################################################ SOURCE ####
 
   source("../matsim-leipzig/src/main/R/masteranalyse.R")
