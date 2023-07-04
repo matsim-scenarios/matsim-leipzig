@@ -10,16 +10,14 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.options.ShpOptions;
-import org.matsim.core.config.Config;
-import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.algorithms.MultimodalNetworkCleaner;
 import org.matsim.core.utils.geometry.geotools.MGC;
 import org.matsim.core.utils.gis.ShapeFileReader;
+import org.matsim.run.LeipzigUtils;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import org.opengis.feature.simple.SimpleFeature;
 import picocli.CommandLine;
-import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -113,7 +111,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
 		multimodalNetworkCleaner.run(modesToAdd);
 
-		log.log(Level.INFO, "The following modes have been added to the network: %s ", modes);
+		log.log(Level.INFO, "The following modes have been added to the network: {}", modes);
 	}
 
 	/**
@@ -159,7 +157,6 @@ public class PrepareNetwork implements MATSimAppCommand {
 	 * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
      */
 	static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
-		ParkingCostConfigGroup parkingCostConfigGroup = ConfigUtils.addOrGetModule(new Config(), ParkingCostConfigGroup.class);
 		Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
 
 		String hourlyParkingCostAttrName = "cost_h";
@@ -189,12 +186,13 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 					if (linkInShp && feature.getAttribute(residentialParkingCostAttrName) != null) {
 						resPFee = (Double) feature.getAttribute(residentialParkingCostAttrName);
+						LeipzigUtils.setLinkParkingTypeToInsideResidentialArea(link);
 					}
-				}
 
-				link.getAttributes().putAttribute(parkingCostConfigGroup.getFirstHourParkingCostLinkAttributeName(), oneHourPCost);
-				link.getAttributes().putAttribute(parkingCostConfigGroup.getExtraHourParkingCostLinkAttributeName(), extraHourPCost);
-				link.getAttributes().putAttribute(parkingCostConfigGroup.getResidentialParkingFeeAttributeName(), resPFee);
+					LeipzigUtils.setFirstHourParkingCost(link, oneHourPCost);
+					LeipzigUtils.setExtraHourParkingCost(link, extraHourPCost);
+					LeipzigUtils.setResidentialParkingCost(link, resPFee);
+				}
 			}
 		}
 

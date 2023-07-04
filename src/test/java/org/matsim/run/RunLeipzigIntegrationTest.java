@@ -11,6 +11,7 @@ import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.core.network.NetworkUtils;
+import org.matsim.simwrapper.SimWrapperConfigGroup;
 import picocli.CommandLine;
 
 import java.nio.file.Path;
@@ -42,8 +43,11 @@ public class RunLeipzigIntegrationTest {
 		config.transit().setVehiclesFile(URL + "leipzig-v1.1-transitVehicles.xml.gz");
 		config.vehicles().setVehiclesFile(URL + "drt-base-case/leipzig-v1.1-vehicle-types-with-drt-scaledFleet.xml");
 
+		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
+
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--slow-speed-area", exampleShp,
-				"--slow-speed-relative-change", "0.5","--drt-area", exampleShp, "--drt-modes", "drtNorth,drtSoutheast", "--post-processing", "disabled");
+				"--slow-speed-relative-change", "0.5","--drt-area", exampleShp, "--drt-modes", "drtNorth,drtSoutheast", "--post-processing", "disabled",
+				"--parking-cost-area", exampleShp);
 
 		assertThat(output)
 				.exists()
@@ -68,6 +72,8 @@ public class RunLeipzigIntegrationTest {
 		config.transit().setTransitScheduleFile(URL + "leipzig-v1.1-transitSchedule.xml.gz");
 		config.transit().setVehiclesFile(URL + "leipzig-v1.1-transitVehicles.xml.gz");
 		config.vehicles().setVehiclesFile(URL + "drt-base-case/leipzig-v1.1-vehicle-types-with-drt-scaledFleet.xml");
+
+		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--drt-area", exampleShp,
 				"--drt-modes", "drtNorth,drtSoutheast", "--waiting-time-threshold-optDrt", "600", "--post-processing", "disabled");
