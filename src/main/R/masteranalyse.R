@@ -415,7 +415,8 @@ if (x_personen_h_trips == 1){
     x %>% 
       filter(main_mode!="freight") %>%
       group_by(main_mode) %>%
-      summarise(personen_stunden_trips = round(sum(trav_time))) %>%
+      # we want the total trav time values in h -sme0723
+      summarise(personen_stunden_trips = round(sum(trav_time)/3600)) %>%
       pivot_wider(names_from = main_mode, values_from = personen_stunden_trips)
   }
   ph.trips.city <- person.hours.trips(scenario.trips.city)
@@ -611,14 +612,10 @@ if (x_average_beeline_speed_trips == 1){
   write.csv(bind_rows(df.list,
                       .id = "id"),
             file = paste0(outputDirectoryScenario, "/df.avg_bee_speed.csv"), row.names = FALSE, quote=FALSE)
-} 
-
-#### #6.1 Emissions ####
-if (x_emissions == 1){
-  print("#### in 6.1 ####")
 }
-#### #7.1 Traffic ####
-if (x_traffic == 1){
+
+#### #7.1 Emissions ####
+if (x_emissions == 1){
   print("#### in 7.1 ####")
 }
 

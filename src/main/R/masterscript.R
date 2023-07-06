@@ -130,9 +130,6 @@ for (scenario in scenarios){
   #### #5.2 Speed BEELINE - trips based
     x_average_beeline_speed_trips = 1
 
-  #### #6.1 Traffic Volumes
-  x_traffic = 1
-
   #### #7.1 Emissions Analysis
   x_emissions = 0
 
@@ -141,16 +138,16 @@ for (scenario in scenarios){
   x_winner_loser = 0
 
   #### #9.1 DRT supply
-  x_drt_supply = 0
+  x_drt_supply = 1
 
   #### #9.2 DRT demand
-  x_drt_demand = 0
+  x_drt_demand = 1
 
   #### #9.3 DRT performance
-  x_drt_performance = 0
+  x_drt_performance = 1
 
   #### #9.4 DRT trip purposes
-  x_drt_trip_purposes = 0
+  x_drt_trip_purposes = 1
 
   print("#### Analysis choice succesful! ####")
   print(paste0("#### Starting to analyze output for dir: ", scenario.run.path, " ####"))
