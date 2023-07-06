@@ -88,9 +88,9 @@ for (scenario in scenarios){
   # PLEASE put (1=yes/0=no) for certain analysis
 
   #### #1.1 Modal Split COUNTS - trips based
-    x_ms_trips_count = 1
+  x_ms_trips_count = 1
   #### #1.2 Modal Split DISTANCE - trips based
-    x_ms_trips_distance = 1
+  x_ms_trips_distance = 1
   #### #1.3 Modal Split COUNTS- legs based
   x_ms_legs_count = 1
   #### #1.4 Modal Split DISTANCE - legs based
@@ -104,15 +104,16 @@ for (scenario in scenarios){
   #### #3.2 Distances EUCLIDEAN - trips based
   x_average_euclidean_distance_trips = 1
   #### #3.3 Heatmap Distances traveled - trips based
-  x_heatmap_distance_trips = 1
-  #### #3.3 PKM - trips based
+  x_heatmap_distance_trips = 0
+  #### #3.4 PKM - trips based
   x_personen_km_trips = 1
-  #### #3.4 Distances TRAVELED - legs based
+  #### #3.5 Distances TRAVELED - legs based
   x_average_traveled_distance_legs = 1
-  #### #3.5 Distances EUCLIDEAN - legs based
-  x_average_euclidean_distance_legs = 1
   #### #3.6 PKM - legs based
   x_personen_km_legs = 1
+  #### #3.7 Distances EUCLIDEAN - legs based
+  # not implemented, not needed though? -sme0723
+  # x_average_euclidean_distance_legs = 1
 
   #### #4.1 Time Traveled - trips based
   x_average_time_trips = 1
@@ -121,14 +122,14 @@ for (scenario in scenarios){
   #### #4.3 ph - trips based
   x_personen_h_trips = 1
   #### #4.4 ph - legs based
-    x_personen_h_legs = 1
+  x_personen_h_legs = 1
   #### #4.5 Time Traveled Heatmap - trips based
-  x_heatmap_time_trips = 1
+  x_heatmap_time_trips = 0
 
   #### #5.1 Speed TRAVELED - trips based
-    x_average_traveled_speed_trips = 1
+  x_average_traveled_speed_trips = 1
   #### #5.2 Speed BEELINE - trips based
-    x_average_beeline_speed_trips = 1
+  x_average_beeline_speed_trips = 1
 
   #### #7.1 Emissions Analysis
   x_emissions = 0

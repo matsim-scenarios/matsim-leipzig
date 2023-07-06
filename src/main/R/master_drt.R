@@ -63,7 +63,7 @@ for (drtMode in drt.modes){
     print("#### in 9.1 ####")
 
     nr.conventional.vehicles <- drt.vehicle.stats$vehicles
-    conventional.fleet.distance <- drt.vehicle.stats$totalDistance/1000
+    conventional.fleet.distance <- round(drt.vehicle.stats$totalDistance/1000)
     op.hours <- (as.numeric(drt.vehicles[1, 4]) - as.numeric(drt.vehicles[1, 3]))/3600
 
     Title <- df.supply.names
@@ -82,8 +82,8 @@ for (drtMode in drt.modes){
     print("#### in 9.2 ####")
 
     rides <- drt.customers$rides
-    in.vehicle.trav.time.mean <- drt.customers$inVehicleTravelTime_mean
-    euclidean.distance.traveled.mean <- drt.KPI$trips_euclidean_distance_mean
+    in.vehicle.trav.time.mean <- round(drt.customers$inVehicleTravelTime_mean)
+    euclidean.distance.traveled.mean <- round(drt.KPI$trips_euclidean_distance_mean)
 
     Title <- df.demand.names
     Value <- c(rides, in.vehicle.trav.time.mean, euclidean.distance.traveled.mean)
@@ -98,16 +98,16 @@ for (drtMode in drt.modes){
   if (x_drt_performance) {
     print("#### in 9.3 ####")
     nr.conventional.vehicles <- drt.vehicle.stats$vehicles
-    conventional.fleet.distance <- drt.vehicle.stats$totalDistance/1000
+    conventional.fleet.distance <- round(drt.vehicle.stats$totalDistance/1000)
 
-    flexa.passengerdistance <- drt.vehicle.stats$totalPassengerDistanceTraveled/1000
+    flexa.passengerdistance <- round(drt.vehicle.stats$totalPassengerDistanceTraveled/1000)
     flexa.empty_ratio <- drt.vehicle.stats$emptyRatio
     flexa.rides <- drt.customers$rides
     flexa.rides.per.vehicle <- flexa.rides / nr.conventional.vehicles
-    flexa.rides.per.vehKM<-  flexa.rides / conventional.fleet.distance
+    flexa.rides.per.vehKM<-  round(flexa.rides / conventional.fleet.distance, digits = 2)
 
     op.hours <- (as.numeric(drt.vehicles[1, 4]) - as.numeric(drt.vehicles[1, 3]))/3600
-    flexa.rides.per.opHour <-  flexa.rides / op.hours
+    flexa.rides.per.opHour <-  round(flexa.rides / op.hours, digits = 2)
 
     Title <- df.performance.names
     Value <- c(conventional.fleet.distance, flexa.passengerdistance, flexa.empty_ratio, flexa.rides, flexa.rides.per.vehicle, flexa.rides.per.vehKM, flexa.rides.per.opHour)
