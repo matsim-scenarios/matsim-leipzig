@@ -68,14 +68,12 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 
 	private static final Logger log = LogManager.getLogger(RunOfflineAirPollutionAnalysisByVehicleCategory.class);
 	private final String runDirectory;
-	private final String runId;
 	private final String hbefaWarmFile;
 	private final String hbefaColdFile;
 	private final String analysisOutputDirectory;
 
-	public RunOfflineAirPollutionAnalysisByVehicleCategory(String runDirectory, String runId, String hbefaFileWarm, String hbefaFileCold, String analysisOutputDirectory) {
+	public RunOfflineAirPollutionAnalysisByVehicleCategory(String runDirectory, String hbefaFileWarm, String hbefaFileCold, String analysisOutputDirectory) {
 		this.runDirectory = runDirectory;
-		this.runId = runId;
 		this.hbefaWarmFile = hbefaFileWarm;
 		this.hbefaColdFile = hbefaFileCold;
 
@@ -85,20 +83,15 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 
 	public static void main(String[] args) {
 
-		if (args.length == 2) {
+		if (args.length == 1) {
 			String runDirectory = args[0];
-			String runId = args[1];
 			if (!runDirectory.endsWith("/")) runDirectory = runDirectory + "/";
-
-			// based on the simulation output available in this project
-//			final String runId = "leipzig-drt-base-case-25pct";
 
 			String hbefaFileWarm = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/7eff8f308633df1b8ac4d06d05180dd0c5fdf577.enc";
 			String hbefaFileCold = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/r9230ru2n209r30u2fn0c9rn20n2rujkhkjhoewt84202.enc";
 
 			RunOfflineAirPollutionAnalysisByVehicleCategory analysis = new RunOfflineAirPollutionAnalysisByVehicleCategory(
 					runDirectory,
-					runId,
 					hbefaFileWarm,
 					hbefaFileCold,
 					runDirectory + "analysis/analysis-emissions");
@@ -116,10 +109,10 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 	public Integer call() throws Exception {
 
 		Config config = ConfigUtils.createConfig();
-		config.vehicles().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory), runId, "output_vehicles")));
-		config.network().setInputFile(String.valueOf(globFile(Path.of(runDirectory), runId, "network")));
-		config.transit().setTransitScheduleFile(String.valueOf(globFile(Path.of(runDirectory), runId, "transitSchedule")));
-		config.transit().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory), runId, "transitVehicles")));
+		config.vehicles().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory),"*output_vehicles*")));
+		config.network().setInputFile(String.valueOf(globFile(Path.of(runDirectory),"*output_network*")));
+		config.transit().setTransitScheduleFile(String.valueOf(globFile(Path.of(runDirectory),"*output_transitSchedule*")));
+		config.transit().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory),"*output_transitVehicles*")));
 
 		config.global().setCoordinateSystem("EPSG:25832");
 		log.info("Using coordinate system '{}'", config.global().getCoordinateSystem());
@@ -135,15 +128,15 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 		eConfig.setNonScenarioVehicles(NonScenarioVehicles.ignore);
 
 		// input and outputs of emissions analysis
-		final String eventsFile = globFile(Path.of(runDirectory), runId, "output_events");
+		final String eventsFile = String.valueOf(globFile(Path.of(runDirectory),"*output_events*"));
 		File dir = new File(analysisOutputDirectory);
 		if (!dir.exists()) {
 			dir.mkdir();
 		}
-		final String emissionEventOutputFile = analysisOutputDirectory + runId + ".emission.events.offline.xml.gz";
+		final String emissionEventOutputFile = analysisOutputDirectory + ".emission.events.offline.xml.gz";
 		log.info("Writing emissions (link totals) to: {}", emissionEventOutputFile);
 		// for SimWrapper
-		final String linkEmissionPerMOutputFile = analysisOutputDirectory + runId + ".emissionsPerLinkPerM.csv";
+		final String linkEmissionPerMOutputFile = analysisOutputDirectory + ".emissionsPerLinkPerM.csv";
 		log.info("Writing emissions per link [g/m] to: {}", linkEmissionPerMOutputFile);
 
 		Scenario scenario = ScenarioUtils.loadScenario(config);
