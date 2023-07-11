@@ -85,22 +85,23 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 
 	public static void main(String[] args) {
 
-		if (args.length == 1) {
+		if (args.length == 2) {
 			String runDirectory = args[0];
+			String runId = args[1];
 			if (!runDirectory.endsWith("/")) runDirectory = runDirectory + "/";
 
 			// based on the simulation output available in this project
-			final String runId = "leipzig-25pct";
+//			final String runId = "leipzig-drt-base-case-25pct";
 
 			String hbefaFileWarm = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/7eff8f308633df1b8ac4d06d05180dd0c5fdf577.enc";
-			String hbefaFileCold = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/ColdStart_Vehcat_2020_Average_withHGVetc.csv.enc";
+			String hbefaFileCold = "https://svn.vsp.tu-berlin.de/repos/public-svn/3507bb3997e5657ab9da76dbedbb13c9b5991d3e/0e73947443d68f95202b71a156b337f7f71604ae/r9230ru2n209r30u2fn0c9rn20n2rujkhkjhoewt84202.enc";
 
 			RunOfflineAirPollutionAnalysisByVehicleCategory analysis = new RunOfflineAirPollutionAnalysisByVehicleCategory(
 					runDirectory,
 					runId,
 					hbefaFileWarm,
 					hbefaFileCold,
-					runDirectory + "emission-analysis-offline");
+					runDirectory + "analysis/analysis-emissions");
 			try {
 				analysis.call();
 			} catch (Exception e) {
