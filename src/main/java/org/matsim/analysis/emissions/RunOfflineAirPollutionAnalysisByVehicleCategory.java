@@ -117,10 +117,10 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 	public Integer call() throws Exception {
 
 		Config config = ConfigUtils.createConfig();
-		config.vehicles().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory),"*output_vehicles*")));
-		config.network().setInputFile(String.valueOf(globFile(Path.of(runDirectory),"*output_network*")));
-		config.transit().setTransitScheduleFile(String.valueOf(globFile(Path.of(runDirectory),"*output_transitSchedule*")));
-		config.transit().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory),"*output_transitVehicles*")));
+		config.vehicles().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory), "*output_vehicles*")));
+		config.network().setInputFile(String.valueOf(globFile(Path.of(runDirectory), "*output_network*")));
+		config.transit().setTransitScheduleFile(String.valueOf(globFile(Path.of(runDirectory), "*output_transitSchedule*")));
+		config.transit().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory), "*output_transitVehicles*")));
 
 		config.global().setCoordinateSystem("EPSG:25832");
 		log.info("Using coordinate system '{}'", config.global().getCoordinateSystem());
@@ -136,7 +136,7 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 		eConfig.setNonScenarioVehicles(NonScenarioVehicles.ignore);
 
 		// input and outputs of emissions analysis
-		final String eventsFile = String.valueOf(globFile(Path.of(runDirectory),"*output_events*"));
+		final String eventsFile = String.valueOf(globFile(Path.of(runDirectory), "*output_events*"));
 		File dir = new File(analysisOutputDirectory);
 		if (!dir.exists()) {
 			dir.mkdir();
