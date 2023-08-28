@@ -10,6 +10,7 @@ import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
 import org.matsim.analysis.pt.stop2stop.PtStop2StopAnalysisModule;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.application.MATSimApplication;
@@ -19,6 +20,7 @@ import org.matsim.application.analysis.population.SubTourAnalysis;
 import org.matsim.application.analysis.traffic.LinkStats;
 import org.matsim.application.analysis.traffic.TrafficAnalysis;
 import org.matsim.application.options.SampleOptions;
+import org.matsim.application.options.ShpOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
 import org.matsim.application.prepare.freight.tripExtraction.ExtractRelevantFreightTrips;
 import org.matsim.application.prepare.network.CleanNetwork;
@@ -251,16 +253,11 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		}
 
-		// Need to initialize even if disabled
-		ConfigUtils.addOrGetModule(config, DvrpConfigGroup.class);
-		ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
-
 		return config;
 	}
 
 	@Override
 	protected void prepareScenario(Scenario scenario) {
-    
 		// TODO: can be removed once v1.2 is done, because this is done in the preparation phase
 		for (Link link : scenario.getNetwork().getLinks().values()) {
 			Set<String> modes = link.getAllowedModes();
@@ -277,7 +274,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		//this has to be executed before DrtCaseSetup.prepareScenario() as the latter method relies on the drt mode being added to the network
 		networkOpt.prepare(scenario.getNetwork());
 		// (passt das Netz an aus den mitgegebenen shape files, z.B. parking area, car-free area, ...)
-    
+
 		if (networkOpt.hasDrtArea()) {
 			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
 		}
@@ -287,7 +284,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	@Override
 	protected void prepareControler(Controler controler) {
-		Config config = controler.getConfig();
 
 		controler.addOverridingModule(new SimWrapperModule());
 		controler.addOverridingModule(new PtStop2StopAnalysisModule());
