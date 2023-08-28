@@ -3,7 +3,6 @@ package org.matsim.run.prepare;
 import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
 import ch.sbb.matsim.routing.pt.raptor.RaptorIntermodalAccessEgress;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.Geometry;
@@ -60,7 +59,7 @@ public final class DrtCaseSetup {
 			"input/v1.2/drtServiceArea/leipzig_flexa_service_area_2021.shp"),
 			null, null);
 
-//	static Geometry geometry = flexaArea2021.getGeometry();
+	private static String errorMessage = "Unexpected value: ";
 
 	static Set<String> drtModes = new HashSet<>();
 
@@ -128,7 +127,7 @@ public final class DrtCaseSetup {
 					configureNecessaryConfigGroups(config, drtConfigGroup.getMode());
 				});
 			}
-			default -> throw new IllegalStateException("Unexpected value: " + (drtCase));
+			default -> throw new IllegalStateException(errorMessage + (drtCase));
 		}
 
 		//drt modes have to be set as network modes in dvrp CfgGroup
@@ -201,7 +200,7 @@ public final class DrtCaseSetup {
 				//"normal" drt, modelled as one single drt mode
 				drtMode = TransportMode.drt;
 
-				//TODO make the 400 configurable??? -sme0723
+				//make the 400 configurable??? -sme0723
 				new LeipzigDrtVehicleCreator().createDrtVehicles(scenario.getVehicles(), scenario.getNetwork(),
 						drtArea, 400, drtMode);
 
@@ -231,7 +230,7 @@ public final class DrtCaseSetup {
 				});
 
 			}
-			default -> throw new IllegalStateException("Unexpected value: " + (drtCase));
+			default -> throw new IllegalStateException(errorMessage + (drtCase));
 		}
 	}
 
@@ -278,7 +277,7 @@ public final class DrtCaseSetup {
 					preparePtDrtIntermodality(controler, drtArea, false);
 				}
 			}
-			default -> throw new IllegalStateException("Unexpected value: " + (drtCase));
+			default -> throw new IllegalStateException(errorMessage + (drtCase));
 		}
 	}
 
@@ -356,15 +355,9 @@ public final class DrtCaseSetup {
 
 		new PrepareTransitSchedule().prepareDrtIntermodality(controler.getScenario().getTransitSchedule(), shp, railwaysOnly);
 
-		MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(controler.getConfig(), MultiModeDrtConfigGroup.class);
-
-		if (Optional.of(multiModeDrtConfigGroup).isPresent()) {
-			Optional<DrtFareParams> fareParams = multiModeDrtConfigGroup.getModalElements().stream().findFirst().get().getDrtFareParams();
-
-			if (fareParams.isPresent()) {
-				prepareDrtFareCompensation(controler, drtModes, fareParams.get().baseFare);
-			}
-		}
+		ConfigUtils.addOrGetModule(controler.getConfig(), MultiModeDrtConfigGroup.class).getModalElements().stream().findFirst().ifPresent(drtConfigGroup ->
+				drtConfigGroup.getDrtFareParams().ifPresent(drtFareParams ->
+						prepareDrtFareCompensation(controler, drtModes, drtFareParams.baseFare)));
 	}
 
 	private static void prepareDrtFareCompensation(Controler controler, Set<String> nonPtModes, Double ptBaseFare) {
@@ -436,10 +429,6 @@ public final class DrtCaseSetup {
 										  String stopsFile) implements StartupListener {
 
 		private static final String OUTPUT_FILE_NAME = "stops.xml";
-
-		@Inject
-		private StopsControlerListener {
-		}
 
 		@Override
 		public void notifyStartup(StartupEvent event) {
