@@ -166,17 +166,16 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 			if (!link.getAllowedModes().contains("pt")) {
 
-				GeometryFactory gf = new GeometryFactory();
-
-				LineString line = gf.createLineString(new Coordinate[]{MGC.coord2Coordinate(link.getFromNode().getCoord()),
-						MGC.coord2Coordinate(link.getToNode().getCoord())});
 				double oneHourPCost = 0.;
 				double extraHourPCost = 0.;
 				double resPFee = 0.;
 
 				for (SimpleFeature feature : features) {
 					Geometry geometry = (Geometry) feature.getDefaultGeometry();
-					boolean linkInShp = line.intersects(geometry);
+					// Here we have to use a different logic for checking whether a link is inside the given geometry.
+					// The standard procedure (as used in the other methods of this class) did include some link out of the geometry.
+					//for this case we have to be more precise than that. -sme0723
+					boolean linkInShp = MGC.coord2Point(link.getCoord()).within(geometry);
 
 					if (linkInShp && feature.getAttribute(hourlyParkingCostAttrName) != null) {
 

@@ -2,9 +2,7 @@ package org.matsim.run;
 
 import ch.sbb.matsim.routing.pt.raptor.SwissRailRaptorModule;
 import com.google.common.collect.Sets;
-import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.analysis.*;
@@ -12,7 +10,6 @@ import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
 import org.matsim.analysis.pt.stop2stop.PtStop2StopAnalysisModule;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
-import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
 import org.matsim.application.MATSimApplication;
@@ -22,7 +19,6 @@ import org.matsim.application.analysis.population.SubTourAnalysis;
 import org.matsim.application.analysis.traffic.LinkStats;
 import org.matsim.application.analysis.traffic.TrafficAnalysis;
 import org.matsim.application.options.SampleOptions;
-import org.matsim.application.options.ShpOptions;
 import org.matsim.application.prepare.CreateLandUseShp;
 import org.matsim.application.prepare.freight.tripExtraction.ExtractRelevantFreightTrips;
 import org.matsim.application.prepare.network.CleanNetwork;
@@ -37,6 +33,8 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.*;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.population.algorithms.PermissibleModesCalculator;
+import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.choosers.ForceInnovationStrategyChooser;
 import org.matsim.core.replanning.choosers.StrategyChooser;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
@@ -45,8 +43,9 @@ import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
 import org.matsim.run.prepare.*;
+import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.SimWrapperModule;
-import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
+import org.matsim.smallScaleCommercialTrafficGeneration.GenerateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
@@ -65,7 +64,7 @@ import java.util.*;
 	MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, PrepareNetwork.class, CleanNetwork.class,
 	CreateLandUseShp.class, ResolveGridCoordinates.class, PreparePopulation.class, CleanPopulation.class, AdjustActivityToLinkDistances.class,
 	SplitActivityTypesDuration.class, ExtractHomeCoordinates.class, FixSubtourModes.class, FixNetwork.class, PrepareTransitSchedule.class,
-	CreateSmallScaleCommercialTrafficDemand.class
+	GenerateSmallScaleCommercialTrafficDemand.class
 })
 @MATSimApplication.Analysis({
 	CheckPopulation.class, LinkStats.class, SubTourAnalysis.class, DrtServiceQualityAnalysis.class,
@@ -77,18 +76,16 @@ public class RunLeipzigScenario extends MATSimApplication {
 	 * Coordinate system used in the scenario.
 	 */
 	public static final String CRS = "EPSG:25832";
-
-	static final String VERSION = "1.1";
-
+	/**
+	 * Current version number.
+	 */
+	public static final String VERSION = "1.2";
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
-
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
 	private final NetworkOptions networkOpt = new NetworkOptions();
 
-	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
-	Double relativeSpeedChange;
 	@CommandLine.Option(names = "--bikes", defaultValue = "onNetworkWithStandardMatsim", description = "Define how bicycles are handled")
 	private BicycleHandling bike;
 
@@ -97,8 +94,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 	private Double parkingCostTimePeriodStart;
 	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
 	private Double parkingCostTimePeriodEnd;
-	@CommandLine.Mixin
-	private ShpOptions shp;
 
 	@CommandLine.Option(names = "--income-dependent", defaultValue = "true", description = "Income dependent scoring", negatable = true)
 	private boolean incomeDependent;
@@ -130,16 +125,15 @@ public class RunLeipzigScenario extends MATSimApplication {
 		config.strategy().clearStrategySettings();
 
 		for (StrategyConfigGroup.StrategySettings strategySetting : modifiableCollectionOfOldStrategySettings) {
+
 			if (strategySetting.getStrategyName().equals("ReRoute")) {
-				StrategyConfigGroup.StrategySettings newReRouteStrategy = new StrategyConfigGroup.StrategySettings();
-				newReRouteStrategy.setStrategyName(LeipzigRoutingStrategyProvider.STRATEGY_NAME);
-				newReRouteStrategy.setSubpopulation(strategySetting.getSubpopulation());
-				newReRouteStrategy.setWeight(strategySetting.getWeight());
-				newReRouteStrategy.setDisableAfter(strategySetting.getDisableAfter());
-				config.strategy().addStrategySettings(newReRouteStrategy);
-			} else {
-				config.strategy().addStrategySettings(strategySetting);
+				strategySetting.setStrategyName(LeipzigRoutingStrategyProvider.STRATEGY_NAME);
+			} else if (strategySetting.getStrategyName().equals("SubtourModeChoice")) {
+				strategySetting.setStrategyName(LeipzigSubtourModeChoice.STRATEGY_NAME);
 			}
+
+			config.strategy().addStrategySettings(strategySetting);
+
 		}
 	}
 
@@ -147,8 +141,35 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@Override
 	protected Config prepareConfig(Config config) {
 
-		SnzActivities.addScoringParams(config);
 		// senozon activity types that are always the same.  Differentiated by typical duration.
+		SnzActivities.addScoringParams(config);
+
+		// Prepare commercial config
+		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("service").setTypicalDuration(3600));
+		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
+		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
+
+		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
+
+		// Path is relative to config
+		simWrapper.defaultParams().shp = "../leipzig-utm32n/leipzig-utm32n.shp";
+		simWrapper.defaultParams().mapCenter = "12.38,51.34";
+		simWrapper.defaultParams().mapZoomLevel = 10.3;
+
+		for (String subpopulation : List.of("outside_person", "freight", "goodsTraffic", "commercialPersonTraffic", "commercialPersonTraffic_service")) {
+			config.strategy().addStrategySettings(
+				new StrategyConfigGroup.StrategySettings()
+					.setStrategyName(DefaultPlanStrategiesModule.DefaultSelector.ChangeExpBeta)
+					.setWeight(0.95)
+					.setSubpopulation(subpopulation)
+			);
+			config.strategy().addStrategySettings(
+				new StrategyConfigGroup.StrategySettings()
+					.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute)
+					.setWeight(0.05)
+					.setSubpopulation(subpopulation)
+			);
+		}
 
 		if (sample.isSet()) {
 			// in [%].  adjust if sample size is less than 100%
@@ -159,6 +180,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 			config.qsim().setFlowCapFactor(sample.getSize() / 100.0);
 			config.qsim().setStorageCapFactor(sample.getSize() / 100.0);
+
+			simWrapper.defaultParams().sampleSize = sample.getSample();
 		}
 
 
@@ -184,8 +207,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		config.qsim().setUsePersonIdForMissingVehicleId(false);
 
-		// this is how it is supposed to be
-		config.facilities().setFacilitiesSource(FacilitiesConfigGroup.FacilitiesSource.onePerActivityLinkInPlansFile);
+		// We need to use coordinates only, otherwise subtour constraints will be violated by the parking re-routing, because it may change link/facility ids
+		config.facilities().setFacilitiesSource(FacilitiesConfigGroup.FacilitiesSource.none);
 
 		switch ((bike)) {
 			case onNetworkWithStandardMatsim -> {
@@ -228,12 +251,16 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		}
 
+		// Need to initialize even if disabled
+		ConfigUtils.addOrGetModule(config, DvrpConfigGroup.class);
+		ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
+
 		return config;
 	}
 
 	@Override
 	protected void prepareScenario(Scenario scenario) {
-
+    
 		// TODO: can be removed once v1.2 is done, because this is done in the preparation phase
 		for (Link link : scenario.getNetwork().getLinks().values()) {
 			Set<String> modes = link.getAllowedModes();
@@ -250,7 +277,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		//this has to be executed before DrtCaseSetup.prepareScenario() as the latter method relies on the drt mode being added to the network
 		networkOpt.prepare(scenario.getNetwork());
 		// (passt das Netz an aus den mitgegebenen shape files, z.B. parking area, car-free area, ...)
-
+    
 		if (networkOpt.hasDrtArea()) {
 			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
 		}
@@ -281,6 +308,14 @@ public class RunLeipzigScenario extends MATSimApplication {
 				// Plots how many different modes agents tried out
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
+				// Leipzig specific planning strategies
+				this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
+				this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
+				this.addPlanStrategyBinding(LeipzigSubtourModeChoice.STRATEGY_NAME).toProvider(LeipzigSubtourModeChoice.class);
+
+				// Normally this is bound with the default subtour mode choice, because we use our own variant this is bound again here
+				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
+
 				if (networkOpt.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
 				}
@@ -288,29 +323,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 				if (networkOpt.hasParkingCostArea()) {
 
 					this.addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
-					this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
-					this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
 
 					install(new PersonMoneyEventsAnalysisModule());
-
 				}
 
-				// TODO FIXME yyyyyy replace by config option
-				{
-					addControlerListenerBinding().to(StrategyWeightFadeout.class).in(Singleton.class);
-
-					Multibinder<StrategyWeightFadeout.Schedule> schedules = StrategyWeightFadeout.getBinder(binder());
-
-					// Mode-choice fades out earlier than the other strategies
-					// Given a fixed mode, the "less disruptive" choice dimensions will be weighted higher during the end
-					schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice, "person", 0.65, 0.80));
-
-					// Fades out until 0.9 (innovation switch off)
-					//TODO switch no new ReRoute!!!!
-					schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(LeipzigRoutingStrategyProvider.STRATEGY_NAME, "person", 0.75));
-					schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.75));
-
-				}
 				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {
 				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
 			}

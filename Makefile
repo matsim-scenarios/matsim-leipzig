@@ -9,7 +9,7 @@ osmosis := osmosis/bin/osmosis
 
 NETWORK := germany-220327.osm.pbf
 germany := ../shared-svn/projects/matsim-germany
-shared := ../shared-svn/projects/NaMAV
+shared ?= ../shared-svn/projects/NaMAV
 
 .PHONY: prepare
 
@@ -70,13 +70,13 @@ input/sumo.net.xml: input/network.osm
 
 
 input/$V/leipzig-$V-network.xml.gz: input/sumo.net.xml
-	$(sc) prepare network-from-sumo $< --output $@
+	$(sc) prepare network-from-sumo $< --output $@ --free-speed-factor 0.75
 	$(sc) prepare fix-network $@ --output $@
 	$(sc) prepare clean-network $@ --output $@ --modes bike
 
 input/$V/leipzig-$V-network-with-pt.xml.gz: input/$V/leipzig-$V-network.xml.gz input/gtfs-lvb.zip
 	$(sc) prepare transit-from-gtfs --network $< $(filter-out $<,$^)\
-	 --name leipzig-$V --date "2019-06-05" --target-crs $(CRS)\
+	 --name leipzig-$V --date "2023-04-19" --target-crs $(CRS)\
 	 --output input/$V
 
 	$(sc) prepare prepare-transit-schedule\
@@ -90,27 +90,28 @@ input/plans-longHaulFreight.xml.gz: input/$V/leipzig-$V-network.xml.gz
 	 --input-crs $(CRS)\
 	 --target-crs $(CRS)\
 	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/freight-area/freight-area.shp\
+	 --cut-on-boundary\
 	 --output $@
 
-input/plans-commercialTraffic.xml.gz:
+input/plans-completeSmallScaleCommercialTraffic.xml.gz:
 	$(sc) prepare generate-small-scale-commercial-traffic\
 	  input/commercialTraffic\
 	 --sample 0.25\
 	 --jspritIterations 1\
 	 --creationOption createNewCarrierFile\
 	 --landuseConfiguration useOSMBuildingsAndLanduse\
-	 --trafficType commercialTraffic\
+	 --smallScaleCommercialTrafficType completeSmallScaleCommercialTraffic\
 	 --zoneShapeFileName $(shared)/data/input-commercialTraffic/leipzig_zones_25832.shp\
 	 --buildingsShapeFileName $(shared)/data/input-commercialTraffic/leipzig_buildings_25832.shp\
 	 --landuseShapeFileName $(shared)/data/input-commercialTraffic/leipzig_landuse_25832.shp\
 	 --shapeCRS "EPSG:25832"\
 	 --resistanceFactor "0.005"\
 	 --nameOutputPopulation $(notdir $@)\
-	 --PathOutput output/commercialTraffic
+	 --pathOutput output/commercialTraffic
 
 	mv output/commercialTraffic/$(notdir $@) $@
 
-input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/plans-commercialTraffic.xml.gz
+input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/plans-completeSmallScaleCommercialTraffic.xml.gz
 	$(sc) prepare trajectory-to-plans\
 	 --name prepare --sample-size 0.25\
 	 --max-typical-duration 0\
@@ -118,7 +119,7 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.
 	 --population $(shared)/matsim-input-files/senozon/20210520_leipzig/population.xml.gz\
 	 --attributes $(shared)/matsim-input-files/senozon/20210520_leipzig/personAttributes.xml.gz
 
-	$(sc) prepare population input/prepare-25pct.plans.xml.gz\
+	$(sc) prepare population input/prepare-25pct.plans.xml.gz --phase pre\
  	 --shp $(shared)/matsim-input-files/senozon/20210520_leipzig/dilutionArea.shp --shp-crs $(CRS)\
 	 --output input/prepare-25pct.plans.xml.gz
 
@@ -143,11 +144,16 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.
 
 	$(sc) prepare split-activity-types-duration\
 		--input input/prepare-25pct.plans-with-trips.xml.gz\
+		--exclude commercial_start,commercial_end,freight_start,freight_end\
 		--output $@
 
-	$(sc) prepare fix-subtour-modes --input $@ --coord-dist 100 --output $@
+	$(sc) prepare merge-populations $@ $^ --output $@
 
-	$(sc) prepare merge-populations $@ $< --output $@
+	$(sc) prepare population $@ --phase post\
+ 	 --shp $(shared)/matsim-input-files/senozon/20210520_leipzig/dilutionArea.shp --shp-crs $(CRS)\
+	 --output $@
+
+	$(sc) prepare fix-subtour-modes --input $@ --coord-dist 100 --output $@
 
 	$(sc) prepare extract-home-coordinates $@ --csv input/$V/leipzig-$V-homes.csv
 
@@ -166,7 +172,7 @@ check: input/$V/leipzig-$V-25pct.plans-initial.xml.gz
 	$(sc) analysis check-population $<\
  	 --input-crs $(CRS)\
  	 --attribute carAvail\
- 	 --shp ../shared-svn/projects/NaMAV/data/leipzig-utm32n/leipzig-utm32n.shp\
+ 	 --shp ../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp\
 
 # Aggregated target
 prepare: input/$V/leipzig-$V-25pct.plans-initial.xml.gz input/$V/leipzig-$V-network-with-pt.xml.gz

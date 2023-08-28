@@ -23,6 +23,7 @@ import java.util.Map;
 /**
  * Attach parking information to links.
  */
+@Deprecated
 public final class ParkingCapacitiesAttacher {
 
 	private static final Logger log = LogManager.getLogger(ParkingCapacitiesAttacher.class);
