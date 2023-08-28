@@ -148,8 +148,11 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 	private void aggregateParkingDemandToCarfreeAreas(Network network, Path outputFolder) {
 
 		Geometry geometry = shpForLinkAggregation.getGeometry();
-		Geometry carfreeAreas = shp.getGeometry();
-		List<Link> surroundingLinks = new ArrayList<>();
+		Map<Id<Link>, Integer> surroundingLinks = new HashMap<>();
+
+		Map<Id<Link>, String> linkIdToGarage = new HashMap<>();
+		Map<String, List<Id<Link>>> neighborhoodGaragesToLinkIds = new HashMap<>();
+		Map<String, Integer> neighborhoodGaragesToMaxParkingDemand = new HashMap<>();
 
 		for (Link link : network.getLinks().values()) {
 
@@ -158,7 +161,7 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 			Double minDistance =null;
 
 			if (isInsideArea) {
-				surroundingLinks.add(link);
+				surroundingLinks.put(link.getId(), maxNoVehiclesPerLink.get(link.getId()));
 
 				for (SimpleFeature feature : shp.readFeatures()) {
 					Geometry geom = (Geometry) feature.getDefaultGeometry();
@@ -166,19 +169,60 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 
 					Geometry linkCentroid = MGC.coord2Point(link.getCoord());
 
+					linkIdToGarage.putIfAbsent(link.getId(), feature.getID());
+
 					if (minDistance==null) {
 						//this is the case when we look at the first feature
 						minDistance = boundary.distance(linkCentroid);
+						linkIdToGarage.replace(link.getId(), feature.getID());
+
 					} else if (boundary.distance(linkCentroid) < minDistance) {
 						minDistance = boundary.distance(linkCentroid);
+						linkIdToGarage.replace(link.getId(), feature.getID());
 					} else {
-						//TODO maybe give warning if distance8 to next carfree area is greater than x meters
+						//maybe give warning if distance to next carfree area is greater than x meters
 					}
-
-					//TODO get max parking demand from links, aggregate them to Kiezgarage (feature) and write to csv
 				}
-
 			}
+		}
+
+		for (Id<Link> linkId : surroundingLinks.keySet()) {
+			if (linkIdToGarage.containsKey(linkId)) {
+				//add link to list of links which are associated with this certain neighborhoodGarage
+				neighborhoodGaragesToLinkIds.putIfAbsent(linkIdToGarage.get(linkId), new ArrayList<>());
+				neighborhoodGaragesToLinkIds.get(linkId).add(linkId);
+
+				//add up max parking demand of link to the current value
+				neighborhoodGaragesToMaxParkingDemand.putIfAbsent(linkIdToGarage.get(linkId), 0);
+				Integer newMaxParkingDemand = neighborhoodGaragesToMaxParkingDemand.get(linkIdToGarage.get(linkId)) + surroundingLinks.get(linkId);
+				neighborhoodGaragesToMaxParkingDemand.replace(linkIdToGarage.get(linkId), newMaxParkingDemand);
+			}
+		}
+
+		BufferedWriter neighborhoodGarageCapacityWriter = IOUtils.getBufferedWriter(outputFolder + "/parking-capacity-per-neighborhood-garage.tsv");
+		log.info("Trying to write neighborhood garage parking data to " + outputFolder);
+
+		try {
+
+			// write header
+			neighborhoodGarageCapacityWriter.write("neighborhoodGarage" + "\t" + "maxParkedVehicles" + "\t" + "linkIds");
+			neighborhoodGarageCapacityWriter.newLine();
+
+			//write max parking demand for each neighborhood garage
+			for (String garage : neighborhoodGaragesToLinkIds.keySet()) {
+
+				neighborhoodGarageCapacityWriter.write(garage + "\t");
+				String linkIds = "{";
+				 for (Id<Link> linkId : neighborhoodGaragesToLinkIds.get(garage)) {
+					 linkIds = linkIds + "," + linkId.toString();
+				 }
+
+				 neighborhoodGarageCapacityWriter.write(neighborhoodGaragesToMaxParkingDemand.get(garage) + "\t" + linkIds + "}");
+				 neighborhoodGarageCapacityWriter.newLine();
+			}
+			neighborhoodGarageCapacityWriter.close();
+		} catch (IOException e) {
+			log.error(e);
 		}
 	}
 
