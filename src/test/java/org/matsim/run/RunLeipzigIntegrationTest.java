@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 public class RunLeipzigIntegrationTest {
 
-	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.1/input/";
+	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.2/input/";
 	private static final String exampleShp = "input/v1.2/drtServiceArea/Leipzig_stadt.shp";
 
 	@Test
@@ -33,7 +33,7 @@ public class RunLeipzigIntegrationTest {
 		config.controler().setLastIteration(1);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controler().setOutputDirectory(output.toString());
-		config.plans().setInputFile(URL + "leipzig-v1.1-0.1pct.plans.xml.gz");
+		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
 
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 
