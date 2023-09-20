@@ -524,3 +524,8 @@ $RECYCLE.BIN/
 
 .lintr
 *.Rproj
+
+# SrV data must not be made public
+/input/srv/H_SrV2018_Leipzig.sav
+/input/srv/P_SrV2018_Leipzig.sav
+/input/srv/W_SrV2018_Leipzig.sav
