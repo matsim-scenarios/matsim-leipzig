@@ -37,6 +37,8 @@ import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
+import org.matsim.facilities.FacilitiesUtils;
+import org.matsim.facilities.Facility;
 import org.matsim.run.prepare.*;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.SimWrapperModule;
@@ -282,6 +284,13 @@ public class RunLeipzigScenario extends MATSimApplication {
 			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
 		}
 
+		// alternative to model car free area, by removing the link id it is ensured the default multi modal link chooser functions as the car free one
+		if (networkOpt.hasCarFreeArea()) {
+			for (Facility fac : scenario.getActivityFacilities().getFacilities().values()) {
+				FacilitiesUtils.setLinkID(fac, null);
+			}
+		}
+
 
 	}
 
@@ -315,7 +324,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
 
 				if (networkOpt.hasCarFreeArea()) {
-					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
+					//bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
 				}
 
 				if (networkOpt.hasParkingCostArea()) {
