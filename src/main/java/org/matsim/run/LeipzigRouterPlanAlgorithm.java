@@ -75,8 +75,10 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			if (!originActivity.getType().contains(ActivityTypes.HOME) && !originActivity.getType().contains(ActivityTypes.SHOPPING)) {
 
 				Link link = fullModalNetwork.getLinks().get(originActivity.getLinkId());
-				if (isLinkParkingTypeInsideResidentialArea(link)) {
-					parkingBehaviourAtOrigin = LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig;
+				if (!(link ==null)) {
+					if (isLinkParkingTypeInsideResidentialArea(link)) {
+						parkingBehaviourAtOrigin = LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig;
+					}
 				}
 			}
 		}
