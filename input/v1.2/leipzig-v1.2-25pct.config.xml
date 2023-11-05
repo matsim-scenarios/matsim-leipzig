@@ -165,6 +165,7 @@
 				<param name="dailyUtilityConstant" value="0.0" />
 				<param name="marginalUtilityOfDistance_util_m" value="0.0" />
 				<param name="marginalUtilityOfTraveling_util_hr" value="-12.0" />
+				<param name="monetaryDistanceRate" value="-5.0E-4" />
 				<param name="mode" value="ride"/>
 			</parameterset>
             <parameterset type="modeParams">
