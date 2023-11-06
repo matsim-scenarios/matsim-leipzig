@@ -55,9 +55,9 @@ import java.util.*;
 public final class DrtCaseSetup {
 
 	private static final Logger log = LogManager.getLogger(DrtCaseSetup.class);
-	private static final ShpOptions flexaArea2021 = new ShpOptions(Path.of(
+	/*private static final ShpOptions flexaArea2021 = new ShpOptions(Path.of(
 			"input/v1.2/drtServiceArea/leipzig_flexa_service_area_2021.shp"),
-			null, null);
+			null, null);*/
 
 	private static final String errorMessage = "Unexpected value: ";
 
@@ -153,7 +153,7 @@ public final class DrtCaseSetup {
 			case twoSeparateServiceAreas -> {
 				//flexa case with 2 separate drt bubbles (north and southeast) -> 2 separate drt modes
 
-				for (SimpleFeature feature : flexaArea2021.readFeatures()) {
+				for (SimpleFeature feature : drtArea.readFeatures()) {
 					if (feature.getAttribute("Name").equals("Nord")) {
 						drtMode = "drtNorth";
 						noVehicles = 3;
@@ -185,8 +185,8 @@ public final class DrtCaseSetup {
 						//create drt stops and save them next to config -> put it as input stops file.
 						//unfortunately there is no scenario.setDrtStops, so we have to do this workaround. -sme0723
 						drtStopsCreator.processNetworkForStopCreation(scenario.getNetwork(), true, (Geometry) feature.getDefaultGeometry(),
-								flexaArea2021.getShapeFile().toString() + "_" + drtConfigGroup.getMode() + "_stops.csv", drtConfigGroup.getMode(),
-								stopsFile.toString(), flexaArea2021);
+								drtArea.getShapeFile().toString() + "_" + drtConfigGroup.getMode() + "_stops.csv", drtConfigGroup.getMode(),
+								stopsFile.toString(), drtArea);
 
 						//naming pattern comes from @DrtStopsWriter line 81. Should be ok to hard code it here. -sme0523
 						drtConfigGroup.transitStopFile = stopsFile.toString();
@@ -266,7 +266,7 @@ public final class DrtCaseSetup {
 
 				//if intermodality between pt and drt -> only railways are tagged as intermodal stations (this is how it is handled in reality) -sme0723
 				if (ptDrtIntermodality.equals(PtDrtIntermodality.drtAsAccessEgressForPt)) {
-					preparePtDrtIntermodality(controler, flexaArea2021, true);
+					preparePtDrtIntermodality(controler, drtArea, true);
 				}
 			}
 
