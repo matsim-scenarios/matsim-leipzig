@@ -30,7 +30,7 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.*;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.population.algorithms.PermissibleModesCalculator;
+import  org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
@@ -263,9 +263,9 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (networkOpt.hasParkingCostArea()) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
-			config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(TripStructureUtils.createStageActivityType("parking")).setScoringThisActivityAtAll(false));
+			//config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(TripStructureUtils.createStageActivityType("parking")).setScoringThisActivityAtAll(false));
 
-			adjustStrategiesForParking(config);
+			//adjustStrategiesForParking(config);
 
 		}
 
@@ -307,12 +307,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
 				// Leipzig specific planning strategies
-				this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
+				/*this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
 				this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
 				this.addPlanStrategyBinding(LeipzigSubtourModeChoice.STRATEGY_NAME).toProvider(LeipzigSubtourModeChoice.class);
 
 				// Normally this is bound with the default subtour mode choice, because we use our own variant this is bound again here
-				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
+				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);*/
 
 				if (networkOpt.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
