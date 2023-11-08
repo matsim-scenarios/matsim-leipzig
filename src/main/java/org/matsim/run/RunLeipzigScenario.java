@@ -263,7 +263,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (networkOpt.hasParkingCostArea()) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
-			//config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(TripStructureUtils.createStageActivityType("parking")).setScoringThisActivityAtAll(false));
+			config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(TripStructureUtils.createStageActivityType("parking")).setScoringThisActivityAtAll(false));
 
 			//adjustStrategiesForParking(config);
 
