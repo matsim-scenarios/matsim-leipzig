@@ -6,6 +6,7 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.*;
+import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.controler.PersonPrepareForSimAlgorithm;
 import org.matsim.core.network.filter.NetworkFilterManager;
 import org.matsim.core.population.algorithms.PlanAlgorithm;
@@ -19,7 +20,6 @@ import org.matsim.core.utils.timing.TimeTracker;
 import org.matsim.facilities.ActivityFacilities;
 import org.matsim.facilities.FacilitiesUtils;
 import org.matsim.facilities.Facility;
-import playground.vsp.openberlinscenario.cemdap.output.ActivityTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +57,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 		// keep all nodes that have no in and out links inside parking area
 		// otherwise nearest link might crash if it finds an empty node
 		networkFilterManager.addNodeFilter(n ->
-				n.getInLinks().values().stream().noneMatch(LeipzigUtils::isLinkParkingTypeInsideResidentialArea) &&
+			n.getInLinks().values().stream().noneMatch(LeipzigUtils::isLinkParkingTypeInsideResidentialArea) &&
 				n.getOutLinks().values().stream().noneMatch(LeipzigUtils::isLinkParkingTypeInsideResidentialArea));
 
 		this.reducedNetwork = networkFilterManager.applyFilters();
@@ -72,7 +72,9 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 			// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
 			// check if non-home activity (since otherwise we assume that there is no parking restriction):
-			if (!originActivity.getType().contains(ActivityTypes.HOME) && !originActivity.getType().contains(ActivityTypes.SHOPPING)) {
+			if (!originActivity.getType().startsWith(SnzActivities.home.name()) &&
+				!originActivity.getType().startsWith(SnzActivities.shop_daily.name()) &&
+				!originActivity.getType().startsWith(SnzActivities.shop_other.name())) {
 
 				Link link = fullModalNetwork.getLinks().get(originActivity.getLinkId());
 				if (isLinkParkingTypeInsideResidentialArea(link)) {
