@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
@@ -21,6 +22,7 @@ import picocli.CommandLine;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @CommandLine.Command(
@@ -120,12 +122,50 @@ public class PrepareNetwork implements MATSimAppCommand {
 	static void prepareCarFree(Network network, ShpOptions shp, String modes) {
 		Set<String> modesToRemove = new HashSet<>(Arrays.asList(modes.split(",")));
 
+		//get all links in shp that allow at least one of modesToRemove
+		Set<Id<Link>> modeLinksInArea = getFilteredLinksInArea(network, shp,
+			link -> link.getAllowedModes().stream().anyMatch(mode -> modesToRemove.contains(mode)));
+		deleteModesFromLinks(network, modeLinksInArea, modes);
+
+		log.info("Car free areas have been added to network.");
+	}
+
+	/**
+	 *
+	 * @param network
+	 * @param linkIds
+	 * @param modes provide modes with comma as a separator
+	 */
+	private static void deleteModesFromLinks(Network network, Set<Id<Link>> linkIds, String modes){
+		Set<String> modesToRemove = new HashSet<>(Arrays.asList(modes.split(",")));
+		for(Id<Link> linkId: linkIds){
+			Link link = network.getLinks().get(linkId);
+			Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
+			for (String mode : modesToRemove) {
+				allowedModes.remove(mode);
+			}
+			link.setAllowedModes(allowedModes);
+		}
+
+		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
+		modesToRemove.forEach(m -> multimodalNetworkCleaner.run(Set.of(m)));
+	}
+
+	/**
+	 * return all links in the network that are inside the shp and fulfill the predicate
+	 * @param network
+	 * @param shp
+	 * @param filter
+	 * @return
+	 */
+	static Set<Id<Link>> getFilteredLinksInArea(Network network, ShpOptions shp, Predicate<Link> filter) {
+
 		Geometry carFreeArea = shp.getGeometry();
 		GeometryFactory gf = new GeometryFactory();
+		Set<Id<Link>> modeLinksInArea = new HashSet<>();
 
 		for (Link link : network.getLinks().values()) {
-
-			if (!link.getAllowedModes().contains(TransportMode.car)) {
+			if(!filter.test(link)){
 				continue;
 			}
 
@@ -135,22 +175,11 @@ public class PrepareNetwork implements MATSimAppCommand {
 			});
 
 			boolean isInsideCarFreeZone = line.intersects(carFreeArea);
-
-			if (isInsideCarFreeZone) {
-				Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
-
-				for (String mode : modesToRemove) {
-					allowedModes.remove(mode);
-				}
-				link.setAllowedModes(allowedModes);
+			if(isInsideCarFreeZone){
+				modeLinksInArea.add(link.getId());
 			}
 		}
-
-		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
-		modesToRemove.forEach(m -> multimodalNetworkCleaner.run(Set.of(m)));
-
-		log.info("Car free areas have been added to network.");
-
+		return modeLinksInArea;
 	}
 
 	/**

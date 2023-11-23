@@ -281,7 +281,9 @@ public class RunLeipzigScenario extends MATSimApplication {
 		if (networkOpt.hasDrtArea()) {
 			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
 		}
-
+		if(networkOpt.hasCarFreeArea()){
+			PreparePopulation.deleteCarAndRideRoutesThatHaveForbiddenLinks(scenario.getPopulation(), networkOpt.getNonPtLinksInCarFreeArea(scenario.getNetwork()));
+		}
 
 	}
 
@@ -314,9 +316,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 				// Normally this is bound with the default subtour mode choice, because we use our own variant this is bound again here
 				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
 
-				if (networkOpt.hasCarFreeArea()) {
-					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
-				}
+				//this is obsolete, the default implementation covers all the functionality of CarfreeMultimodalLinkChooser
+//				if (networkOpt.hasCarFreeArea()) {
+//					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
+//				}
 
 				if (networkOpt.hasParkingCostArea()) {
 

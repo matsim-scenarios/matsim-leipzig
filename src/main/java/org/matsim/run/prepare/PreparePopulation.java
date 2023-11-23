@@ -4,11 +4,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.TransportMode;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.application.MATSimAppCommand;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.core.population.PersonUtils;
 import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.scenario.ProjectionUtils;
 import org.matsim.run.RunLeipzigScenario;
@@ -215,7 +218,32 @@ public class PreparePopulation implements MATSimAppCommand {
 		return null;
 	}
 
-
 	enum Phase {pre, post}
+
+	/**
+	 * @param population
+	 * @param forbiddenLinks
+	 */
+	//TODO remove hardcoding of the transport modes??
+	public static void deleteCarAndRideRoutesThatHaveForbiddenLinks(Population population, Set<Id<Link>> forbiddenLinks) {
+//		log.info("start deleting every car route that travels one or more links within car-free-zone");
+
+		population.getPersons().values().stream()
+			.forEach(person -> person.getPlans().stream().flatMap(plan ->
+					TripStructureUtils.getLegs(plan).stream())
+				.forEach(leg -> {
+					if(leg.getMode().equals(TransportMode.car) || leg.getMode().equals(TransportMode.ride)){
+						Route route = leg.getRoute();
+						if (route != null){
+							boolean routeTouchesZone = (route instanceof NetworkRoute && ((NetworkRoute) route).getLinkIds().stream().filter(l -> forbiddenLinks.contains(l)).findAny().isPresent() );
+							if(routeTouchesZone || forbiddenLinks.contains(route.getStartLinkId()) || forbiddenLinks.contains(route.getEndLinkId()) ){
+								leg.setRoute(null);
+							}
+						}
+					}
+				}));
+
+//		log.info(".... finished deleting every car route that travels one or more links within car-free-zone");
+	}
 
 }
