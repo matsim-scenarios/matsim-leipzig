@@ -231,11 +231,11 @@ public class PreparePopulation implements MATSimAppCommand {
 			.forEach(person -> person.getPlans().stream().flatMap(plan ->
 					TripStructureUtils.getLegs(plan).stream())
 				.forEach(leg -> {
-					if(leg.getMode().equals(TransportMode.car) || leg.getMode().equals(TransportMode.ride)){
+					if (leg.getMode().equals(TransportMode.car) || leg.getMode().equals(TransportMode.ride)){
 						Route route = leg.getRoute();
 						if (route != null){
 							boolean routeTouchesZone = (route instanceof NetworkRoute && ((NetworkRoute) route).getLinkIds().stream().filter(l -> forbiddenLinks.contains(l)).findAny().isPresent() );
-							if(routeTouchesZone || forbiddenLinks.contains(route.getStartLinkId()) || forbiddenLinks.contains(route.getEndLinkId()) ){
+							if (routeTouchesZone || forbiddenLinks.contains(route.getStartLinkId()) || forbiddenLinks.contains(route.getEndLinkId()) ){
 								leg.setRoute(null);
 							}
 						}
