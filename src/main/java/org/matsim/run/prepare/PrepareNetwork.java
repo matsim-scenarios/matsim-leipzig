@@ -125,38 +125,30 @@ public class PrepareNetwork implements MATSimAppCommand {
 		//get all links in shp that allow at least one of modesToRemove
 		Set<Id<Link>> modeLinksInArea = getFilteredLinksInArea(network, shp,
 			link -> link.getAllowedModes().stream().anyMatch(mode -> modesToRemove.contains(mode)));
-		deleteModesFromLinks(network, modeLinksInArea, modes);
+		deleteModesFromLinks(network, modeLinksInArea, modesToRemove);
 
 		log.info("Car free areas have been added to network.");
 	}
 
 	/**
-	 *
-	 * @param network
-	 * @param linkIds
-	 * @param modes provide modes with comma as a separator
+	 * mutate the allowedModes field for all links in the network whose id is contained in linkIds such that it does not contain any of the given modes.
 	 */
-	private static void deleteModesFromLinks(Network network, Set<Id<Link>> linkIds, String modes){
-		Set<String> modesToRemove = new HashSet<>(Arrays.asList(modes.split(",")));
-		for(Id<Link> linkId: linkIds){
+	private static void deleteModesFromLinks(Network network, Set<Id<Link>> linkIds, Set<String> modes){
+		for (Id<Link> linkId: linkIds){
 			Link link = network.getLinks().get(linkId);
 			Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
-			for (String mode : modesToRemove) {
+			for (String mode : modes) {
 				allowedModes.remove(mode);
 			}
 			link.setAllowedModes(allowedModes);
 		}
 
 		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
-		modesToRemove.forEach(m -> multimodalNetworkCleaner.run(Set.of(m)));
+		modes.forEach(m -> multimodalNetworkCleaner.run(Set.of(m)));
 	}
 
 	/**
-	 * return all links in the network that are inside the shp and fulfill the predicate
-	 * @param network
-	 * @param shp
-	 * @param filter
-	 * @return
+	 * return all links in the network that are inside the shp and fulfill the predicate.
 	 */
 	static Set<Id<Link>> getFilteredLinksInArea(Network network, ShpOptions shp, Predicate<Link> filter) {
 
@@ -165,7 +157,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 		Set<Id<Link>> modeLinksInArea = new HashSet<>();
 
 		for (Link link : network.getLinks().values()) {
-			if(!filter.test(link)){
+			if (!filter.test(link)){
 				continue;
 			}
 
@@ -175,7 +167,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 			});
 
 			boolean isInsideCarFreeZone = line.intersects(carFreeArea);
-			if(isInsideCarFreeZone){
+			if (isInsideCarFreeZone){
 				modeLinksInArea.add(link.getId());
 			}
 		}
@@ -183,7 +175,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 	}
 
 	/**
-	 * Add parking cost to network links. Therefore, a shape file of the  parking area is needed
+	 * Add parking cost to network links. Therefore, a shape file of the  parking area is needed.
      */
 	static void prepareParkingCost(Network network, ShpOptions parkingCostShape) {
 		Collection<SimpleFeature> features = ShapeFileReader.getAllFeatures(String.valueOf(parkingCostShape.getShapeFile()));
@@ -229,8 +221,8 @@ public class PrepareNetwork implements MATSimAppCommand {
 	}
 
 	/**
-	 * Add parking capacities per link to network links. Therefore, a shape file of the parking area + a csv with capacity data are needed
-	 * For the creation of a capacities.csv see {@link org.matsim.analysis.ParkedVehiclesAnalysis}
+	 * Add parking capacities per link to network links. Therefore, a shape file of the parking area + a csv with capacity data are needed.
+	 * For the creation of a capacities.csv see {@link org.matsim.analysis.ParkedVehiclesAnalysis}.
 	 */
 
 	static void prepareParkingCapacities(Network network, ShpOptions parkingArea, Path inputParkingCapacities) {

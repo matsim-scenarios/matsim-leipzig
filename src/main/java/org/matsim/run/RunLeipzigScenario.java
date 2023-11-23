@@ -34,7 +34,6 @@ import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
-import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
 import org.matsim.run.prepare.*;
@@ -281,7 +280,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		if (networkOpt.hasDrtArea()) {
 			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
 		}
-		if(networkOpt.hasCarFreeArea()){
+		if (networkOpt.hasCarFreeArea()){
 			PreparePopulation.deleteCarAndRideRoutesThatHaveForbiddenLinks(scenario.getPopulation(), networkOpt.getNonPtLinksInCarFreeArea(scenario.getNetwork()));
 		}
 

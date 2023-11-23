@@ -221,8 +221,7 @@ public class PreparePopulation implements MATSimAppCommand {
 	enum Phase {pre, post}
 
 	/**
-	 * @param population
-	 * @param forbiddenLinks
+	 * deletes all car and ride routes from the population that contain at least one of the given links.
 	 */
 	//TODO remove hardcoding of the transport modes??
 	public static void deleteCarAndRideRoutesThatHaveForbiddenLinks(Population population, Set<Id<Link>> forbiddenLinks) {

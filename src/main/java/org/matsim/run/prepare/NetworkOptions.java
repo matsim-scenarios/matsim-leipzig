@@ -123,9 +123,7 @@ public class NetworkOptions {
 	}
 
 	/**
-	 * returns ids for all links inside the car free area that do not allow public transport
-	 * @param network
-	 * @return
+	 * return ids for all links inside the car free area that do not allow public transport.
 	 */
 	public Set<Id<Link>> getNonPtLinksInCarFreeArea(Network network) {
 		if (!hasCarFreeArea()){
