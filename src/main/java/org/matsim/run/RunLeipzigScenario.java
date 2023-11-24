@@ -96,6 +96,9 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--intermodality", defaultValue = "drtAndPtSeparateFromEachOther", description = "Define if drt should be used as access and egress mode for pt.")
 	private DrtCaseSetup.PtDrtIntermodality ptDrtIntermodality;
 
+	@CommandLine.Option(names = "--initial-reroute", defaultValue = "false", description = "Define whether ALL trips should be rerouted prior to the simulation. use for base case calibration only.")
+	private boolean initialReroute;
+
 	public RunLeipzigScenario(@Nullable Config config) {
 		super(config);
 	}
@@ -307,7 +310,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
 				// Leipzig specific planning strategies
-				this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
+
+				if(initialReroute){
+					//re-route prior to simulation
+					this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
+				}
+
 				this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
 				this.addPlanStrategyBinding(LeipzigSubtourModeChoice.STRATEGY_NAME).toProvider(LeipzigSubtourModeChoice.class);
 
