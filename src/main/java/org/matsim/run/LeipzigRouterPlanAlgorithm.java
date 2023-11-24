@@ -64,25 +64,24 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 		this.xy2Links = new XY2Links(fullModalNetwork, scenario.getActivityFacilities());
 	}
 
-	private static LeipzigUtils.PersonParkingBehaviour getParkingBehaviour(Network fullModalNetwork, Activity originActivity, String routingMode) {
-		LeipzigUtils.PersonParkingBehaviour parkingBehaviourAtOrigin = LeipzigUtils.PersonParkingBehaviour.defaultLogic;
+	private static LeipzigUtils.PersonParkingBehaviour getParkingBehaviour(Network fullModalNetwork, Activity activity, String routingMode) {
+		LeipzigUtils.PersonParkingBehaviour parkingBehaviour = LeipzigUtils.PersonParkingBehaviour.defaultLogic;
 
 		// if we find out that there are time restrictions on all the links
 		if (routingMode.equals(TransportMode.car)) {
 
-			// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
-			// check if non-home activity (since otherwise we assume that there is no parking restriction):
-			if (!originActivity.getType().startsWith(SnzActivities.home.name()) &&
-				!originActivity.getType().startsWith(SnzActivities.shop_daily.name()) &&
-				!originActivity.getType().startsWith(SnzActivities.shop_other.name())) {
+			Link link = fullModalNetwork.getLinks().get(activity.getLinkId());
 
-				Link link = fullModalNetwork.getLinks().get(originActivity.getLinkId());
+			// check if non-home activity (since otherwise we assume that there is no parking restriction):
+			//link might be null if inside car free zone (i.e. not in modal network)
+			if (link == null || isParkingRelevantActivity(activity)) {
+
 				if (isLinkParkingTypeInsideResidentialArea(link)) {
-					parkingBehaviourAtOrigin = LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig;
+					parkingBehaviour = LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig;
 				}
 			}
 		}
-		return parkingBehaviourAtOrigin;
+		return parkingBehaviour;
 	}
 
 	@Override
@@ -99,7 +98,6 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			final Facility toFacility = FacilitiesUtils.toFacility(oldTrip.getDestinationActivity(), facilities);
 
 
-			// At this point, I only want to deal with residential parking.  Shopping comes later (and is simpler).
 
 			LeipzigUtils.PersonParkingBehaviour parkingBehaviourAtOrigin = getParkingBehaviour(fullModalNetwork, oldTrip.getOriginActivity(), routingMode);
 			LeipzigUtils.PersonParkingBehaviour parkingBehaviourAtDestination = getParkingBehaviour(fullModalNetwork, oldTrip.getDestinationActivity(), routingMode);
@@ -129,16 +127,15 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			} else if (parkingBehaviourAtOrigin == LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig
 				&& parkingBehaviourAtDestination == LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig) {
 
-				// restricted parking at origin:
 				// first find parking:
-				final Link originParkingLink = linkChooser.decideOnLink(fromFacility, reducedNetwork);
+				final Link originParkingLink = chooseParkingLink(oldTrip.getOriginActivity(), fromFacility);
 
 				final Activity originParkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 					TripStructureUtils.createStageActivityType("parking"), originParkingLink.getId());
 				final Facility originParkingFacility = FacilitiesUtils.toFacility(originParkingActivity, facilities);
 
 				//parking at destination
-				final Link destinationParkingLink = linkChooser.decideOnLink(toFacility, reducedNetwork);
+				final Link destinationParkingLink = chooseParkingLink(oldTrip.getDestinationActivity(), toFacility);
 
 				final Activity destinationParkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 					TripStructureUtils.createStageActivityType("parking"), destinationParkingLink.getId());
@@ -200,7 +197,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 		// restricted parking at origin:
 		// first find parking:
-		final Link parkingLink = linkChooser.decideOnLink(fromFacility, reducedNetwork);
+		final Link parkingLink = chooseParkingLink(oldTrip.getOriginActivity(), fromFacility);
 
 		final Activity parkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 			TripStructureUtils.createStageActivityType("parking"), parkingLink.getId());
@@ -231,8 +228,8 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 	private List<PlanElement> createTripForParkingAtDestination(TripStructureUtils.Trip oldTrip, String routingMode, Facility fromFacility, Facility toFacility, Plan plan, TimeTracker timeTracker) {
 
-		//parking at destination
-		final Link parkingLink = linkChooser.decideOnLink(toFacility, reducedNetwork);
+		final Link parkingLink = chooseParkingLink(oldTrip.getDestinationActivity(), toFacility);
+
 		final Activity parkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 			TripStructureUtils.createStageActivityType("parking"), parkingLink.getId());
 		final Facility parkingFacility = FacilitiesUtils.toFacility(parkingActivity, facilities);
@@ -260,6 +257,37 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 		timeTracker.addElements(newTripElements);
 
 		return newTripElements;
+	}
+
+	/**
+	 *
+	 * we need to check the activity type (again) because it might be that the link in the activity
+	 * is not in the modal network (i.e. activity is in car-free are) and the nearest car link is in
+	 * residential zone. But if the activity is non-residential (or shopping), we want the linkChooser
+	 * to choose the nearest link from outside the residential zone.
+	 *
+	 */
+	private Link chooseParkingLink(Activity activity, Facility facility) {
+		Network networkToSearchIn;
+		//parking at destination
+		if(isParkingRelevantActivity(activity)){
+			networkToSearchIn = fullModalNetwork;
+		} else {
+			networkToSearchIn = reducedNetwork;
+		}
+
+		final Link parkingLink = linkChooser.decideOnLink(facility, networkToSearchIn);
+		return parkingLink;
+	}
+
+	/**
+	 * check if activity type is relevant for residential parking zones
+	 */
+	private static boolean isParkingRelevantActivity(Activity activity) {
+		// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
+		return !activity.getType().startsWith(SnzActivities.home.name()) &&
+			!activity.getType().startsWith(SnzActivities.shop_daily.name()) &&
+			!activity.getType().startsWith(SnzActivities.shop_other.name());
 	}
 
 }
