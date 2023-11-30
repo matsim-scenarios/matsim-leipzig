@@ -183,8 +183,15 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 						amount = -1. * residentialParkingFeePerDay;
 						events.processEvent(new PersonMoneyEvent(event.getTime(), event.getPersonId(), amount, "residential parking", "city", "link " + link.getId().toString()));
 					}
+				}
 
-				} else {
+
+				if (personId2previousActivity.get(event.getPersonId()).startsWith(LeipzigUtils.getActivityPrefixForDailyParkingCosts())
+						&& hasAlreadyPaidDailyResidentialParkingCosts.contains(event.getPersonId())) {
+					//agent has already paid res parking cost, do nothing
+				}
+
+				else {
 					// other parking cost types
 
 					double parkingStartTime = 0.;
