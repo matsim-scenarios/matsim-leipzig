@@ -36,7 +36,7 @@ public class TimeRestrictedParkingCostHandlerTest {
 	public MatsimTestUtils utils = new MatsimTestUtils();
 
 	enum Situation { noTimeRestrictionDefined, timeRestrictionStartAndEndDefined,
-		timeRestrictionStartDefined, timeRestrictionEndDefined }
+		timeRestrictionStartDefined, timeRestrictionEndDefined, multipleHomeActivities }
 
 	void createExamplePopulation(Population population, Scenario scenario, Situation situation ) {
 
@@ -84,7 +84,6 @@ public class TimeRestrictedParkingCostHandlerTest {
 				plan.addActivity(originActivity);
 				plan.addLeg(carLeg);
 				plan.addActivity(destinationActivity);
-
 				//	2.2) eventime outside parking period -> no charging
 				//	3.2) eventTime is later than end of period -> no charging
 				Activity originActivity2 = factory.createActivityFromLinkId(SnzActivities.work.name(), startLink.getId());
@@ -115,6 +114,49 @@ public class TimeRestrictedParkingCostHandlerTest {
 				person2.addPlan(plan2);
 				population.addPerson(person2);
 			}
+
+			case multipleHomeActivities -> {
+				originActivity.setEndTime(75500.);
+				plan.addActivity(originActivity);
+				plan.addLeg(carLeg);
+				plan.addActivity(destinationActivity);
+
+				// set res parking cost to a different value
+				Link homeLink = scenario.getNetwork().getLinks().get(Id.createLinkId("70"));
+				homeLink.getAttributes().putAttribute(LeipzigUtils.getFirstHourParkingCostLinkAttributeName(), 1.);
+				homeLink.getAttributes().putAttribute(LeipzigUtils.getExtraHourParkingCostLinkAttributeName(), 1.);
+				homeLink.getAttributes().putAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName(), 70.);
+
+				Link workLink = scenario.getNetwork().getLinks().get(Id.createLinkId("80"));
+				workLink.getAttributes().putAttribute(LeipzigUtils.getFirstHourParkingCostLinkAttributeName(), 1.);
+				workLink.getAttributes().putAttribute(LeipzigUtils.getExtraHourParkingCostLinkAttributeName(), 1.);
+				workLink.getAttributes().putAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName(), 80.);
+
+				Link workLink2 = scenario.getNetwork().getLinks().get(Id.createLinkId("85"));
+				workLink2.getAttributes().putAttribute(LeipzigUtils.getFirstHourParkingCostLinkAttributeName(), 1.);
+				workLink2.getAttributes().putAttribute(LeipzigUtils.getExtraHourParkingCostLinkAttributeName(), 1.);
+				workLink2.getAttributes().putAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName(), 85.);
+
+				Activity homeActivity = factory.createActivityFromLinkId(SnzActivities.home.name(), homeLink.getId());
+				Activity homeActivity2 = factory.createActivityFromLinkId(SnzActivities.home.name(), homeLink.getId());
+				Activity workActivity = factory.createActivityFromLinkId(SnzActivities.work.name(), workLink.getId());
+				Activity workActivity2 = factory.createActivityFromLinkId(SnzActivities.work.name(), workLink2.getId());
+
+				homeActivity.setEndTime(55500.);
+				workActivity.setEndTime(65900.);
+				homeActivity2.setEndTime(70900.);
+				workActivity2.setEndTime(76950.);
+
+				plan2.addActivity(homeActivity);
+				plan2.addLeg(carLeg);
+				plan2.addActivity(workActivity);
+				plan2.addLeg(carLeg);
+				plan2.addActivity(homeActivity2);
+				plan2.addLeg(carLeg);
+				plan2.addActivity(workActivity2);
+				person2.addPlan(plan2);
+				population.addPerson(person2);
+			}
 		}
 
 		person.addPlan(plan);
@@ -133,6 +175,7 @@ public class TimeRestrictedParkingCostHandlerTest {
 		situations.put(Situation.timeRestrictionStartAndEndDefined, new double[] {28800., 75600.});
 		situations.put(Situation.timeRestrictionEndDefined, new double[] {0., 75600.});
 		situations.put(Situation.timeRestrictionStartDefined, new double[] {28800., 0.});
+		situations.put(Situation.multipleHomeActivities, new double[] {0., 0.});
 
 		for (Situation situation : situations.keySet()) {
 
@@ -211,6 +254,10 @@ public class TimeRestrictedParkingCostHandlerTest {
 				Assert.assertEquals("number of charged activities for person inside parking time period", 1,
 						tracker.notSoRichPersonsAnymore.get(Id.createPersonId(situation + "_2")).size());
 
+			}
+
+			case multipleHomeActivities -> {
+				Assert.assertEquals("number of tested persons", 2, tracker.notSoRichPersonsAnymore.keySet().size());
 			}
 		}
 
