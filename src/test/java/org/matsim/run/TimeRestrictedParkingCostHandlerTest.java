@@ -29,6 +29,7 @@ import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TimeRestrictedParkingCostHandlerTest {
 
@@ -258,6 +259,8 @@ public class TimeRestrictedParkingCostHandlerTest {
 
 			case multipleHomeActivities -> {
 				Assert.assertEquals("number of tested persons", 2, tracker.notSoRichPersonsAnymore.keySet().size());
+				Assert.assertEquals("number of charged activities", 2,
+						tracker.notSoRichPersonsAnymore.get(Id.createPersonId(situation + "_2")).size());
 			}
 		}
 
