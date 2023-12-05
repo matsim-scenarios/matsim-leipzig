@@ -13,7 +13,6 @@ import org.matsim.api.core.v01.events.handler.ActivityStartEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonMoneyEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.*;
-import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.VspExperimentalConfigGroup;
@@ -25,6 +24,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.examples.ExamplesUtils;
 import org.matsim.testcases.MatsimTestUtils;
+import playground.vsp.openberlinscenario.cemdap.output.ActivityTypes;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import java.net.URL;
@@ -57,8 +57,8 @@ public class TimeRestrictedParkingCostHandlerTest {
 		destinationLink.getAttributes().putAttribute(LeipzigUtils.getExtraHourParkingCostLinkAttributeName(), 1.);
 		destinationLink.getAttributes().putAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName(), 1.);
 
-		Activity originActivity = factory.createActivityFromLinkId(SnzActivities.work.name(), startLink.getId());
-		Activity destinationActivity = factory.createActivityFromLinkId(SnzActivities.leisure.name(), destinationLink.getId());
+		Activity originActivity = factory.createActivityFromLinkId(ActivityTypes.WORK, startLink.getId());
+		Activity destinationActivity = factory.createActivityFromLinkId(ActivityTypes.LEISURE, destinationLink.getId());
 
 		Leg carLeg = factory.createLeg(TransportMode.car);
 
@@ -87,7 +87,7 @@ public class TimeRestrictedParkingCostHandlerTest {
 
 				//	2.2) eventime outside parking period -> no charging
 				//	3.2) eventTime is later than end of period -> no charging
-				Activity originActivity2 = factory.createActivityFromLinkId(SnzActivities.work.name(), startLink.getId());
+				Activity originActivity2 = factory.createActivityFromLinkId(ActivityTypes.WORK, startLink.getId());
 				originActivity2.setEndTime(75700.);
 				plan2.addActivity(originActivity2);
 				plan2.addLeg(carLeg);
@@ -106,7 +106,7 @@ public class TimeRestrictedParkingCostHandlerTest {
 				plan.addActivity(destinationActivity);
 
 				//	4.2) eventTime is equal or later than start of period -> charging
-				Activity originActivity2 = factory.createActivityFromLinkId(SnzActivities.work.name(), startLink.getId());
+				Activity originActivity2 = factory.createActivityFromLinkId(ActivityTypes.WORK, startLink.getId());
 				originActivity2.setEndTime(28900.);
 				plan2.addActivity(originActivity2);
 				plan2.addLeg(carLeg);
