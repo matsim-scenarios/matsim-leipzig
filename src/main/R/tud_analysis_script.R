@@ -23,6 +23,9 @@ x_average_speed_by_mode_leg_based_barchart= 1
 x_emissions_barchart = 1
 X_winner_loser_analysis = 0 # Note: A more extensive analysis is performed by TUB.
 
+##
+plot_creation = 1
+
 ## base data reading and filtering
 
 # trips reading and filtering
@@ -68,6 +71,60 @@ trips.list.TFW.carfree.area <- list(base = base.trips.TFW.carfree.area, policy =
 legs.list.TFW.carfree.area <- list(base = base.legs.region, policy = scenario.legs.region)
 
 print(" TUD data is read and filtered")
+
+
+## plot functions ##
+
+plot_bar_chart <- function(analyzed_data, main_title, x_label, y_label, mode_col, output_filename) {
+  
+  skip_naming = 0
+  if (names(analyzed_data)[1] == "interval"){
+    skip_naming = 1 
+  }
+  
+    names(analyzed_data)[1] <- "main_mode"
+
+  if (skip_naming != 1 )
+  # Renaming modes to official names
+    analyzed_data <- analyzed_data %>%
+    mutate(main_mode = case_when(
+      main_mode == "bike" ~ "Bicycle",
+      main_mode == "car" ~ "Car",
+      main_mode == "pt" ~ "Public transport",
+      main_mode == "ride" ~ "Car as passenger",
+      main_mode == "walk" ~ "Walking",
+      TRUE ~ main_mode  
+    ))
+  
+  long_analyzed_data <- analyzed_data %>% # ggplot works with long_data
+    gather(key = "Scenario", value = "Value", -mode_col)
+  
+  gg <- ggplot(long_analyzed_data, aes(x = get(mode_col), y = Value, fill = Scenario)) + 
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(
+      title = main_title,
+      # subtitle = sub_title,# could be passed as argument if needed
+      x = x_label,
+      y = y_label
+    ) +
+    scale_fill_brewer(palette = "Set1", name = "Scenario") +  
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",                           
+      title = element_text(size = 16),                      
+      plot.subtitle = element_text(size = 14),
+      axis.title.x = element_text(size = 14),               
+      axis.title.y = element_text(size = 14),              
+      axis.text.x = element_text(size = 11),               
+      axis.text.y = element_text(size = 11),                
+      legend.title = element_text(size = 12),               
+      legend.text = element_text(size = 12)                 
+    )
+  
+  ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), plot = gg, device = "pdf", width = 10, height = 7)
+  
+  return(gg)
+}
 
 ############### Analysis functions ###################
 
@@ -165,6 +222,9 @@ trips_number_by_mode_barchart <- function(trips_list, output_filename){
     }
   }
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data, "Number of trips by mode",  "Main trip mode",  "Number of trips", "main_mode" , output_filename )
+    }
 }
 
 # Note: For the inner_join function, the first argument should be 'base', followed by the 'policy' as the second argument.
@@ -219,6 +279,9 @@ shifted_trips_average_distance <- function(trip_lists, interested_mode, output_f
     filter(!is.na(main_mode) & main_mode != "drtNorth" & main_mode != "drtSoutheast")
   
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.",interested_mode,".", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data, "Average distance of shifted trips",  "Main trip mode",  "Average distance (m)", "main_mode" , output_filename )
+  }
 }
 
 ## average total distance, average travel distance, and average distance traveled by an individual person
@@ -286,6 +349,12 @@ total_and_average_distance_by_mode <- function(trips_list, output_filename_total
   write.csv(total_trip_distance, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_total, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   write.csv(average_trip_distance, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_average, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   write.csv(average_person_distance, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_person_average, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(total_trip_distance, "Total distance (based on main mode of trip)",  "Main trip mode",  "Total distance (km)", "main_mode" , output_filename_total )
+    plot_bar_chart(average_trip_distance, "Average travel distance (based on main mode of trip)","Main trip mode","Average travel distance (km)", "main_mode" , output_filename_average )
+    plot_bar_chart(average_person_distance, "Average distance per person",  "Main trip mode",  "Average distance per person (km)", "main_mode" , output_filename_person_average )
+  }
 }
 
 ## average and total distance bar chart leg based
@@ -329,6 +398,11 @@ average_and_total_travel_distance_by_mode_leg_based_barchart <- function(legs_li
   
   write.csv(combined_data_total, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_total, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   write.csv(combined_data_average, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_average, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data_total, "Total distance (leg based)",  "Main trip mode",  "Total distance (km)", "main_mode" , output_filename_total )
+    plot_bar_chart(combined_data_average, "Average travel distance (leg based)","Main trip mode","Average travel distance (km)", "main_mode" , output_filename_average )
+  }
 }
 
 
@@ -377,6 +451,11 @@ total_and_average_distance_by_mode_just_main_leg <- function(trips_list, legs_li
   
   write.csv(combined_data_total, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_total, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   write.csv(combined_data_average, file = paste0(outputDirectoryScenario, "/", "df.", output_filename_average, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data_total, "Total distance (main leg of the trip)",  "Main trip mode",  "Total distance (km)", "main_mode" , output_filename_total )
+    plot_bar_chart(combined_data_average, "Average travel distance (main leg of the trip)","Main trip mode","Average travel distance (km)", "main_mode" , output_filename_average )
+  }
 }
 
 # average walking distance by mode bar chart
@@ -424,6 +503,10 @@ average_walking_distance_by_mode <- function(trips_list, legs_list, output_filen
     }
   }
   write.csv(average_walking_distance_csv_data, file = paste0(outputDirectoryScenario, "/", "df." ,output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(average_walking_distance_csv_data, "Average walking distance by main mode",  "Main trip mode",  "Average walking distance(km)", "main_mode" , output_filename )
+  }
 }
 
 ## walking distance distribution by mode bar or line chart
@@ -477,6 +560,11 @@ walking_distance_distribution_by_mode <- function(trips_list, legs_list, output_
     
     output_filename <- paste0(outputDirectoryScenario, "/", "df.", output_filename_prefix, ".", mode, ".TUD.csv")
     write.csv(mode_data_wide, file = output_filename, row.names = FALSE, quote = FALSE)
+    
+    if(plot_creation == 1){
+      output_filename_pdf <- paste0(output_filename_prefix,".",mode)
+      plot_bar_chart(mode_data_wide, "Number of trips by walking distance interval for car mode",  "Distance class",  "Number of trips", "main_mode" , output_filename_pdf )
+    }
   }
 }
 
@@ -506,6 +594,10 @@ travel_time_by_mode_trip_based_bar_chart <- function(trips_list, output_filename
     }
   }
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data, "Average travel time (trip based)",  "Main trip mode",  "Average travel time (min)", "main_mode" , output_filename )
+  }
 }
 
 ## travel time by mode bar chart - leg based
@@ -534,6 +626,10 @@ travel_time_by_mode_leg_based_bar_chart <- function(legs_list, output_filename){
     }
   }
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data, "Average travel time (leg based)",  "Mode",  "Average travel time (min)", "main_mode" , output_filename )
+  }
 }
 
 ## average speed by mode bar chart
@@ -562,6 +658,10 @@ average_speed_by_mode_trip_based_barchart <- function(trips_list, output_filenam
     }
   }
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data, "Average speed (trip based)",  "Main trip mode",  "Average speed (m/s)", "main_mode" , output_filename )
+  }
 }
 
 ## average speed by mode trip based bar chart
@@ -590,6 +690,10 @@ average_speed_by_mode_leg_based_barchart <- function(legs_list, output_filename)
     }
   }
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1){
+    plot_bar_chart(combined_data, "Average speed (leg based)",  "Mode",  "Average speed (m/s)", "main_mode" , output_filename )
+  }
 }
 
 ## emission bar chart
@@ -615,6 +719,10 @@ if (x_emissions_barchart == 1){
     emission_df <- data.frame(emission_type = emission_type, base = base_emission, policy_90 = scenario_emission)
     
     write.csv(emission_df, file = paste0(outputDirectoryScenario, "/", "df." ,emission_type, "_emission_TUD.csv"), row.names = FALSE, quote = FALSE)
+    
+    if(plot_creation == 1){
+      plot_bar_chart(emission_df, paste("emission" ,emission_type),  emission_type,  "Emisison (kg)", "main_mode" , "Emission" )
+    }
   }
 }
 
