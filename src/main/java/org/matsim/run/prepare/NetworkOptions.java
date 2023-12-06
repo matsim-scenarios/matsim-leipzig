@@ -28,7 +28,7 @@ public class NetworkOptions {
 	private Path parkingCapacitiesArea;
 	@CommandLine.Option(names = "--parking-capacities-input", description = "Path to csv file containing parking capacity data per link")
 	private Path inputParkingCapacities;
-	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking cost area", required = true, defaultValue = "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp")
+	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking cost area", required = false, defaultValue = "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp")
 	private Path parkingCostArea;
 	@CommandLine.Option(names = "--slow-speed-area", description = "Path to SHP file specifying area of adapted speed")
 	private Path slowSpeedArea;
