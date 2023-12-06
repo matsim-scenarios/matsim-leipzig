@@ -27,6 +27,7 @@ import org.matsim.vehicles.MatsimVehicleReader;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleUtils;
 import org.matsim.vehicles.Vehicles;
+import org.opengis.feature.simple.SimpleFeature;
 import picocli.CommandLine;
 
 import java.io.BufferedWriter;
@@ -52,6 +53,8 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 	private static final Logger log = LogManager.getLogger(ParkedVehiclesAnalysis.class);
 	@CommandLine.Mixin()
 	private final ShpOptions shp = new ShpOptions();
+	@CommandLine.Mixin()
+	private final ShpOptions shpForLinkAggregation = new ShpOptions();
 	@CommandLine.Option(names = "--directory", description = "path to matsim output directory", required = true)
 	private Path directory;
 	@CommandLine.Option(names = "--time-bin", description = "Time bin size in seconds", defaultValue = "900")
@@ -135,7 +138,92 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 		analyzeParkingCapacityPerLink(network, parkingTracker, timeBins);
 		writeParkingCapacityPerLink(network, outputFolder, timeBins);
 
+		if (shpForLinkAggregation.isDefined()) {
+			aggregateParkingDemandToCarfreeAreas(network, outputFolder);
+		}
+
 		return 0;
+	}
+
+	private void aggregateParkingDemandToCarfreeAreas(Network network, Path outputFolder) {
+
+		Geometry geometry = shpForLinkAggregation.getGeometry();
+		Map<Id<Link>, Integer> surroundingLinks = new HashMap<>();
+
+		Map<Id<Link>, String> linkIdToGarage = new HashMap<>();
+		Map<String, List<Id<Link>>> neighborhoodGaragesToLinkIds = new HashMap<>();
+		Map<String, Integer> neighborhoodGaragesToMaxParkingDemand = new HashMap<>();
+
+		for (Link link : network.getLinks().values()) {
+
+			boolean isInsideArea = MGC.coord2Point(link.getCoord()).within(geometry);
+
+			Double minDistance =null;
+
+			if (isInsideArea) {
+				surroundingLinks.put(link.getId(), maxNoVehiclesPerLink.get(link.getId()));
+
+				for (SimpleFeature feature : shp.readFeatures()) {
+					Geometry geom = (Geometry) feature.getDefaultGeometry();
+					Geometry boundary = geom.getBoundary();
+
+					Geometry linkCentroid = MGC.coord2Point(link.getCoord());
+
+					linkIdToGarage.putIfAbsent(link.getId(), feature.getID());
+
+					if (minDistance==null) {
+						//this is the case when we look at the first feature
+						minDistance = boundary.distance(linkCentroid);
+						linkIdToGarage.replace(link.getId(), feature.getID());
+
+					} else if (boundary.distance(linkCentroid) < minDistance) {
+						minDistance = boundary.distance(linkCentroid);
+						linkIdToGarage.replace(link.getId(), feature.getID());
+					} else {
+						//maybe give warning if distance to next carfree area is greater than x meters
+					}
+				}
+			}
+		}
+
+		for (Id<Link> linkId : surroundingLinks.keySet()) {
+			if (linkIdToGarage.containsKey(linkId)) {
+				//add link to list of links which are associated with this certain neighborhoodGarage
+				neighborhoodGaragesToLinkIds.putIfAbsent(linkIdToGarage.get(linkId), new ArrayList<>());
+				neighborhoodGaragesToLinkIds.get(linkId).add(linkId);
+
+				//add up max parking demand of link to the current value
+				neighborhoodGaragesToMaxParkingDemand.putIfAbsent(linkIdToGarage.get(linkId), 0);
+				Integer newMaxParkingDemand = neighborhoodGaragesToMaxParkingDemand.get(linkIdToGarage.get(linkId)) + surroundingLinks.get(linkId);
+				neighborhoodGaragesToMaxParkingDemand.replace(linkIdToGarage.get(linkId), newMaxParkingDemand);
+			}
+		}
+
+		BufferedWriter neighborhoodGarageCapacityWriter = IOUtils.getBufferedWriter(outputFolder + "/parking-capacity-per-neighborhood-garage.tsv");
+		log.info("Trying to write neighborhood garage parking data to " + outputFolder);
+
+		try {
+
+			// write header
+			neighborhoodGarageCapacityWriter.write("neighborhoodGarage" + "\t" + "maxParkedVehicles" + "\t" + "linkIds");
+			neighborhoodGarageCapacityWriter.newLine();
+
+			//write max parking demand for each neighborhood garage
+			for (String garage : neighborhoodGaragesToLinkIds.keySet()) {
+
+				neighborhoodGarageCapacityWriter.write(garage + "\t");
+				String linkIds = "{";
+				 for (Id<Link> linkId : neighborhoodGaragesToLinkIds.get(garage)) {
+					 linkIds = linkIds + "," + linkId.toString();
+				 }
+
+				 neighborhoodGarageCapacityWriter.write(neighborhoodGaragesToMaxParkingDemand.get(garage) + "\t" + linkIds + "}");
+				 neighborhoodGarageCapacityWriter.newLine();
+			}
+			neighborhoodGarageCapacityWriter.close();
+		} catch (IOException e) {
+			log.error(e);
+		}
 	}
 
 	@SuppressWarnings("CyclomaticComplexity")
