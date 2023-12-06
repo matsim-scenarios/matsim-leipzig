@@ -2,17 +2,15 @@ package org.matsim.run;
 
 import org.junit.Test;
 import org.matsim.analysis.ParkingLocation;
-import org.matsim.api.core.v01.population.PlanElement;
-import org.matsim.api.core.v01.population.Population;
 import org.matsim.application.MATSimApplication;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.OutputDirectoryHierarchy;
-import org.matsim.core.population.PopulationUtils;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
+
 import java.nio.file.Path;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 
 public class ParkingLeipzigTest {
@@ -32,13 +30,13 @@ public class ParkingLeipzigTest {
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
 
-		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
-				"--parking-cost-area", "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp",
-				"--intermodality", "drtAsAccessEgressForPt");
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--drt-area", exampleShp, "--post-processing", "disabled",
+			"--parking-cost-area", "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp",
+			"--parking", "--intermodality", "drtAsAccessEgressForPt");
 
 		assertThat(output)
-				.exists()
-				.isNotEmptyDirectory();
+			.exists()
+			.isNotEmptyDirectory();
 		new ParkingLocation().execute("--directory", output.toString());
 	}
 }

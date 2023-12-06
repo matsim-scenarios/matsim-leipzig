@@ -84,6 +84,9 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@CommandLine.Option(names = "--bikes", defaultValue = "onNetworkWithStandardMatsim", description = "Define how bicycles are handled")
 	private BicycleHandling bike;
 
+	@CommandLine.Option(names = "--parking", defaultValue = "false", description = "Define if parking logic should be enabled.")
+	private boolean parking = false;
+
 	//TODO: define adequate values for the following doubles
 	@CommandLine.Option(names = "--parking-cost-time-period-start", defaultValue = "0", description = "Start of time period for which parking cost will be charged.")
 	private Double parkingCostTimePeriodStart;
@@ -261,12 +264,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 			default -> throw new IllegalStateException("Unexpected value: " + bike);
 		}
 
-		if (networkOpt.hasParkingCostArea()) {
+		if (parking) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 			config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(TripStructureUtils.createStageActivityType("parking")).setScoringThisActivityAtAll(false));
-
 			adjustStrategiesForParking(config);
-
 		}
 
 		return config;
@@ -281,7 +282,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 		if (networkOpt.hasDrtArea()) {
 			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
 		}
-
 
 	}
 
@@ -306,24 +306,24 @@ public class RunLeipzigScenario extends MATSimApplication {
 				// Plots how many different modes agents tried out
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
-				// Leipzig specific planning strategies
-				this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
-				this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
-				this.addPlanStrategyBinding(LeipzigSubtourModeChoice.STRATEGY_NAME).toProvider(LeipzigSubtourModeChoice.class);
+				// Leipzig parking specific planning strategies
+				if (parking) {
+					this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
+					this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
+					this.addPlanStrategyBinding(LeipzigSubtourModeChoice.STRATEGY_NAME).toProvider(LeipzigSubtourModeChoice.class);
 
-				// Normally this is bound with the default subtour mode choice, because we use our own variant this is bound again here
-				bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
+					// Normally this is bound with the default subtour mode choice, because we use our own variant this is bound again here
+					bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
+
+					this.addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
+				}
+
 
 				if (networkOpt.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
 				}
 
-				if (networkOpt.hasParkingCostArea()) {
-
-					this.addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
-
-					install(new PersonMoneyEventsAnalysisModule());
-				}
+				install(new PersonMoneyEventsAnalysisModule());
 			}
 		});
 
