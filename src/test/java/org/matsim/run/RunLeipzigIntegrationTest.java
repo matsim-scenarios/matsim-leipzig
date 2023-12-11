@@ -27,7 +27,7 @@ public class RunLeipzigIntegrationTest {
 	public final void runPoint1pctIntegrationTest() {
 		Path output = Path.of("output/it-1pct");
 
-		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-25pct.config.xml");
+		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-10pct.config.xml");
 
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
