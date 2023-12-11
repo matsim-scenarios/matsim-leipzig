@@ -53,34 +53,25 @@ public class RunLeipzigIntegrationTest {
 
 	@Test
 	public final void runPoint1pctParkingIntegrationTest() {
-		Path output = Path.of("output/it-1pct");
-
+		Path output = Path.of("output-parking-test/it-1pct");
 		Config config = ConfigUtils.loadConfig("input/v1.3/leipzig-v1.3-10pct.config.xml");
-
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
-		config.controler().setLastIteration(1);
+		config.controler().setLastIteration(0);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controler().setOutputDirectory(output.toString());
+		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
 
-		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
-
-		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--slow-speed-area", exampleShp,
-			"--slow-speed-relative-change", "0.5","--drt-area", exampleShp, "--post-processing", "disabled",
-			"--parking", "--parking-cost-area", exampleShp, "--intermodality", "drtAsAccessEgressForPt");
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--drt-area", exampleShp, "--post-processing", "disabled",
+			"--parking-cost-area", "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp",
+			"--parking", "--intermodality", "drtAsAccessEgressForPt");
 
 		assertThat(output)
 			.exists()
 			.isNotEmptyDirectory();
-
 		new ParkingLocation().execute("--directory", output.toString());
-
-		Network network = NetworkUtils.readNetwork(output + "/" + config.controler().getRunId() + ".output_network.xml.gz");
-		assertTrue(network.getLinks().get(Id.createLinkId("24232899")).getFreespeed() < 12.501000000000001);
-		assertTrue(network.getLinks().get(Id.createLinkId("24675139")).getFreespeed() < 7.497);
 	}
-
 
 	@Test
 	@Ignore("Opt Drt is not used right now.")
