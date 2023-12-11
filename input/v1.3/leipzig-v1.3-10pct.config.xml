@@ -46,7 +46,7 @@
     </module>
 
     <module name="counts">
-        <param name="inputCountsFile" value="./leipzig-v1.2-counts-car-bast.xml.gz"/>
+        <param name="inputCountsFile" value="./leipzig-v1.3-counts-car-bast.xml.gz"/>
     </module>
 
     <module name="planscalcroute">

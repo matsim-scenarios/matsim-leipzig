@@ -21,13 +21,13 @@ import static org.junit.Assert.assertTrue;
 public class RunLeipzigIntegrationTest {
 
 	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.2/input/";
-	private static final String exampleShp = "input/v1.2/drtServiceArea/Leipzig_stadt.shp";
+	private static final String exampleShp = "input/v1.3/drtServiceArea/Leipzig_stadt.shp";
 
 	@Test
 	public final void runPoint1pctIntegrationTest() {
 		Path output = Path.of("output/it-1pct");
 
-		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-10pct.config.xml");
+		Config config = ConfigUtils.loadConfig("input/v1.3/leipzig-v1.3-10pct.config.xml");
 
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
