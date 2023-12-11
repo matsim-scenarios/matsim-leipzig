@@ -69,7 +69,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/matsim-scenarios/matsim-duesseldorf</url>
+			<url>https://maven.pkg.github.com/matsim-scenarios/matsim-leipzig</url>
 		</repository>
 	</distributionManagement>
 
