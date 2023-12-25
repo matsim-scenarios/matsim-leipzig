@@ -936,7 +936,7 @@ if(x_trips_number_by_mode_and_distance_barchart == 1){
   
   trips_number_by_mode_and_distance_barchart(trips.list.region, "trips.number.by.mode.and.distance.region")
   trips_number_by_mode_and_distance_barchart(trips.list.city, "trips.number.by.mode.and.distance.city")
-  trips_number_by_mode_and_distance_barchart(trips.list.carfree.area, "trips.number.by.mode.and.distance.mode.carfree.area")
+  trips_number_by_mode_and_distance_barchart(trips.list.carfree.area, "trips.number.by.mode.and.distance.carfree.area")
   trips_number_by_mode_and_distance_barchart(trips.list.TFW.carfree.area, "trips.number.by.mode.and.distance.TFW.carfree.area")
   trips_number_by_mode_and_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.mode.and.distance.residents.TFW.carfree.area")
   trips_number_by_mode_and_distance_barchart(trips.list.workers.TFW.carfree.area, "trips.number.by.mode.and.distance.workers.TFW.carfree.area")
