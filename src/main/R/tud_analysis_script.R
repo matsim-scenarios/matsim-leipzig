@@ -9,6 +9,7 @@ x_modal_split_trips_distance = 1
 x_modal_split_legs_distance =1
 x_trips_number_barchart = 1
 x_trips_number_by_mode_and_distance_barchart = 1
+x_trips_number_by_distance_barchart = 1
 x_modal_shift = 1
 x_shifted_trips_average_distance_bar_chart = 1
 x_average_and_total_travel_distance_by_mode_barchart = 1
@@ -312,6 +313,62 @@ trips_number_by_mode_and_distance_barchart <- function(trips_list, output_filena
   
   if(plot_creation == 1){
     plot_bar_chart_two_dimensional(combined_data, "Number of trips by mode and distance", "Main trip mode and Distance class", "Number of trips", output_filename)
+  }
+}
+
+trips_number_by_distance_barchart <- function(trips_list, output_filename) {
+  
+  calculation <- function(trips, mode) {
+    mode_trips <- trips %>% 
+    filter(main_mode == mode)  %>% 
+    filter(!is.na(main_mode) & main_mode != "drtNorth" & main_mode != "drtSoutheast")
+    
+    
+    mode_trips %>%
+      mutate(distance_class = case_when(
+        traveled_distance <= 1000 ~ "0-1000",
+        traveled_distance <= 2000 ~ "1000-2000",
+        traveled_distance <= 5000 ~ "2000-5000",
+        traveled_distance <= 10000 ~ "5000-10000",
+        traveled_distance <= 20000 ~ "10000-20000",
+        TRUE ~ "20000 and more"
+      )) %>%
+      mutate(distance_class = factor(distance_class, levels = c("0-1000", "1000-2000", "2000-5000", "5000-10000", "10000-20000", "20000 and more"))) %>%
+      group_by(distance_class) %>%
+      summarise(trips_number = n(), .groups = 'drop') %>%
+      mutate(main_mode = mode)
+  }
+  
+  combined_data_list <- list()
+  
+  for (i in seq_along(trips_list)) {
+    scenario_name <- names(trips_list)[i]
+    trips_data <- trips_list[[scenario_name]]
+    modes <- unique(trips_data$main_mode)
+    
+    for (mode in modes) {
+      mode_data <- calculation(trips_data, mode)
+      mode_data$scenario <- scenario_name
+      combined_data_list[[length(combined_data_list) + 1]] <- mode_data
+    }
+  }
+  
+  combined_data <- do.call(rbind, combined_data_list)
+  unique_modes <- unique(combined_data$main_mode)
+  
+  for (mode in unique_modes) {
+    mode_data <- subset(combined_data, main_mode == mode)
+    
+    mode_data_wide <- mode_data %>%
+      select(-main_mode) %>%
+      pivot_wider(names_from = scenario, values_from = trips_number, values_fill = list(trips_number = 0))
+    
+    output_filename_csv <- paste0(outputDirectoryScenario, "/", mode, ".", output_filename, ".csv")
+    write.csv(mode_data_wide, file = output_filename_csv, row.names = FALSE, quote = FALSE)
+    
+    if(plot_creation == 1){
+      plot_bar_chart(mode_data_wide, paste0("Number of trips by distance for mode ", mode), "Distance class", "Number of trips", "distance_class", paste0(mode, ".", output_filename))
+    }
   }
 }
 
@@ -887,6 +944,18 @@ if(x_trips_number_by_mode_and_distance_barchart == 1){
   trips_number_by_mode_and_distance_barchart(trips.list.workers.carfree.area, "trips.number.by.mode.and.distance.workers.carfree.area")
 }
 
+if(x_trips_number_by_distance_barchart == 1){
+  
+  trips_number_by_distance_barchart(trips.list.region, "trips.number.by.distance.region")
+  trips_number_by_distance_barchart(trips.list.city, "trips.number.by.distance.city")
+  trips_number_by_distance_barchart(trips.list.carfree.area, "trips.number.by.distance.carfree.area")
+  trips_number_by_distance_barchart(trips.list.TFW.carfree.area, "trips.number.by.distance.TFW.carfree.area")
+  trips_number_by_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.distance.residents.TFW.carfree.area")
+  trips_number_by_distance_barchart(trips.list.workers.TFW.carfree.area, "trips.number.by.distance.workers.TFW.carfree.area")
+  trips_number_by_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.distance.residents.carfree.area")
+  trips_number_by_distance_barchart(trips.list.workers.carfree.area, "trips.number.by.distance.workers.carfree.area")
+}
+  
 if(x_modal_shift == 1){
   
   modal_shift(trips.list.region,"sankey.region")
