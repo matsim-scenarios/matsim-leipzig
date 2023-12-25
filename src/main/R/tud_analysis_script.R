@@ -122,24 +122,18 @@ plot_bar_chart_two_dimensional <- function(analyzed_data, main_title, x_label, y
 
 plot_bar_chart <- function(analyzed_data, main_title, x_label, y_label, mode_col, output_filename) {
   
-  skip_naming = 0
-  if (names(analyzed_data)[1] %in% c("interval", "distance_class")) {
-    skip_naming = 1
-  }
-  
+  if (!names(analyzed_data)[1] %in% c("interval", "distance_class")) {
     names(analyzed_data)[1] <- "main_mode"
-
-  if (skip_naming != 1 )
-  # Renaming modes to official names
-    analyzed_data <- analyzed_data %>%
-    mutate(main_mode = case_when(
-      main_mode == "bike" ~ "Bicycle",
-      main_mode == "car" ~ "Car",
-      main_mode == "pt" ~ "Public transport",
-      main_mode == "ride" ~ "Car as passenger",
-      main_mode == "walk" ~ "Walking",
-      TRUE ~ main_mode  
-    ))
+    
+    # Check if 'main_mode' is a column before renaming values
+    if ("main_mode" %in% names(analyzed_data)) {
+      analyzed_data$main_mode <- ifelse(analyzed_data$main_mode == "bike", "Bicycle",
+                                        ifelse(analyzed_data$main_mode == "car", "Car",
+                                               ifelse(analyzed_data$main_mode == "pt", "Public transport",
+                                                      ifelse(analyzed_data$main_mode == "ride", "Car as passenger",
+                                                             ifelse(analyzed_data$main_mode == "walk", "Walking", analyzed_data$main_mode)))))
+    }
+  }
   
   long_analyzed_data <- analyzed_data %>% # ggplot works with long_data
     gather(key = "Scenario", value = "Value", -mode_col)
@@ -708,7 +702,7 @@ walking_distance_distribution_by_mode <- function(trips_list, legs_list, output_
     
     if(plot_creation == 1){
       output_filename_pdf <- paste0(output_filename_prefix,".",mode)
-      plot_bar_chart(mode_data_wide, "Number of trips by walking distance interval for car mode",  "Distance class",  "Number of trips", "main_mode" , output_filename_pdf )
+      plot_bar_chart(mode_data_wide, "Number of trips by walking distance interval for car mode",  "Distance class",  "Number of trips", "interval" , output_filename_pdf )
     }
   }
 }
