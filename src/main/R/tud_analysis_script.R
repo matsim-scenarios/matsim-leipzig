@@ -165,6 +165,35 @@ plot_bar_chart <- function(analyzed_data, main_title, x_label, y_label, mode_col
   return(gg)
 }
 
+plot_pie_chart <- function(df, plot_title ,output_filename) {
+  
+  labels <- as.character(unlist(df[1, ]))
+  values <- as.numeric(unlist(df[3, ]))
+  
+  pie_data <- data.frame(mode = labels, Value = values) %>%
+    filter(mode != "drtNorth" & mode != "drtSoutheast")
+  
+  if ("mode" %in% names(pie_data)) {
+    pie_data$mode <- ifelse(pie_data$mode == "bike", "Bicycle",
+                                ifelse(pie_data$mode == "car", "Car",
+                                       ifelse(pie_data$mode == "pt", "Public transport",
+                                              ifelse(pie_data$mode == "ride", "Car as passenger",
+                                                     ifelse(pie_data$mode == "walk", "Walking", pie_data$mode)))))
+  }
+  
+  pie_chart <- ggplot(pie_data, aes(x="", y=Value, fill=mode, label=Value)) +
+    geom_bar(stat="identity", width=1) +
+    coord_polar("y", start=0) +
+    geom_text(aes(label = sprintf("%.1f%%", 100 * Value/sum(Value))), 
+              position = position_stack(vjust = 0.5))+
+    theme_void() +
+    theme(legend.title = element_blank()) +
+    labs(fill = "Categories", title = plot_title)
+  
+  ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), plot = pie_chart, device = "pdf", width = 10, height = 7)
+  return(pie_chart)
+}
+
 ############### Analysis functions ###################
 
 ## Population segment filter 
@@ -198,6 +227,10 @@ modal_split_trips_main_mode <- function(trips_table, output_filename) {
   df_t <- as.data.frame(t(df))
   colnames(df_t) <- df_t[1, ]
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation ==1){
+    plot_pie_chart(df_t,"Modal split by counts (trips)", output_filename)
+  }
 }
 
 ## modal split by leg count and mode
@@ -210,6 +243,10 @@ modal_split_legs_mode <- function(legs_table, output_filename) {
   df_t <- as.data.frame(t(df))
   colnames(df_t) <- df_t[1, ]
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation ==1){
+    plot_pie_chart(df_t,"Modal split by counts (legs)", output_filename)
+  }
 }
 
 ## modal split by trip distance and main mode
@@ -223,6 +260,10 @@ modal_split_trips_distance <- function(trips_table, output_filename ){
   df_t <- as.data.frame(t(df))
   colnames(df_t) <- df_t[1, ]
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation ==1){
+    plot_pie_chart(df_t,"Modal split by distance (trips)", output_filename)
+  }
 }
 
 ## modal split by leg distance and mode
@@ -236,6 +277,10 @@ modal_split_legs_distance <- function(legs_table, output_filename ){
   df_t <- as.data.frame(t(df))
   colnames(df_t) <- df_t[1, ]
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation ==1){
+    plot_pie_chart(df_t,"Modal split by distance (legs)", output_filename)
+  }
 }
 
 ## trips number by mode barchart
