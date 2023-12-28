@@ -959,6 +959,34 @@ if(x_modal_split_legs_mode == 1 ){
   modal_split_legs_mode(legs.list.carfree.area$policy, "pie.ms.counts.legs.policy.carfree.area")
 }
 
+if(x_modal_split_trips_distance == 1){
+  
+  modal_split_trips_distance(trips.list.region$base, "pie.ms.distance.trips.base.region")
+  modal_split_trips_distance(trips.list.city$base, "pie.ms.distance.trips.base.city")
+  modal_split_trips_distance(trips.list.carfree.area$base, "pie.ms.distance.trips.base.carfree.area")
+  modal_split_trips_distance(trips.list.TFW.carfree.area$base, "pie.ms.distance.trips.base.TFW.carfree.area")
+  modal_split_trips_distance(trips.list.residents.carfree.area$base, "pie.ms.distance.trips.base.residetns.carfree.area")
+  modal_split_trips_distance(trips.list.workers.carfree.area$base, "pie.ms.distance.trips.base.workers.carfree.area")
+  
+  modal_split_trips_distance(trips.list.region$policy, "pie.ms.distance.trips.policy.region")
+  modal_split_trips_distance(trips.list.city$policy, "pie.ms.distance.trips.policy.city")
+  modal_split_trips_distance(trips.list.carfree.area$policy, "pie.ms.distance.trips.policy.carfree.area")
+  modal_split_trips_distance(trips.list.TFW.carfree.area$policy, "pie.ms.distance.trips.policy.TFW.carfree.area")
+  modal_split_trips_distance(trips.list.residents.carfree.area$policy, "pie.ms.distance.trips.policy.residetns.carfree.area")
+  modal_split_trips_distance(trips.list.workers.carfree.area$policy, "pie.ms.distance.trips.policy.workers.carfree.area")
+}
+
+if(x_modal_split_legs_distance == 1){
+  
+  modal_split_legs_distance(legs.list.region$base, "pie.ms.distance.legs.base.region")
+  modal_split_legs_distance(legs.list.city$base, "pie.ms.distance.legs.base.city")
+  modal_split_legs_distance(legs.list.carfree.area$base, "pie.ms.distance.legs.base.carfree.area")
+  
+  modal_split_legs_distance(legs.list.region$policy, "pie.ms.distance.legs.policy.region")
+  modal_split_legs_distance(legs.list.city$policy, "pie.ms.distance.legs.policy.city")
+  modal_split_legs_distance(legs.list.carfree.area$policy, "pie.ms.distance.legs.policy.carfree.area")
+}
+
 if(x_trips_number_barchart == 1){
   
   trips_number_by_mode_barchart(trips.list.region, "trips.number.by.mode.region")
