@@ -33,8 +33,8 @@ public class ParkingLeipzigTest {
 		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
 
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
-				"--parking-cost-area", "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp",
-				"--intermodality", "drtAsAccessEgressForPt");
+				"--parking-cost-area", "input/v" + "1.2" + "/parkingCostArea/Bewohnerparken_2020.shp",
+				"--intermodality", "drtAsAccessEgressForPt", "--parking" );
 
 		assertThat(output)
 				.exists()
