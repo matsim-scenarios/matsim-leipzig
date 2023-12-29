@@ -270,7 +270,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 	private Link chooseParkingLink(Activity activity, Facility facility) {
 		Network networkToSearchIn;
 		//parking at destination
-		if(isParkingRelevantActivity(activity)){
+		if(!isParkingRelevantActivity(activity)){
 			networkToSearchIn = fullModalNetwork;
 		} else {
 			networkToSearchIn = reducedNetwork;
