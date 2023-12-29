@@ -79,6 +79,7 @@ print(" TUD data is read and filtered")
 
 plot_bar_chart_two_dimensional <- function(analyzed_data, main_title, x_label, y_label, output_filename) {
   
+  library(RColorBrewer)
   # Convert data to long format for ggplot, excluding the first two columns
   long_data <- analyzed_data %>%
     pivot_longer(cols = -c(distance_class, scenario), names_to = "Data_Type", values_to = "Value") %>%
