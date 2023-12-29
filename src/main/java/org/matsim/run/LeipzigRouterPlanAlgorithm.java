@@ -260,7 +260,6 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 	}
 
 	/**
-	 *
 	 * we need to check the activity type (again) because it might be that the link in the activity
 	 * is not in the modal network (i.e. activity is in car-free are) and the nearest car link is in
 	 * residential zone. But if the activity is non-residential (or shopping), we want the linkChooser
@@ -270,7 +269,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 	private Link chooseParkingLink(Activity activity, Facility facility) {
 		Network networkToSearchIn;
 		//parking at destination
-		if(!isParkingRelevantActivity(activity)){
+		if (!isParkingRelevantActivity(activity)){
 			networkToSearchIn = fullModalNetwork;
 		} else {
 			networkToSearchIn = reducedNetwork;
@@ -281,7 +280,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 	}
 
 	/**
-	 * check if activity type is relevant for residential parking zones
+	 * check if activity type is relevant for residential parking zones.
 	 */
 	private static boolean isParkingRelevantActivity(Activity activity) {
 		// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
