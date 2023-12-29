@@ -168,11 +168,10 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 			if (LeipzigUtils.getActivityPrefixesToBeExcludedFromParkingCost().stream()
 					.noneMatch(s -> personId2previousActivity.get(event.getPersonId()).startsWith(s))) {
 
-
-
 				if (personId2previousActivity.get(event.getPersonId()).startsWith(LeipzigUtils.getActivityPrefixForDailyParkingCosts())) {
-					// daily residential parking costs
 					if (!hasAlreadyPaidDailyResidentialParkingCosts.contains(event.getPersonId())) {
+						// daily residential parking costs
+
 						hasAlreadyPaidDailyResidentialParkingCosts.add(event.getPersonId());
 
 						double residentialParkingFeePerDay = 0.;
@@ -184,7 +183,8 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 							amount = -1. * residentialParkingFeePerDay;
 							events.processEvent(new PersonMoneyEvent(event.getTime(), event.getPersonId(), amount, "residential parking", "city", "link " + link.getId().toString()));
 						}
-					}
+				}
+
 				} else {
 					// other parking cost types
 
