@@ -195,6 +195,28 @@ plot_pie_chart <- function(df, plot_title ,output_filename) {
   return(pie_chart)
 }
 
+plot_sankey <- function(trip_table,output_filename) {
+  
+  trip_table[[1]] <- as.factor(trip_table[[1]])
+  trip_table[[2]] <- as.factor(trip_table[[2]])
+  
+  trip_table <- data.frame(base = trip_table[[1]], policy = trip_table[[2]], frequncy = trip_table[[3]]) %>%
+    filter(base != "drtSoutheast" & base != "drtNorth") %>%
+    filter(policy != "drtSoutheast" & policy != "drtNorth")
+  
+  sankey_chart <- ggplot(trip_table, aes(axis1 = base, axis2 = policy, y = frequncy)) +
+    geom_alluvium(aes(fill = policy)) +
+    geom_stratum(aes(fill = base)) +
+    geom_stratum(aes(fill = policy)) +
+    geom_text(stat = "stratum", aes(label = after_stat(stratum)), size = 3) +
+    theme_void() + 
+    theme(legend.position = "none")+
+    labs(y = "Frequency", fill = "Main transportation of trip")
+  
+  ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), plot = sankey_chart, device = "pdf", width = 10, height = 7)
+  return(sankey_chart)
+}
+
 ############### Analysis functions ###################
 
 ## Population segment filter 
@@ -420,6 +442,11 @@ modal_shift <- function(trips_list, output_filename){
     group_by(main_mode.x, main_mode.y) %>%
     summarise(Freq = n(), .groups = 'drop')
   write.csv(sankey_dataframe, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1)
+  {
+    plot_sankey(sankey_dataframe, output_filename)
+  }
 }
 
 ## shifted trips average distance bar chart
