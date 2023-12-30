@@ -200,11 +200,11 @@ plot_sankey <- function(trip_table,output_filename) {
   trip_table[[1]] <- as.factor(trip_table[[1]])
   trip_table[[2]] <- as.factor(trip_table[[2]])
   
-  trip_table <- data.frame(base = trip_table[[1]], policy = trip_table[[2]], frequncy = trip_table[[3]]) %>%
+  trip_table <- data.frame(base = trip_table[[1]], policy = trip_table[[2]], frequency = trip_table[[3]]) %>%
     filter(base != "drtSoutheast" & base != "drtNorth") %>%
     filter(policy != "drtSoutheast" & policy != "drtNorth")
   
-  sankey_chart <- ggplot(trip_table, aes(axis1 = base, axis2 = policy, y = frequncy)) +
+  sankey_chart <- ggplot(trip_table, aes(axis1 = base, axis2 = policy, y = frequency)) +
     geom_alluvium(aes(fill = policy)) +
     geom_stratum(aes(fill = base)) +
     geom_stratum(aes(fill = policy)) +
