@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE facilities SYSTEM "http://www.matsim.org/files/dtd/facilities_v1.dtd">
+<facilities>
+
+<!-- ====================================================================== -->
+
+	<facility id="1" x="315189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="2" x="320189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="3" x="325189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="4" x="330189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="5" x="33589.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="6" x="340189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="7" x="345189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="8" x="350189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="9" x="355189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="10" x="360189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="11" x="365189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="12" x="370189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="13" x="375189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="14" x="380189.1" y="5261230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="15" x="315189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="16" x="320189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="17" x="325189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="18" x="330189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="19" x="33589.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="20" x="340189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="21" x="345189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="22" x="350189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="23" x="355189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="24" x="360189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="25" x="365189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="26" x="370189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="27" x="375189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+	<facility id="28" x="380189.1" y="5281230.1">
+		<activity type="work">
+		</activity>
+	</facility>
+
+</facilities>
