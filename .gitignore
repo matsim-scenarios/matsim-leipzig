@@ -1,5 +1,11 @@
 # Add own ignores on top, don't edit the template
 
+input/*stops.xml
+input/*stops.csv
+*.Rhistory
+*.RProj
+
+
 
 
 # Common files to ignore when working with matsim

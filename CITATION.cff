@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+title: MATSim Open Leipzig Scenario
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Christian
+    family-names: Rakow
+    email: rakow@vsp.tu-berlin.de
+    affiliation: Technische Universität Berlin
+    orcid: 'https://orcid.org/0000-0003-3760-2243'
+  - given-names: Gregor
+    family-names: Rybczak
+    affiliation: Technische Universität Berlin
+  - given-names: Simon
+    family-names: Meinhardt
+    affiliation: Technische Universität Berlin
+
+url: "https://github.com/matsim-scenarios/matsim-leipzig"
+date-released: 2023-12-11
+year: 2023
+version: 1.3
+license: GPL-2.0

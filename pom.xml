@@ -4,13 +4,14 @@
 	<parent>
 		<groupId>org.matsim</groupId>
 		<artifactId>matsim-all</artifactId>
-		<version>16.0-PR2653</version>
+		<version>16.0-PR2745</version>
+<!--		<version>16.0-SNAPSHOT</version>-->
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.matsim-scenarios</groupId>
 	<artifactId>matsim-leipzig</artifactId>
-	<version>1.2-SNAPSHOT</version>
+	<version>1.3</version>
 
 	<name>MATSim Open Leipzig Scenario</name>
 	<description>MATSim Open Leipzig Scenario</description>
@@ -68,7 +69,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/matsim-scenarios/matsim-duesseldorf</url>
+			<url>https://maven.pkg.github.com/matsim-scenarios/matsim-leipzig</url>
 		</repository>
 	</distributionManagement>
 
@@ -110,6 +111,11 @@
 			<artifactId>drt</artifactId>
 			<version>${matsim.version}</version>
 			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.matsim.contrib</groupId>
+			<artifactId>drt-extensions</artifactId>
+			<version>${matsim.version}</version>
 		</dependency>
 
 		<dependency>
@@ -272,7 +278,7 @@
 					<forkCount>1</forkCount>
 					<reuseForks>false</reuseForks>
 					<!-- avoid out of memory errors: -->
-					<argLine>@{argLine} -Xmx9500m -Djava.awt.headless=true -Dmatsim.preferLocalDtds=true</argLine>
+					<argLine>@{argLine} -Xmx6500m -Djava.awt.headless=true -Dmatsim.preferLocalDtds=true</argLine>
 					<!--necessary in tu berlin gitlab. BUT not good in other places, so solve by command line switch only where needed.  kai, nov'18-->
 					<!--<useSystemClassLoader>false</useSystemClassLoader>-->
 				</configuration>

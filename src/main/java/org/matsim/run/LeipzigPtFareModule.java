@@ -13,6 +13,13 @@ import playground.vsp.pt.fare.PtFareUpperBoundHandler;
  */
 public class LeipzigPtFareModule extends AbstractModule {
 
+	final double minFare = 2.0;
+	final int longDistanceThreshold = 50000;
+	final double normalTripSlope = 0.00017987993018495408;
+	final double longTripSlope = 0.000;
+	final double normalBaseFare = 2.4710702921120262;
+	final double longBaseFare = 18.90;
+
 	@Override
 	public void install() {
 		// Set the money related thing in the config (planCalcScore) file to 0.
@@ -31,20 +38,20 @@ public class LeipzigPtFareModule extends AbstractModule {
 		// https://www.mdv.de/site/uploads/tarifzonenplan.pdf
 
 		// Minimum fare (e.g. short trip or 1 zone ticket)
-		distanceBasedPtFareParams.setMinFare(2.0);
+		distanceBasedPtFareParams.setMinFare(minFare);
 		// Division between long trip and short trip (unit: m)
-		distanceBasedPtFareParams.setLongDistanceTripThreshold(50000);
+		distanceBasedPtFareParams.setLongDistanceTripThreshold(longDistanceThreshold);
 
 		// y = ax + b --> a value, for short trips
-		distanceBasedPtFareParams.setNormalTripSlope(0.00017987993018495408);
+		distanceBasedPtFareParams.setNormalTripSlope(normalTripSlope);
 		// y = ax + b --> b value, for short trips
-		distanceBasedPtFareParams.setNormalTripIntercept(2.4710702921120262);
+		distanceBasedPtFareParams.setNormalTripIntercept(normalBaseFare);
 
 		// Base price is the daily ticket for long trips
 		// y = ax + b --> a value, for long trips
-		distanceBasedPtFareParams.setLongDistanceTripSlope(0.000);
+		distanceBasedPtFareParams.setLongDistanceTripSlope(longTripSlope);
 		// y = ax + b --> b value, for long trips
-		distanceBasedPtFareParams.setLongDistanceTripIntercept(18.90);
+		distanceBasedPtFareParams.setLongDistanceTripIntercept(longBaseFare);
 
 
 		// Add bindings
@@ -54,5 +61,19 @@ public class LeipzigPtFareModule extends AbstractModule {
 			addEventHandlerBinding().toInstance(ptFareUpperBoundHandler);
 			addControlerListenerBinding().toInstance(ptFareUpperBoundHandler);
 		}
+	}
+
+	/**
+	 * base fare for pt ride.
+	 */
+	public Double getNormalPtBaseFare() {
+		return normalBaseFare;
+	}
+
+	/**
+	 * distance based fare for pt ride.
+	 */
+	public Double getNormalDistanceBasedFare() {
+		return normalTripSlope;
 	}
 }

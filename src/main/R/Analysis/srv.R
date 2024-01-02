@@ -7,12 +7,12 @@ library(ggsci)
 library(sf)
 
 
-# setwd("C:/Users/chris/Development/matsim-scenarios/matsim-leipzig/src/main/R")
+# setwd("~/Development/matsim-scenarios/matsim-leipzig/src/main/R")
 
 # Person data from srv
 ############################
 
-persons <- read_delim("../../../../../shared-svn/projects/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_P2018.csv", delim = ";", 
+persons <- read_delim("../../../../shared-svn/projects/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_P2018.csv", delim = ";", 
                       locale = locale(decimal_mark = ",")) %>%
   filter(ST_CODE_NAME=="Leipzig") %>%
   filter(STICHTAG_WTAG <= 5) %>%
@@ -29,7 +29,7 @@ tt <- per_day * 600000
 # Trip data from srV
 #############################
 
-trips <- read_delim("../../../../../shared-svn/projects/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_W2018.csv", delim = ";", 
+trips <- read_delim("../../../../shared-svn/projects/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_W2018.csv", delim = ";", 
                     col_types = cols(
                       V_ZIEL_LAND = col_character(),
                       GIS_LAENGE = col_double(),
@@ -51,10 +51,10 @@ breaks = c(0, 1, 3, 5, 10, 20, Inf)
 relevant <- trips %>%
   filter(ST_CODE_NAME=="Leipzig") %>%
   filter(E_HVM < 70) %>%
-  filter(V_VM_LAENG < 70) %>%
-  filter(GIS_LAENGE >= 0 & GIS_LAENGE_GUELTIG == -1) %>%
+  filter(GIS_LAENGE >= 0 & E_DAUER > 0) %>%
+  filter(GIS_LAENGE < 100) %>%
   filter(STICHTAG_WTAG <= 5) %>%
-  mutate(dist_group = cut(GIS_LAENGE, breaks=breaks, labels=levels, right=T))
+  mutate(dist_group = cut(GIS_LAENGE, breaks=breaks, labels=levels, right=F))
 
 matched <- relevant %>% left_join(lookup, by=c("E_HVM"="category"))
 
@@ -150,9 +150,9 @@ p2_aggr <- ggplot(data=aggr, mapping =  aes(x=1, y=share, fill=mode)) +
   scale_fill_locuszoom() +
   theme_void()
 
-g <- arrangeGrob(p1_aggr, p2_aggr, ncol = 2)
+g <- arrangeGrob(p1_aggr, p2_aggr, nrow = 2)
 ggsave(filename = "modal-split.png", path = ".", g,
-       width = 12, height = 2, device='png', dpi=300)
+       width = 6, height = 2, device='png', dpi=300)
 
 
 #########
@@ -184,6 +184,80 @@ calib_aggr <- sim %>%
 tripShare <- 0.2418
 shortDistance <- sum(filter(sim, dist_group=="0 - 1000")$trips)
 numTrips = (shortDistance - calib_sum * tripShare) / (tripShare - 1)
+
+
+########################
+
+srv0 <- srv %>%
+  filter(dist_group=="0 - 1000") %>%
+  mutate(sum_group = sum(trips))
+
+srv13 <- srv %>%
+  filter(dist_group=="1000 - 3000") %>%
+  mutate(sum_group = sum(trips))
+
+srv35 <- srv %>%
+  filter(dist_group=="3000 - 5000") %>%
+  mutate(sum_group = sum(trips))
+
+srv510 <- srv %>%
+  filter(dist_group=="5000 - 10000") %>%
+  mutate(sum_group = sum(trips))
+
+srv1020 <- srv %>%
+  filter(dist_group=="10000 - 20000") %>%
+  mutate(sum_group = sum(trips))
+
+srv20 <- srv %>%
+  filter(dist_group=="20000+") %>%
+  mutate(sum_group = sum(trips))
+
+srv <- bind_rows(srv0,srv13,srv35,srv510,srv1020,srv20) %>%
+  mutate(share_group = trips / sum_group)
+
+sim0 <- sim %>%
+  filter(dist_group=="0 - 1000") %>%
+  mutate(sum_group = sum(trips))
+
+sim13 <- sim %>%
+  filter(dist_group=="1000 - 3000") %>%
+  mutate(sum_group = sum(trips))
+
+sim35 <- sim %>%
+  filter(dist_group=="3000 - 5000") %>%
+  mutate(sum_group = sum(trips))
+
+sim510 <- sim %>%
+  filter(dist_group=="5000 - 10000") %>%
+  mutate(sum_group = sum(trips))
+
+sim1020 <- sim %>%
+  filter(dist_group=="10000 - 20000") %>%
+  mutate(sum_group = sum(trips))
+
+sim20 <- sim %>%
+  filter(dist_group=="20000+") %>%
+  mutate(sum_group = sum(trips))
+
+sim <- bind_rows(sim0,sim13,sim35,sim510,sim1020,sim20) %>%
+  mutate(share_group = trips / sum_group)
+
+by_distance <- bind_rows(filter(srv, mode!="total_distance_distribution"), sim) %>%
+  mutate(mode=fct_relevel(mode, "walk", "bike", "pt", "ride", "car"))
+
+dist_order <- factor(by_distance$dist_group, level = levels)
+dist_order <- fct_explicit_na(dist_order, "100000+")
+
+g <- ggplot(by_distance, aes(y=share_group, x=source, fill=mode)) +
+  labs(subtitle = paste("Kelheim scenario", substring(f, 52)), x="distance [m]", y="share") +
+  geom_bar(position="stack", stat="identity", width = 0.5) +
+  facet_wrap(dist_order, nrow = 1) +
+  scale_fill_locuszoom() +
+  theme_minimal()
+g
+
+ggsave(filename = "modal-distance-distribution-relative.png", path = ".", g,
+       width = 12, height = 10, device='png', dpi=300)
 
 
 

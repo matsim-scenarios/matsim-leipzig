@@ -48,8 +48,8 @@ public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
 	@CommandLine.Option(names = "--min-distance", description = "minimal distance between two stops in m", defaultValue = "100.")
 	private double minDistance;
 
-	@CommandLine.Option(names = "--output-folder", description = "path to output folder", required = true)
-	private String outputFolder;
+	@CommandLine.Option(names = "--output", description = "output file name", required = true)
+	private String outputFile;
 
 	private static final Logger log = LogManager.getLogger(CreateDrtStopsFromNetwork.class);
 
@@ -66,7 +66,6 @@ public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
 
 		String stopsData = shp.getShapeFile().toString() + "_" + mode + "_stops.csv";
 		Geometry drtServiceArea = null;
-		Map<Id<Node>, Node> stopNodes = new HashMap<>();
 
 		if (shp.getShapeFile() != null) {
 			drtServiceArea = shp.getGeometry();
@@ -74,6 +73,24 @@ public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
 			log.error("The input shp file is empty or does not exist.");
 			return 2;
 		}
+
+		processNetworkForStopCreation(network, modeFilteredNetwork, drtServiceArea, stopsData, mode, outputFile, shp);
+
+		return 0;
+	}
+
+	/**
+	 * method, which is called by @DrtCaseSetup for drt config / input automation.
+	 * @param network input network, which is used to create stops.
+	 * @param modeFilteredNetwork use mode filtered network yes / no.
+	 * @param drtServiceArea shp with drt service area.
+	 * @param stopsData csv file with stop coordinates for comparison.
+	 * @param mode drt mode, for which stops are created.
+	 * @param outputFile output stops file.xml.
+	 */
+	public void processNetworkForStopCreation(Network network, boolean modeFilteredNetwork, Geometry drtServiceArea, String stopsData, String mode, String outputFile, ShpOptions shp) {
+
+		Map<Id<Node>, Node> stopNodes = new HashMap<>();
 
 		if (modeFilteredNetwork) {
 			Network filteredNetwork = NetworkUtils.createNetwork();
@@ -125,16 +142,17 @@ public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
 				csvWriter.append(";");
 				csvWriter.append(Double.toString(filteredNodes.get(nodeId).getCoord().getY()));
 			}
+		} catch (IOException e) {
+			log.fatal(e);
 		}
 
 		MATSimAppCommand prepareDrtStops = new PrepareDrtStops();
-		String outputNet = outputFolder + "/" + mode + "networkForDrtStopCreation.xml.gz";
+		String outputNet = "./" + mode + "networkForDrtStopCreation.xml.gz";
 		NetworkUtils.writeNetwork(network, outputNet);
 
 		prepareDrtStops.execute("--stops-data", stopsData, "--network", outputNet, "--mode", mode,
-				"--shp", shp.getShapeFile().toString(), "--output-folder", outputFolder);
+				"--shp", shp.getShapeFile().toString(), "--output", outputFile);
 
-		return 0;
 	}
 
 	Map<Id<Node>, Node> filterDistance(Double minDistance, Map<Id<Node>, Node> nodes) {

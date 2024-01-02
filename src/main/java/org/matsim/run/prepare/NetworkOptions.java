@@ -4,6 +4,7 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.core.utils.io.IOUtils;
+import org.matsim.run.RunLeipzigScenario;
 import org.matsim.utils.gis.shp2matsim.ShpGeometryUtils;
 import picocli.CommandLine;
 
@@ -27,7 +28,7 @@ public class NetworkOptions {
 	private Path parkingCapacitiesArea;
 	@CommandLine.Option(names = "--parking-capacities-input", description = "Path to csv file containing parking capacity data per link")
 	private Path inputParkingCapacities;
-	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking cost area")
+	@CommandLine.Option(names = "--parking-cost-area", description = "Path to SHP file specifying parking cost area", required = false, defaultValue = "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp")
 	private Path parkingCostArea;
 	@CommandLine.Option(names = "--slow-speed-area", description = "Path to SHP file specifying area of adapted speed")
 	private Path slowSpeedArea;
@@ -45,14 +46,15 @@ public class NetworkOptions {
 	 * Return whether a drt area is defined.
 	 */
 	public boolean hasDrtArea() {
-		return isDefined(drtArea); }
+		return isDefined(drtArea);
+	}
 
 	/**
 	 * Return whether a parkingCost area is defined.
 	 */
 	public boolean hasParkingCostArea() {
-		return isDefined(parkingCostArea); }
-
+		return isDefined(parkingCostArea);
+	}
 
 	/**
 	 * Prepare network with given options.
@@ -78,12 +80,12 @@ public class NetworkOptions {
 		if (isDefined(slowSpeedArea)) {
 			if (!Files.exists(slowSpeedArea)) {
 				throw new IllegalArgumentException("Path to slow speed area not found: " + slowSpeedArea);
-			} else if (slowSpeedRelativeChange==null) {
+			} else if (slowSpeedRelativeChange == null) {
 				throw new IllegalArgumentException("No relative change value for freeSpeed defined: " + slowSpeedArea);
 			} else {
 				PrepareNetwork.prepareSlowSpeed(network,
-						ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(slowSpeedArea, null, null).getShapeFile().toString())),
-						slowSpeedRelativeChange);
+					ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(slowSpeedArea, null, null).getShapeFile().toString())),
+					slowSpeedRelativeChange);
 			}
 		}
 
@@ -104,6 +106,13 @@ public class NetworkOptions {
 				PrepareNetwork.prepareCarFree(network, new ShpOptions(carFreeArea, null, null), carFreeModes);
 			}
 		}
+	}
+
+	/**
+	 * Return path to drt area.
+	 */
+	public Path getDrtArea() {
+		return drtArea;
 	}
 
 	private boolean isDefined(Path p) {

@@ -1,5 +1,6 @@
 package org.matsim.run.prepare;
 
+import com.google.common.collect.Sets;
 import com.opencsv.CSVWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 		description = "Writes drt vehicles file"
 )
 
-public class LeipzigDrtVehicleCreator implements MATSimAppCommand {
+public final class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 
 	private static final Logger log = LogManager.getLogger(LeipzigDrtVehicleCreator.class);
 
@@ -82,24 +83,10 @@ public class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 		TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
 		filter.filter(drtNetwork, modes);
 
-		List<SimpleFeature> serviceAreas = shp.readFeatures();
-
 		MatsimVehicleReader reader = new MatsimVehicleReader(vehicles);
 		reader.readFile(vehTypesFile);
 
-		VehicleType drtType = null;
-
-		//this is ugly hard coded and should maybe be converted into a run input parameter
-		for (VehicleType type : vehicles.getVehicleTypes().values()) {
-			if (type.getId().toString().contains("conventional")) {
-				drtType = type;
-			}
-		}
-
-		for (SimpleFeature serviceArea : serviceAreas) {
-			createVehiclesByRandomPointInShape(serviceArea, drtNetwork, noVehiclesPerArea, serviceStartTime,
-					serviceEndTime, serviceAreas.indexOf(serviceArea), drtType);
-		}
+		createDrtVehicles(vehicles, drtNetwork, shp, noVehiclesPerArea, drtMode);
 
 		String string = vehTypesFile.split("xml")[0].substring(0, vehTypesFile.split("xml")[0].length() - 1) + "-scaledFleet-caseNamav-"
 				+ noVehiclesPerArea + "veh.xml";
@@ -113,8 +100,67 @@ public class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 		return 0;
 	}
 
+	/**
+	 * Creates Drt vehicles for an area, which can consist of multiple, connected single areas (features).
+	 * Use this method if you want to create drt vehicles for one single service area.
+	 */
+	public void createDrtVehicles(Vehicles vehicles, Network network, ShpOptions shp, int noVehiclesPerArea, String drtMode) {
+
+		List<SimpleFeature> serviceAreas = shp.readFeatures();
+
+		//delete existing drtVehicles
+		for (Id<Vehicle> vehId : vehicles.getVehicles().keySet()) {
+			vehicles.removeVehicle(vehId);
+		}
+
+		createDrtVehTypeIfMissing(vehicles);
+
+		VehicleType drtType = null;
+
+		//this is ugly hard coded and should maybe be converted into a run input parameter
+		for (VehicleType type : vehicles.getVehicleTypes().values()) {
+			if (type.getId().toString().contains("conventional")) {
+				drtType = type;
+			}
+		}
+
+		Network filteredNetwork = NetworkUtils.createNetwork();
+		TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
+		filter.filter(filteredNetwork, Sets.newHashSet(drtMode));
+
+		for (SimpleFeature serviceArea : serviceAreas) {
+			createVehiclesByRandomPointInShape(serviceArea, filteredNetwork, noVehiclesPerArea, serviceStartTime,
+					serviceEndTime, serviceAreas.indexOf(serviceArea), drtType, drtMode, vehicles);
+		}
+	}
+
+	/**
+	 * Creates Drt vehicles for a single area (feature).
+	 * Use this method if you want to create drt vehicles for one single, separated + independent service area.
+	 */
+	public void createDrtVehiclesForSingleArea(Vehicles vehicles, Network network, SimpleFeature feature, int noVehiclesPerArea, String drtMode) {
+
+		createDrtVehTypeIfMissing(vehicles);
+
+		VehicleType drtType = null;
+
+		//this is ugly hard coded and should maybe be converted into a run input parameter
+		for (VehicleType type : vehicles.getVehicleTypes().values()) {
+			if (type.getId().toString().contains("conventional")) {
+				drtType = type;
+			}
+		}
+
+		Network filteredNetwork = NetworkUtils.createNetwork();
+		TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
+		filter.filter(filteredNetwork, Sets.newHashSet(drtMode));
+
+		createVehiclesByRandomPointInShape(feature, filteredNetwork, noVehiclesPerArea, serviceStartTime,
+				serviceEndTime, 1, drtType, drtMode, vehicles);
+	}
+
 	private void createVehiclesByRandomPointInShape(SimpleFeature feature, Network network, int noVehiclesPerArea,
-													double serviceStartTime, double serviceEndTime, int serviceAreaCount, VehicleType drtType) {
+													double serviceStartTime, double serviceEndTime, int serviceAreaCount, VehicleType drtType, String drtMode, Vehicles vehicles) {
 		Geometry geometry = (Geometry) feature.getDefaultGeometry();
 
 		for (int i = 0; i < noVehiclesPerArea; i++) {
@@ -175,6 +221,20 @@ public class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 			writer.close();
 		} catch (IOException e) {
 			log.error(e);
+		}
+	}
+
+	/**
+	 *Creates a Leipzig standard drt vehicle type if its missing.
+	 */
+	private void createDrtVehTypeIfMissing(Vehicles vehicles) {
+		if (!vehicles.getVehicleTypes().containsKey(Id.create("conventional_vehicle", VehicleType.class))) {
+			VehicleType vehType = VehicleUtils.createVehicleType(Id.create("conventional_vehicle", VehicleType.class));
+			VehicleCapacity capacity = vehType.getCapacity();
+			capacity.setSeats(6);
+
+			vehType.setDescription("conventional DRT");
+			vehicles.addVehicleType(vehType);
 		}
 	}
 }

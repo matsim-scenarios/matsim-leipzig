@@ -42,6 +42,9 @@ public class PreparePopulation implements MATSimAppCommand {
 	@CommandLine.Mixin
 	private ShpOptions shp;
 
+	@CommandLine.Option(names = "--phase", description = "Run pre or post phase", required = true)
+	private Phase phase;
+
 	public static void main(String[] args) {
 		new PreparePopulation().execute(args);
 	}
@@ -68,6 +71,23 @@ public class PreparePopulation implements MATSimAppCommand {
 
 		ShpOptions.Index index = shp.createIndex(RunLeipzigScenario.CRS, "_");
 
+		switch (phase) {
+			case pre -> prePhase(population);
+			case post -> postPhase(population, index);
+			default -> throw new IllegalArgumentException("Illegal phase");
+		}
+
+
+		PopulationUtils.writePopulation(population, output.toString());
+
+		return 0;
+	}
+
+	/**
+	 * This step runs before any other steps.
+	 */
+	private void prePhase(Population population) {
+
 		Set<Id<Person>> toRemove = new HashSet<>();
 
 		for (Person person : population.getPersons().values()) {
@@ -75,19 +95,8 @@ public class PreparePopulation implements MATSimAppCommand {
 			List<Activity> activities = TripStructureUtils.getActivities(person.getSelectedPlan(), TripStructureUtils.StageActivityHandling.ExcludeStageActivities);
 			for (Activity act : activities) {
 				// Remove persons having activities after 27hours
-
 				if (act.getStartTime().isDefined() && act.getStartTime().seconds() > 27 * 3600)
 					toRemove.add(person.getId());
-
-				// Reduce unnecessary precision
-				if (act.getCoord() != null) {
-					act.setCoord(new Coord(round(act.getCoord().getX()), round(act.getCoord().getY())));
-				}
-			}
-
-			Coord home = setHomeCoordinate(person);
-			if (home == null || !index.contains(home)) {
-				PopulationUtils.putSubpopulation(person, "outside_person");
 			}
 
 			// Set car availability to "never" for agents below 18 years old
@@ -154,9 +163,32 @@ public class PreparePopulation implements MATSimAppCommand {
 		log.info("Removing {} out of {} persons with activities outside valid range", toRemove.size(), population.getPersons().size());
 		toRemove.forEach(population::removePerson);
 
-		PopulationUtils.writePopulation(population, output.toString());
+	}
 
-		return 0;
+	/**
+	 * This step runs at the very end.
+	 */
+	private void postPhase(Population population, ShpOptions.Index index) {
+
+		for (Person person : population.getPersons().values()) {
+
+			List<Activity> activities = TripStructureUtils.getActivities(person.getSelectedPlan(), TripStructureUtils.StageActivityHandling.ExcludeStageActivities);
+			for (Activity act : activities) {
+				// Reduce unnecessary precision
+				if (act.getCoord() != null) {
+					act.setCoord(new Coord(round(act.getCoord().getX()), round(act.getCoord().getY())));
+				}
+			}
+
+			// Only handles persons
+			if (!"person".equals(PopulationUtils.getSubpopulation(person)))
+				continue;
+
+			Coord home = setHomeCoordinate(person);
+			if (home == null || !index.contains(home)) {
+				PopulationUtils.putSubpopulation(person, "outside_person");
+			}
+		}
 	}
 
 	/**
@@ -182,5 +214,8 @@ public class PreparePopulation implements MATSimAppCommand {
 
 		return null;
 	}
+
+
+	enum Phase {pre, post}
 
 }

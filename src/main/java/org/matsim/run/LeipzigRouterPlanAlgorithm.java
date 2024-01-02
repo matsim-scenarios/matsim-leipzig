@@ -5,10 +5,10 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
-import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.*;
+import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.controler.PersonPrepareForSimAlgorithm;
-import org.matsim.core.network.NetworkUtils;
+import org.matsim.core.network.filter.NetworkFilterManager;
 import org.matsim.core.population.algorithms.PlanAlgorithm;
 import org.matsim.core.population.algorithms.XY2Links;
 import org.matsim.core.router.MultimodalLinkChooser;
@@ -20,7 +20,6 @@ import org.matsim.core.utils.timing.TimeTracker;
 import org.matsim.facilities.ActivityFacilities;
 import org.matsim.facilities.FacilitiesUtils;
 import org.matsim.facilities.Facility;
-import playground.vsp.openberlinscenario.cemdap.output.ActivityTypes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,20 +46,22 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 		this.timeInterpretation = timeInterpretation;
 		this.scenario = scenario;
 		this.fullModalNetwork = singleModeNetworksCache.getSingleModeNetworksCache().get(TransportMode.car);
+		this.linkChooser = linkChooser;
+
 
 		// yyyy one should look at the networks cache and see how the following is done.  And maybe even register it there.
-		this.reducedNetwork = NetworkUtils.createNetwork(scenario.getConfig().network());
-		this.linkChooser = linkChooser;
-		for (Node node : this.fullModalNetwork.getNodes().values()) {
-			reducedNetwork.addNode(node);
-		}
-		for (Link link : this.fullModalNetwork.getLinks().values()) {
-			if (!LeipzigUtils.isLinkParkingTypeInsideResidentialArea(link)) {
-				reducedNetwork.addLink(link);
-			}
-		}
+		NetworkFilterManager networkFilterManager = new NetworkFilterManager(fullModalNetwork, scenario.getConfig().network());
 
-		xy2Links = new XY2Links(fullModalNetwork, scenario.getActivityFacilities());
+		networkFilterManager.addLinkFilter(link -> !LeipzigUtils.isLinkParkingTypeInsideResidentialArea(link));
+
+		// keep all nodes that have no in and out links inside parking area
+		// otherwise nearest link might crash if it finds an empty node
+		networkFilterManager.addNodeFilter(n ->
+			n.getInLinks().values().stream().noneMatch(LeipzigUtils::isLinkParkingTypeInsideResidentialArea) &&
+				n.getOutLinks().values().stream().noneMatch(LeipzigUtils::isLinkParkingTypeInsideResidentialArea));
+
+		this.reducedNetwork = networkFilterManager.applyFilters();
+		this.xy2Links = new XY2Links(fullModalNetwork, scenario.getActivityFacilities());
 	}
 
 	private static LeipzigUtils.PersonParkingBehaviour getParkingBehaviour(Network fullModalNetwork, Activity originActivity, String routingMode) {
@@ -71,7 +72,9 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 			// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
 			// check if non-home activity (since otherwise we assume that there is no parking restriction):
-			if (!originActivity.getType().equals(ActivityTypes.HOME)) {
+			if (!originActivity.getType().startsWith(SnzActivities.home.name()) &&
+				!originActivity.getType().startsWith(SnzActivities.shop_daily.name()) &&
+				!originActivity.getType().startsWith(SnzActivities.shop_other.name())) {
 
 				Link link = fullModalNetwork.getLinks().get(originActivity.getLinkId());
 				if (isLinkParkingTypeInsideResidentialArea(link)) {

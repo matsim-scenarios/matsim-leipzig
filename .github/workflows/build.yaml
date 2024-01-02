@@ -103,4 +103,4 @@ jobs:
           path: staging
 
     env:
-      MAVEN_OPTS: -Xmx10G
+      MAVEN_OPTS: -Xmx512m

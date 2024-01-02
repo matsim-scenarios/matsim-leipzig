@@ -22,7 +22,7 @@ public class NetworkOptionsTest {
 	public MatsimTestUtils utils = new MatsimTestUtils();
 
     private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.1/input/";
-    private static final String shpPath = "./input/v1.2/drtServiceArea/preliminary-serviceArea-leipzig-utm32n.shp";
+    private static final String shpPath = "./input/v1.2/drtServiceArea/leipzig_flexa_service_area_2021.shp";
 
 	private Network network;
 	private NetworkOptions options;

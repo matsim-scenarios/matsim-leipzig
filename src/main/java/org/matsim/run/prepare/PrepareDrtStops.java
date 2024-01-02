@@ -29,8 +29,8 @@ public class PrepareDrtStops implements MATSimAppCommand {
 	private String mode;
 	// mode = "drt", "av" or other specific drt operator mode
 
-	@CommandLine.Option(names = "--output-folder", description = "path to output folder", required = true)
-	private String outputFolder;
+	@CommandLine.Option(names = "--output", description = "output file name", required = true)
+	private String outputFile;
 
 	public static void main(String[] args) throws IOException {
 		new PrepareDrtStops().execute(args);
@@ -43,7 +43,7 @@ public class PrepareDrtStops implements MATSimAppCommand {
 		Scenario scenario = ScenarioUtils.loadScenario(config);
 		Network network = scenario.getNetwork();
 
-		DrtStopsWriter drtStopsWriter = new DrtStopsWriter(stopsData, network, mode, shp, outputFolder);
+		DrtStopsWriter drtStopsWriter = new DrtStopsWriter(stopsData, network, mode, shp, outputFile);
 		drtStopsWriter.write();
 		return 0;
 	}

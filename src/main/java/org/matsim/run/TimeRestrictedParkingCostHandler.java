@@ -168,21 +168,22 @@ final class TimeRestrictedParkingCostHandler implements TransitDriverStartsEvent
 			if (LeipzigUtils.getActivityPrefixesToBeExcludedFromParkingCost().stream()
 					.noneMatch(s -> personId2previousActivity.get(event.getPersonId()).startsWith(s))) {
 
-				if (personId2previousActivity.get(event.getPersonId()).startsWith(LeipzigUtils.getActivityPrefixForDailyParkingCosts())
-				&& !hasAlreadyPaidDailyResidentialParkingCosts.contains(event.getPersonId())) {
-					// daily residential parking costs
+				if (personId2previousActivity.get(event.getPersonId()).startsWith(LeipzigUtils.getActivityPrefixForDailyParkingCosts())) {
+					if (!hasAlreadyPaidDailyResidentialParkingCosts.contains(event.getPersonId())) {
+						// daily residential parking costs
 
-					hasAlreadyPaidDailyResidentialParkingCosts.add(event.getPersonId());
+						hasAlreadyPaidDailyResidentialParkingCosts.add(event.getPersonId());
 
-					double residentialParkingFeePerDay = 0.;
-					if (link.getAttributes().getAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName()) != null) {
-						residentialParkingFeePerDay = (double) link.getAttributes().getAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName());
-					}
+						double residentialParkingFeePerDay = 0.;
+						if (link.getAttributes().getAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName()) != null) {
+							residentialParkingFeePerDay = (double) link.getAttributes().getAttribute(LeipzigUtils.getResidentialParkingFeeAttributeName());
+						}
 
-					if (residentialParkingFeePerDay > 0.) {
-						amount = -1. * residentialParkingFeePerDay;
-						events.processEvent(new PersonMoneyEvent(event.getTime(), event.getPersonId(), amount, "residential parking", "city", "link " + link.getId().toString()));
-					}
+						if (residentialParkingFeePerDay > 0.) {
+							amount = -1. * residentialParkingFeePerDay;
+							events.processEvent(new PersonMoneyEvent(event.getTime(), event.getPersonId(), amount, "residential parking", "city", "link " + link.getId().toString()));
+						}
+				}
 
 				} else {
 					// other parking cost types

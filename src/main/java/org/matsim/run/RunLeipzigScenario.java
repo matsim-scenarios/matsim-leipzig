@@ -1,12 +1,6 @@
 package org.matsim.run;
 
-import ch.sbb.matsim.config.SwissRailRaptorConfigGroup;
-import ch.sbb.matsim.routing.pt.raptor.RaptorIntermodalAccessEgress;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.matsim.analysis.*;
@@ -14,9 +8,6 @@ import org.matsim.analysis.personMoney.PersonMoneyEventsAnalysisModule;
 import org.matsim.analysis.pt.stop2stop.PtStop2StopAnalysisModule;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
-import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Plan;
 import org.matsim.application.MATSimApplication;
 import org.matsim.application.analysis.CheckPopulation;
 import org.matsim.application.analysis.noise.NoiseAnalysis;
@@ -33,42 +24,29 @@ import org.matsim.application.prepare.population.*;
 import org.matsim.application.prepare.pt.CreateTransitScheduleFromGtfs;
 import org.matsim.contrib.bicycle.BicycleConfigGroup;
 import org.matsim.contrib.bicycle.BicycleModule;
-import org.matsim.contrib.drt.fare.DrtFareParams;
-import org.matsim.contrib.drt.routing.DrtRoute;
-import org.matsim.contrib.drt.routing.DrtRouteFactory;
-import org.matsim.contrib.drt.run.DrtConfigs;
-import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
-import org.matsim.contrib.drt.run.MultiModeDrtModule;
-import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
-import org.matsim.contrib.dvrp.run.DvrpModule;
-import org.matsim.contrib.dvrp.run.DvrpQSimComponents;
 import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.groups.*;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.replanning.choosers.ForceInnovationStrategyChooser;
-import org.matsim.core.replanning.choosers.StrategyChooser;
+import org.matsim.core.population.algorithms.PermissibleModesCalculator;
+import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.MultimodalLinkChooser;
 import org.matsim.core.router.TripStructureUtils;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
-import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorConfigGroup;
-import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsConfigGroup;
-import org.matsim.extensions.pt.fare.intermodalTripFareCompensator.IntermodalTripFareCompensatorsModule;
-import org.matsim.extensions.pt.routing.EnhancedRaptorIntermodalAccessEgress;
-import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesConfigGroup;
-import org.matsim.extensions.pt.routing.ptRoutingModes.PtIntermodalRoutingModesModule;
 import org.matsim.run.prepare.*;
+import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.SimWrapperModule;
-import org.matsim.smallScaleCommercialTrafficGeneration.CreateSmallScaleCommercialTrafficDemand;
+import org.matsim.smallScaleCommercialTrafficGeneration.GenerateSmallScaleCommercialTrafficDemand;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import javax.annotation.Nullable;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -81,7 +59,7 @@ import java.util.*;
 	MergePopulations.class, ExtractRelevantFreightTrips.class, DownSamplePopulation.class, PrepareNetwork.class, CleanNetwork.class,
 	CreateLandUseShp.class, ResolveGridCoordinates.class, PreparePopulation.class, CleanPopulation.class, AdjustActivityToLinkDistances.class,
 	SplitActivityTypesDuration.class, ExtractHomeCoordinates.class, FixSubtourModes.class, FixNetwork.class, PrepareTransitSchedule.class,
-	CreateSmallScaleCommercialTrafficDemand.class
+	GenerateSmallScaleCommercialTrafficDemand.class
 })
 @MATSimApplication.Analysis({
 	CheckPopulation.class, LinkStats.class, SubTourAnalysis.class, DrtServiceQualityAnalysis.class,
@@ -93,35 +71,40 @@ public class RunLeipzigScenario extends MATSimApplication {
 	 * Coordinate system used in the scenario.
 	 */
 	public static final String CRS = "EPSG:25832";
-
-	static final String VERSION = "1.1";
-
+	/**
+	 * Current version number.
+	 */
+	public static final String VERSION = "1.3";
 	private static final Logger log = LogManager.getLogger(RunLeipzigScenario.class);
-
 	@CommandLine.Mixin
 	private final SampleOptions sample = new SampleOptions(1, 10, 25);
 	@CommandLine.ArgGroup(heading = "%nNetwork options%n", exclusive = false, multiplicity = "0..1")
 	private final NetworkOptions networkOpt = new NetworkOptions();
 
-	@CommandLine.Option(names = "--relativeSpeedChange", defaultValue = "1", description = "provide a value that is bigger then 0.0 and smaller then 1.0, else the speed will be reduced to 20 km/h")
-	Double relativeSpeedChange;
 	@CommandLine.Option(names = "--bikes", defaultValue = "onNetworkWithStandardMatsim", description = "Define how bicycles are handled")
 	private BicycleHandling bike;
+
+	@CommandLine.Option(names = "--parking", defaultValue = "false", description = "Define if parking logic should be enabled.")
+	private boolean parking = false;
 
 	//TODO: define adequate values for the following doubles
 	@CommandLine.Option(names = "--parking-cost-time-period-start", defaultValue = "0", description = "Start of time period for which parking cost will be charged.")
 	private Double parkingCostTimePeriodStart;
 	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
 	private Double parkingCostTimePeriodEnd;
-	@CommandLine.Mixin
-	private ShpOptions shp;
+
+	@CommandLine.Option(names = "--drt-case", defaultValue = "oneServiceArea", description = "Defines how drt is modelled. For a more detailed description see class DrtCaseSetup.")
+	private DrtCaseSetup.DrtCase drtCase;
+
+	@CommandLine.Option(names = "--intermodality", defaultValue = "drtAndPtSeparateFromEachOther", description = "Define if drt should be used as access and egress mode for pt.")
+	private DrtCaseSetup.PtDrtIntermodality ptDrtIntermodality;
 
 	public RunLeipzigScenario(@Nullable Config config) {
 		super(config);
 	}
 
 	public RunLeipzigScenario() {
-		super(String.format("input/v%s/leipzig-v%s-25pct.config.xml", VERSION, VERSION));
+		super(String.format("input/v%s/leipzig-v%s-10pct.config.xml", VERSION, VERSION));
 	}
 
 	public static void main(String[] args) {
@@ -137,16 +120,15 @@ public class RunLeipzigScenario extends MATSimApplication {
 		config.strategy().clearStrategySettings();
 
 		for (StrategyConfigGroup.StrategySettings strategySetting : modifiableCollectionOfOldStrategySettings) {
+
 			if (strategySetting.getStrategyName().equals("ReRoute")) {
-				StrategyConfigGroup.StrategySettings newReRouteStrategy = new StrategyConfigGroup.StrategySettings();
-				newReRouteStrategy.setStrategyName(LeipzigRoutingStrategyProvider.STRATEGY_NAME);
-				newReRouteStrategy.setSubpopulation(strategySetting.getSubpopulation());
-				newReRouteStrategy.setWeight(strategySetting.getWeight());
-				newReRouteStrategy.setDisableAfter(strategySetting.getDisableAfter());
-				config.strategy().addStrategySettings(newReRouteStrategy);
-			} else {
-				config.strategy().addStrategySettings(strategySetting);
+				strategySetting.setStrategyName(LeipzigRoutingStrategyProvider.STRATEGY_NAME);
+			} else if (strategySetting.getStrategyName().equals("SubtourModeChoice")) {
+				strategySetting.setStrategyName(LeipzigSubtourModeChoice.STRATEGY_NAME);
 			}
+
+			config.strategy().addStrategySettings(strategySetting);
+
 		}
 	}
 
@@ -154,8 +136,35 @@ public class RunLeipzigScenario extends MATSimApplication {
 	@Override
 	protected Config prepareConfig(Config config) {
 
-		SnzActivities.addScoringParams(config);
 		// senozon activity types that are always the same.  Differentiated by typical duration.
+		SnzActivities.addScoringParams(config);
+
+		// Prepare commercial config
+		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("service").setTypicalDuration(3600));
+		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("commercial_start").setTypicalDuration(3600));
+		config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams("commercial_end").setTypicalDuration(3600));
+
+		SimWrapperConfigGroup simWrapper = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
+
+		// Path is relative to config
+		simWrapper.defaultParams().shp = "../leipzig-utm32n/leipzig-utm32n.shp";
+		simWrapper.defaultParams().mapCenter = "12.38,51.34";
+		simWrapper.defaultParams().mapZoomLevel = 10.3;
+
+		for (String subpopulation : List.of("outside_person", "freight", "goodsTraffic", "commercialPersonTraffic", "commercialPersonTraffic_service")) {
+			config.strategy().addStrategySettings(
+				new StrategyConfigGroup.StrategySettings()
+					.setStrategyName(DefaultPlanStrategiesModule.DefaultSelector.ChangeExpBeta)
+					.setWeight(0.95)
+					.setSubpopulation(subpopulation)
+			);
+			config.strategy().addStrategySettings(
+				new StrategyConfigGroup.StrategySettings()
+					.setStrategyName(DefaultPlanStrategiesModule.DefaultStrategy.ReRoute)
+					.setWeight(0.05)
+					.setSubpopulation(subpopulation)
+			);
+		}
 
 		if (sample.isSet()) {
 			// in [%].  adjust if sample size is less than 100%
@@ -166,6 +175,8 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 			config.qsim().setFlowCapFactor(sample.getSize() / 100.0);
 			config.qsim().setStorageCapFactor(sample.getSize() / 100.0);
+
+			simWrapper.defaultParams().sampleSize = sample.getSample();
 		}
 
 
@@ -178,9 +189,12 @@ public class RunLeipzigScenario extends MATSimApplication {
 		// but we do not know where the facilities are.  (Facilities are not written to file.)
 
 		if (networkOpt.hasDrtArea()) {
-			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
-			ConfigUtils.addOrGetModule(config, DvrpConfigGroup.class);
-			DrtConfigs.adjustMultiModeDrtConfig(multiModeDrtConfigGroup, config.planCalcScore(), config.plansCalcRoute());
+			//drt
+			try {
+				DrtCaseSetup.prepareConfig(config, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null));
+			} catch (URISyntaxException e) {
+				log.fatal(e);
+			}
 		}
 
 		config.qsim().setUsingTravelTimeCheckInTeleportation(true);
@@ -188,10 +202,10 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		config.qsim().setUsePersonIdForMissingVehicleId(false);
 
-		// this is how it is supposed to be
-		config.facilities().setFacilitiesSource(FacilitiesConfigGroup.FacilitiesSource.onePerActivityLinkInPlansFile);
+		// We need to use coordinates only, otherwise subtour constraints will be violated by the parking re-routing, because it may change link/facility ids
+		config.facilities().setFacilitiesSource(FacilitiesConfigGroup.FacilitiesSource.none);
 
-		switch ((bike)) {
+		switch (bike) {
 			case onNetworkWithStandardMatsim -> {
 				// bike is routed on the network per the xml config.
 
@@ -221,15 +235,39 @@ public class RunLeipzigScenario extends MATSimApplication {
 				BicycleConfigGroup bikeConfigGroup = ConfigUtils.addOrGetModule(config, BicycleConfigGroup.class);
 				bikeConfigGroup.setBicycleMode(TransportMode.bike);
 			}
-			default -> throw new IllegalStateException("Unexpected value: " + (bike));
+			case bikeTeleportedStandardMatsim -> {
+
+				log.info("Simulating with bikes teleported");
+				PlansCalcRouteConfigGroup plansCalcRouteConfigGroup = ConfigUtils.addOrGetModule(config, PlansCalcRouteConfigGroup.class);
+
+				if (plansCalcRouteConfigGroup.getNetworkModes().contains(TransportMode.bike)) {
+
+					Collection<String> networkModes = Sets.newHashSet();
+
+					for (String mode : plansCalcRouteConfigGroup.getNetworkModes()) {
+						if (!mode.equals(TransportMode.bike)) {
+							networkModes.add(mode);
+						}
+					}
+					plansCalcRouteConfigGroup.setNetworkModes(networkModes);
+				}
+
+				if (!plansCalcRouteConfigGroup.getTeleportedModeParams().containsKey(TransportMode.bike)) {
+					PlansCalcRouteConfigGroup.TeleportedModeParams teleportedModeParams = new PlansCalcRouteConfigGroup.TeleportedModeParams();
+					teleportedModeParams.setMode(TransportMode.bike);
+					teleportedModeParams.setBeelineDistanceFactor(1.3);
+					teleportedModeParams.setTeleportedModeSpeed(3.1388889);
+					plansCalcRouteConfigGroup.addTeleportedModeParams(teleportedModeParams);
+				}
+			}
+
+			default -> throw new IllegalStateException("Unexpected value: " + bike);
 		}
 
-		if (networkOpt.hasParkingCostArea()) {
+		if (parking) {
 			ConfigUtils.addOrGetModule(config, ParkingCostConfigGroup.class);
 			config.planCalcScore().addActivityParams(new PlanCalcScoreConfigGroup.ActivityParams(TripStructureUtils.createStageActivityType("parking")).setScoringThisActivityAtAll(false));
-
 			adjustStrategiesForParking(config);
-
 		}
 
 		return config;
@@ -237,32 +275,18 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 	@Override
 	protected void prepareScenario(Scenario scenario) {
-
-		// TODO: can be removed once v1.2 is done, because this is done in the preparation phase
-		for (Link link : scenario.getNetwork().getLinks().values()) {
-			Set<String> modes = link.getAllowedModes();
-
-			// allow freight traffic together with cars
-			if (modes.contains("car")) {
-				Set<String> newModes = Sets.newHashSet(modes);
-				newModes.add("freight");
-
-				link.setAllowedModes(newModes);
-			}
-		}
-
-		if (networkOpt.hasDrtArea()) {
-			scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(DrtRoute.class, new DrtRouteFactory());
-			// (matsim core does not know about DRT routes. This makes it possible to read them before the controler is there.)
-		}
-
+		//this has to be executed before DrtCaseSetup.prepareScenario() as the latter method relies on the drt mode being added to the network
 		networkOpt.prepare(scenario.getNetwork());
 		// (passt das Netz an aus den mitgegebenen shape files, z.B. parking area, car-free area, ...)
+
+		if (networkOpt.hasDrtArea()) {
+			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
+		}
+
 	}
 
 	@Override
 	protected void prepareControler(Controler controler) {
-		Config config = controler.getConfig();
 
 		controler.addOverridingModule(new SimWrapperModule());
 		controler.addOverridingModule(new PtStop2StopAnalysisModule());
@@ -282,70 +306,29 @@ public class RunLeipzigScenario extends MATSimApplication {
 				// Plots how many different modes agents tried out
 				addControlerListenerBinding().to(ModeChoiceCoverageControlerListener.class);
 
+				// Leipzig parking specific planning strategies
+				if (parking) {
+					this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
+					this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
+					this.addPlanStrategyBinding(LeipzigSubtourModeChoice.STRATEGY_NAME).toProvider(LeipzigSubtourModeChoice.class);
+
+					// Normally this is bound with the default subtour mode choice, because we use our own variant this is bound again here
+					bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class);
+
+					this.addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
+				}
+
+
 				if (networkOpt.hasCarFreeArea()) {
 					bind(MultimodalLinkChooser.class).to(CarfreeMultimodalLinkChooser.class);
 				}
 
-				if (networkOpt.hasParkingCostArea()) {
-
-					this.addEventHandlerBinding().toInstance(new TimeRestrictedParkingCostHandler(parkingCostTimePeriodStart, parkingCostTimePeriodEnd));
-					this.addPersonPrepareForSimAlgorithm().to(LeipzigRouterPlanAlgorithm.class);
-					this.addPlanStrategyBinding(LeipzigRoutingStrategyProvider.STRATEGY_NAME).toProvider(LeipzigRoutingStrategyProvider.class);
-
-					install(new PersonMoneyEventsAnalysisModule());
-
-				}
-
-				// TODO FIXME yyyyyy replace by config option
-				{
-					addControlerListenerBinding().to(StrategyWeightFadeout.class).in(Singleton.class);
-
-					Multibinder<StrategyWeightFadeout.Schedule> schedules = StrategyWeightFadeout.getBinder(binder());
-
-					// Mode-choice fades out earlier than the other strategies
-					// Given a fixed mode, the "less disruptive" choice dimensions will be weighted higher during the end
-					schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.SubtourModeChoice, "person", 0.65, 0.80));
-
-					// Fades out until 0.9 (innovation switch off)
-					//TODO switch no new ReRoute!!!!
-					schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(LeipzigRoutingStrategyProvider.STRATEGY_NAME, "person", 0.75));
-					schedules.addBinding().toInstance(new StrategyWeightFadeout.Schedule(DefaultPlanStrategiesModule.DefaultStrategy.TimeAllocationMutator, "person", 0.75));
-
-				}
-				bind(new TypeLiteral<StrategyChooser<Plan, Person>>() {
-				}).toInstance(new ForceInnovationStrategyChooser<>(10, ForceInnovationStrategyChooser.Permute.yes));
+				install(new PersonMoneyEventsAnalysisModule());
 			}
 		});
 
 		if (networkOpt.hasDrtArea()) {
-			// FIXME yyyyyy move above into prepareConfig
-			// FIXME will be integrated into DrtCaseSetup class
-
-			MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(config, MultiModeDrtConfigGroup.class);
-
-			//set fare params; flexa has the same prices as leipzig PT: Values taken out of LeipzigPtFareModule -sm0522
-			Double ptBaseFare = 2.4710702921120262;
-			Double ptDistanceFare = 0.00017987993018495408;
-
-			DrtFareParams drtFareParams = new DrtFareParams();
-			drtFareParams.baseFare = ptBaseFare;
-			drtFareParams.distanceFare_m = ptDistanceFare;
-			drtFareParams.timeFare_h = 0.;
-			drtFareParams.dailySubscriptionFee = 0.;
-
-			Set<String> drtModes = new HashSet<>();
-
-			multiModeDrtConfigGroup.getModalElements().forEach(drtConfigGroup -> {
-				drtConfigGroup.addParameterSet(drtFareParams);
-				DrtConfigs.adjustDrtConfig(drtConfigGroup, config.planCalcScore(), config.plansCalcRoute());
-				drtModes.add(drtConfigGroup.getMode());
-			});
-
-			controler.addOverridingModule(new DvrpModule());
-			controler.addOverridingModule(new MultiModeDrtModule());
-			controler.configureQSimComponents(DvrpQSimComponents.activateAllModes(multiModeDrtConfigGroup));
-
-			prepareDrtFareCompensation(config, controler, drtModes, ptBaseFare);
+			DrtCaseSetup.prepareControler(controler, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), ptDrtIntermodality);
 		}
 
 		if (bike == BicycleHandling.onNetworkWithBicycleContrib) {
@@ -354,68 +337,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 	}
 
 	/**
-	 * FIXME: will be moved into separate class.
-	 */
-	private void prepareDrtFareCompensation(Config config, Controler controler, Set<String> nonPtModes, Double ptBaseFare) {
-		IntermodalTripFareCompensatorsConfigGroup intermodalTripFareCompensatorsConfigGroup =
-			ConfigUtils.addOrGetModule(config, IntermodalTripFareCompensatorsConfigGroup.class);
-
-		IntermodalTripFareCompensatorConfigGroup drtFareCompensator = new IntermodalTripFareCompensatorConfigGroup();
-		drtFareCompensator.setCompensationCondition(IntermodalTripFareCompensatorConfigGroup.CompensationCondition.PtModeUsedAnywhereInTheDay);
-
-		//Flexa is integrated into pt system, so users only pay once
-		drtFareCompensator.setCompensationMoneyPerTrip(ptBaseFare);
-		drtFareCompensator.setNonPtModes(ImmutableSet.copyOf(nonPtModes));
-
-		intermodalTripFareCompensatorsConfigGroup.addParameterSet(drtFareCompensator);
-		controler.addOverridingModule(new IntermodalTripFareCompensatorsModule());
-
-		//for intermodality between pt and drt the following modules have to be installed and configured
-		String artificialPtMode = "pt_w_drt_allowed";
-		PtIntermodalRoutingModesConfigGroup ptIntermodalRoutingModesConfig = ConfigUtils.addOrGetModule(config, PtIntermodalRoutingModesConfigGroup.class);
-		PtIntermodalRoutingModesConfigGroup.PtIntermodalRoutingModeParameterSet ptIntermodalRoutingModesParamSet
-			= new PtIntermodalRoutingModesConfigGroup.PtIntermodalRoutingModeParameterSet();
-
-		ptIntermodalRoutingModesParamSet.setDelegateMode(TransportMode.pt);
-		ptIntermodalRoutingModesParamSet.setRoutingMode(artificialPtMode);
-
-		PtIntermodalRoutingModesConfigGroup.PersonAttribute2ValuePair personAttrParamSet
-			= new PtIntermodalRoutingModesConfigGroup.PersonAttribute2ValuePair();
-		personAttrParamSet.setPersonFilterAttribute("canUseDrt");
-		personAttrParamSet.setPersonFilterValue("true");
-		ptIntermodalRoutingModesParamSet.addPersonAttribute2ValuePair(personAttrParamSet);
-
-		ptIntermodalRoutingModesConfig.addParameterSet(ptIntermodalRoutingModesParamSet);
-
-		controler.addOverridingModule(new PtIntermodalRoutingModesModule());
-
-		//SRRConfigGroup needs to have the same personFilterAttr and Value as PtIntermodalRoutingModesConfigGroup
-		SwissRailRaptorConfigGroup ptConfig = ConfigUtils.addOrGetModule(config, SwissRailRaptorConfigGroup.class);
-		for (SwissRailRaptorConfigGroup.IntermodalAccessEgressParameterSet paramSet : ptConfig.getIntermodalAccessEgressParameterSets()) {
-			if (paramSet.getMode().contains("drt")) {
-				paramSet.setPersonFilterAttribute("canUseDrt");
-				paramSet.setPersonFilterValue("true");
-			}
-		}
-
-		controler.addOverridingModule(new AbstractModule() {
-			@Override
-			public void install() {
-				bind(RaptorIntermodalAccessEgress.class).to(EnhancedRaptorIntermodalAccessEgress.class);
-			}
-		});
-
-		//finally the new pt mode has to be added to subtourModeChoice
-		SubtourModeChoiceConfigGroup modeChoiceConfigGroup = ConfigUtils.addOrGetModule(config, SubtourModeChoiceConfigGroup.class);
-		List<String> modes = new ArrayList<>();
-		Collections.addAll(modes, modeChoiceConfigGroup.getModes());
-		modes.add(artificialPtMode);
-		modeChoiceConfigGroup.setModes(modes.toArray(new String[0]));
-	}
-
-	/**
 	 * Defines how bicycles are scored.
 	 */
-	enum BicycleHandling {onNetworkWithStandardMatsim, onNetworkWithBicycleContrib}
-
+	enum BicycleHandling {onNetworkWithStandardMatsim, onNetworkWithBicycleContrib, bikeTeleportedStandardMatsim}
 }
