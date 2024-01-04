@@ -39,9 +39,7 @@ public final class LeipzigUtils{
 	 */
 	public static boolean isLinkParkingTypeInsideResidentialArea(Link link ) {
 
-		/**
-		 * If a link is null he is not in the modal network anymore. The default logic is as in the car free area all agents can´t park at the closest link as well
-		 */
+		 // If a link is null he is not in the modal network anymore. The default logic is as in the car free area all agents can´t park at the closest link as well
 		String result;
 		if (link != null) {
 			result = (String) link.getAttributes().getAttribute("linkParkingType");
