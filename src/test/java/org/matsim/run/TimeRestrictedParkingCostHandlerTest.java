@@ -29,7 +29,6 @@ import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TimeRestrictedParkingCostHandlerTest {
 
@@ -115,7 +114,6 @@ public class TimeRestrictedParkingCostHandlerTest {
 				person2.addPlan(plan2);
 				population.addPerson(person2);
 			}
-
 			case multipleHomeActivities -> {
 				originActivity.setEndTime(75500.);
 				plan.addActivity(originActivity);
@@ -159,7 +157,6 @@ public class TimeRestrictedParkingCostHandlerTest {
 				population.addPerson(person2);
 			}
 		}
-
 		person.addPlan(plan);
 		population.addPerson(person);
 	}

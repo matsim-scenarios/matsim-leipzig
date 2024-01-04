@@ -21,13 +21,13 @@ import static org.junit.Assert.assertTrue;
 public class RunLeipzigIntegrationTest {
 
 	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.2/input/";
-	private static final String exampleShp = "input/v1.2/drtServiceArea/Leipzig_stadt.shp";
+	private static final String exampleShp = "input/v1.3/drtServiceArea/Leipzig_stadt.shp";
 
 	@Test
 	public final void runPoint1pctIntegrationTest() {
 		Path output = Path.of("output/it-1pct");
 
-		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-25pct.config.xml");
+		Config config = ConfigUtils.loadConfig("input/v1.3/leipzig-v1.3-10pct.config.xml");
 
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
@@ -39,18 +39,38 @@ public class RunLeipzigIntegrationTest {
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--slow-speed-area", exampleShp,
-				"--slow-speed-relative-change", "0.5","--drt-area", exampleShp, "--post-processing", "disabled",
-				"--parking-cost-area", exampleShp, "--intermodality", "drtAsAccessEgressForPt");
+				"--slow-speed-relative-change", "0.5","--drt-area", exampleShp, "--post-processing", "disabled"
+		);
 
 		assertThat(output)
 				.exists()
 				.isNotEmptyDirectory();
 
-		new ParkingLocation().execute("--directory", output.toString());
-
 		Network network = NetworkUtils.readNetwork(output + "/" + config.controler().getRunId() + ".output_network.xml.gz");
 		assertTrue(network.getLinks().get(Id.createLinkId("24232899")).getFreespeed() < 12.501000000000001);
 		assertTrue(network.getLinks().get(Id.createLinkId("24675139")).getFreespeed() < 7.497);
+	}
+
+	@Test
+	public final void runPoint1pctParkingIntegrationTest() {
+		Path output = Path.of("output-parking-test/it-1pct");
+		Config config = ConfigUtils.loadConfig("input/v1.3/leipzig-v1.3-10pct.config.xml");
+		config.global().setNumberOfThreads(1);
+		config.qsim().setNumberOfThreads(1);
+		config.controler().setLastIteration(0);
+		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controler().setOutputDirectory(output.toString());
+		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
+		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
+
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct", "--drt-area", exampleShp, "--post-processing", "disabled",
+			"--parking-cost-area", "input/v" + RunLeipzigScenario.VERSION + "/parkingCostArea/Bewohnerparken_2020.shp",
+			"--parking", "--intermodality", "drtAsAccessEgressForPt");
+
+		assertThat(output)
+			.exists()
+			.isNotEmptyDirectory();
+		new ParkingLocation().execute("--directory", output.toString());
 	}
 
 	@Test

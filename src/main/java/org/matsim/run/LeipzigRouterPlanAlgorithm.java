@@ -98,6 +98,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			final Facility toFacility = FacilitiesUtils.toFacility(oldTrip.getDestinationActivity(), facilities);
 
 
+			// At this point, I only want to deal with residential parking.  Shopping comes later (and is simpler).
 
 			LeipzigUtils.PersonParkingBehaviour parkingBehaviourAtOrigin = getParkingBehaviour(fullModalNetwork, oldTrip.getOriginActivity(), routingMode);
 			LeipzigUtils.PersonParkingBehaviour parkingBehaviourAtDestination = getParkingBehaviour(fullModalNetwork, oldTrip.getDestinationActivity(), routingMode);
