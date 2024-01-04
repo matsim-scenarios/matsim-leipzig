@@ -133,6 +133,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 				final Activity originParkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 					TripStructureUtils.createStageActivityType("parking"), originParkingLink.getId());
+				originParkingActivity.setCoord(originParkingLink.getCoord());
 				final Facility originParkingFacility = FacilitiesUtils.toFacility(originParkingActivity, facilities);
 
 				//parking at destination
@@ -140,6 +141,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 				final Activity destinationParkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 					TripStructureUtils.createStageActivityType("parking"), destinationParkingLink.getId());
+				destinationParkingActivity.setCoord(destinationParkingLink.getCoord());
 				final Facility destinationParkingFacility = FacilitiesUtils.toFacility(destinationParkingActivity, facilities);
 
 				// trip from origin to originParking:
@@ -202,6 +204,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 		final Activity parkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 			TripStructureUtils.createStageActivityType("parking"), parkingLink.getId());
+		parkingActivity.setCoord(parkingLink.getCoord());
 		final Facility parkingFacility = FacilitiesUtils.toFacility(parkingActivity, facilities);
 
 		// trip from origin to parking:
@@ -233,6 +236,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 		final Activity parkingActivity = scenario.getPopulation().getFactory().createInteractionActivityFromLinkId(
 			TripStructureUtils.createStageActivityType("parking"), parkingLink.getId());
+		parkingActivity.setCoord(parkingLink.getCoord());
 		final Facility parkingFacility = FacilitiesUtils.toFacility(parkingActivity, facilities);
 
 		// trip from origin to parking:
