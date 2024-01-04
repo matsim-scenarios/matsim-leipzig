@@ -38,10 +38,20 @@ public final class LeipzigUtils{
 	 * Check if link is inside residential area or not (parking on link is restricted or not).
 	 */
 	public static boolean isLinkParkingTypeInsideResidentialArea(Link link ) {
-		String result = (String) link.getAttributes().getAttribute( "linkParkingType" );
+
+		/**
+		 * If a link is null he is not in the modal network anymore. The default logic is as in the car free area all agents can´t park at the closest link as well
+		 */
+		String result;
+		if (link != null) {
+			result = (String) link.getAttributes().getAttribute("linkParkingType");
+		} else {
+			result = null;
+		}
+
 		boolean insideResidentialArea = true;
 
-		if ( result == null ) {
+		if (result == null) {
 			insideResidentialArea = false;
 		}
 		return insideResidentialArea;
