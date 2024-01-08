@@ -438,8 +438,8 @@ trips_number_by_distance_barchart <- function(trips_list, output_filename) {
 }
 
 # Note: For the inner_join function, the first argument should be 'base', followed by the 'policy' as the second argument.
-modal_shift <- function(trips_list, output_filename){
-  sankey_dataframe <- inner_join(trips_list$base , trips_list$policy, by = "trip_id") 
+modal_shift <- function(trips_list_base, trips_list_policy, output_filename){
+  sankey_dataframe <- inner_join(trips_list_base , trips_list_policy, by = "trip_id") 
   sankey_dataframe <- sankey_dataframe %>%
     select(trip_id, main_mode.x, main_mode.y) %>%
     group_by(main_mode.x, main_mode.y) %>%
@@ -1087,14 +1087,14 @@ if(x_trips_number_by_distance_barchart == 1){
   
 if(x_modal_shift == 1){
   
-  modal_shift(trips.list.region,"sankey.region")
-  modal_shift(trips.list.city,"sankey.city")
-  modal_shift(trips.list.carfree.area,"sankey.carfree.area")
-  modal_shift(trips.list.TFW.carfree.area,"sankey.TFW.carfree.area")
-  modal_shift(trips.list.residents.TFW.carfree.area,"sankey.residents.TFW.carfree.area")
-  modal_shift(trips.list.workers.TFW.carfree.area,"sankey.workers.TFW.carfree.area")
-  modal_shift(trips.list.residents.carfree.area,"sankey.residents.carfree.area")
-  modal_shift(trips.list.workers.carfree.area,"sankey.workers.carfree.area")
+  modal_shift(trips.list.region[[1]], trips.list.region[[3]],"sankey.region")
+  modal_shift(trips.list.city[[1]], trips.list.city[[3]],"sankey.city")
+  modal_shift(trips.list.carfree.area[[1]], trips.list.carfree.area[[3]],"sankey.carfree.area")
+  modal_shift(trips.list.TFW.carfree.area[[1]],trips.list.TFW.carfree.area[[3]],"sankey.TFW.carfree.area")
+  modal_shift(trips.list.residents.TFW.carfree.area[[1]],trips.list.residents.TFW.carfree.area[[3]] ,"sankey.residents.TFW.carfree.area")
+  modal_shift(trips.list.workers.TFW.carfree.area[[1]],trips.list.workers.TFW.carfree.area[[3]],"sankey.workers.TFW.carfree.area")
+  modal_shift(trips.list.residents.carfree.area[[1]],trips.list.residents.carfree.area[[3]] ,"sankey.residents.carfree.area")
+  modal_shift(trips.list.workers.carfree.area[[1]],trips.list.workers.carfree.area[[3]] ,"sankey.workers.carfree.area")
 }
 
 if(x_shifted_trips_average_distance_bar_chart == 1){
