@@ -186,11 +186,14 @@ plot_pie_chart <- function(df, plot_title ,output_filename) {
     geom_bar(stat="identity", width=1) +
     coord_polar("y", start=0) +
     geom_text(aes(label = sprintf("%.1f%%", 100 * Value/sum(Value))), 
-              position = position_stack(vjust = 0.5))+
+              position = position_stack(vjust = 0.5),
+              size = 8)+
     theme_void() +
-    theme(legend.title = element_blank()) +
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size = 28),
+          plot.title = element_text(size = 30)) +  # Set the title size here
     labs(fill = "Categories", title = plot_title)
-  
+
   ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), plot = pie_chart, device = "pdf", width = 10, height = 7)
   return(pie_chart)
 }
@@ -241,7 +244,7 @@ population_filtering_function <- function(trips_table, population_type) {
 }
 
 ## modal split by trip count and main mode.
-modal_split_trips_main_mode <- function(trips_table, output_filename) {
+modal_split_trips_main_mode <- function(trips_table, output_filename ,plot_title) {
   
   df <- trips_table %>%
     count(main_mode) %>%
@@ -252,12 +255,12 @@ modal_split_trips_main_mode <- function(trips_table, output_filename) {
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   
   if(plot_creation ==1){
-    plot_pie_chart(df_t,"Modal split by counts (trips)", output_filename)
+    plot_pie_chart(df_t,plot_title, output_filename)
   }
 }
 
 ## modal split by leg count and mode
-modal_split_legs_mode <- function(legs_table, output_filename) {
+modal_split_legs_mode <- function(legs_table, output_filename,plot_title) {
   
   df <- legs_table %>%
     count(mode) %>%
@@ -268,12 +271,12 @@ modal_split_legs_mode <- function(legs_table, output_filename) {
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   
   if(plot_creation ==1){
-    plot_pie_chart(df_t,"Modal split by counts (legs)", output_filename)
+    plot_pie_chart(df_t,plot_title, output_filename)
   }
 }
 
 ## modal split by trip distance and main mode
-modal_split_trips_distance <- function(trips_table, output_filename ){
+modal_split_trips_distance <- function(trips_table, output_filename, plot_title ){
   
   df <- trips_table %>%
     group_by(main_mode) %>%
@@ -285,12 +288,12 @@ modal_split_trips_distance <- function(trips_table, output_filename ){
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   
   if(plot_creation ==1){
-    plot_pie_chart(df_t,"Modal split by distance (trips)", output_filename)
+    plot_pie_chart(df_t,plot_title, output_filename)
   }
 }
 
 ## modal split by leg distance and mode
-modal_split_legs_distance <- function(legs_table, output_filename ){
+modal_split_legs_distance <- function(legs_table, output_filename ,plot_title){
   
   df <- legs_table %>%
     group_by(mode) %>%
@@ -302,7 +305,7 @@ modal_split_legs_distance <- function(legs_table, output_filename ){
   write.csv(df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   
   if(plot_creation ==1){
-    plot_pie_chart(df_t,"Modal split by distance (legs)", output_filename)
+    plot_pie_chart(df_t,plot_title, output_filename)
   }
 }
 
@@ -961,58 +964,80 @@ if(x_population_seg_filter == 1){
 
 if(x_modal_split_trips_main_mode == 1){
   
-  modal_split_trips_main_mode(trips.list.region$base, "pie.ms.counts.trips.base.region")
-  modal_split_trips_main_mode(trips.list.city$base, "pie.ms.counts.trips.base.city")
-  modal_split_trips_main_mode(trips.list.carfree.area$base, "pie.ms.counts.trips.base.carfree.area")
-  modal_split_trips_main_mode(trips.list.TFW.carfree.area$base, "pie.ms.counts.trips.base.TFW.carfree.area")
-  modal_split_trips_main_mode(trips.list.residents.carfree.area$base, "pie.ms.counts.trips.base.residetns.carfree.area")
-  modal_split_trips_main_mode(trips.list.workers.carfree.area$base, "pie.ms.counts.trips.base.workers.carfree.area")
+  modal_split_trips_main_mode(trips.list.region[[1]], "pie.ms.counts.trips.base.region", "base")
+  modal_split_trips_main_mode(trips.list.city[[1]], "pie.ms.counts.trips.base.city", "base")
+  modal_split_trips_main_mode(trips.list.carfree.area[[1]], "pie.ms.counts.trips.base.carfree.area", "base")
+  modal_split_trips_main_mode(trips.list.TFW.carfree.area[[1]], "pie.ms.counts.trips.base.TFW.carfree.area", "base")
+  modal_split_trips_main_mode(trips.list.residents.carfree.area[[1]], "pie.ms.counts.trips.base.residetns.carfree.area", "base")
+  modal_split_trips_main_mode(trips.list.workers.carfree.area[[1]], "pie.ms.counts.trips.base.workers.carfree.area", "base")
   
-  modal_split_trips_main_mode(trips.list.region$policy, "pie.ms.counts.trips.policy.region")
-  modal_split_trips_main_mode(trips.list.city$policy, "pie.ms.counts.trips.policy.city")
-  modal_split_trips_main_mode(trips.list.carfree.area$policy, "pie.ms.counts.trips.policy.carfree.area")
-  modal_split_trips_main_mode(trips.list.TFW.carfree.area$policy, "pie.ms.counts.trips.policy.TFW.carfree.area")
-  modal_split_trips_main_mode(trips.list.residents.carfree.area$policy, "pie.ms.counts.trips.policy.residetns.carfree.area")
-  modal_split_trips_main_mode(trips.list.workers.carfree.area$policy, "pie.ms.counts.trips.policy.workers.carfree.area")
+  modal_split_trips_main_mode(trips.list.region[[2]], "pie.ms.counts.trips.base.parking.region", "base parking")
+  modal_split_trips_main_mode(trips.list.city[[2]], "pie.ms.counts.trips.base.parking.city", "base parking")
+  modal_split_trips_main_mode(trips.list.carfree.area[[2]], "pie.ms.counts.trips.base.parking.carfree.area", "base parking")
+  modal_split_trips_main_mode(trips.list.TFW.carfree.area[[2]], "pie.ms.counts.trips.base.parking.TFW.carfree.area", "base parking")
+  modal_split_trips_main_mode(trips.list.residents.carfree.area[[2]], "pie.ms.counts.trips.base.parking.residetns.carfree.area", "base parking")
+  modal_split_trips_main_mode(trips.list.workers.carfree.area[[2]], "pie.ms.counts.trips.base.parking.workers.carfree.area", "base parking")
+  
+  modal_split_trips_main_mode(trips.list.region[[3]], "pie.ms.counts.trips.car.free.area.region", "large car free area")
+  modal_split_trips_main_mode(trips.list.city[[3]], "pie.ms.counts.trips.car.free.area.city", "large car free area")
+  modal_split_trips_main_mode(trips.list.carfree.area[[3]], "pie.ms.counts.trips.car.free.area.carfree.area", "large car free area")
+  modal_split_trips_main_mode(trips.list.TFW.carfree.area[[3]], "pie.ms.counts.trips.car.free.area.TFW.carfree.area", "large car free area")
+  modal_split_trips_main_mode(trips.list.residents.carfree.area[[3]], "pie.ms.counts.trips.car.free.area.residetns.carfree.area", "large car free area")
+  modal_split_trips_main_mode(trips.list.workers.carfree.area[[3]], "pie.ms.counts.trips.car.free.area.workers.carfree.area", "large car free area")
 }
 
 if(x_modal_split_legs_mode == 1 ){
   
-  modal_split_legs_mode(legs.list.region$base, "pie.ms.counts.legs.base.region")
-  modal_split_legs_mode(legs.list.city$base, "pie.ms.counts.legs.base.city")
-  modal_split_legs_mode(legs.list.carfree.area$base, "pie.ms.counts.legs.base.carfree.area")
+  modal_split_legs_mode(legs.list.region[[1]], "pie.ms.counts.legs.base.region", "base")
+  modal_split_legs_mode(legs.list.city[[1]], "pie.ms.counts.legs.base.city", "base")
+  modal_split_legs_mode(legs.list.carfree.area[[1]], "pie.ms.counts.legs.base.carfree.area", "base")
 
-  modal_split_legs_mode(legs.list.region$policy, "pie.ms.counts.legs.policy.region")
-  modal_split_legs_mode(legs.list.city$policy, "pie.ms.counts.legs.policy.city")
-  modal_split_legs_mode(legs.list.carfree.area$policy, "pie.ms.counts.legs.policy.carfree.area")
+  modal_split_legs_mode(legs.list.region[[2]], "pie.ms.counts.legs.base.parking.region", "base parking")
+  modal_split_legs_mode(legs.list.city[[2]], "pie.ms.counts.legs.base.parking.city", "base parking")
+  modal_split_legs_mode(legs.list.carfree.area[[2]], "pie.ms.counts.legs.base.parking.carfree.area", "base parking")
+  
+  modal_split_legs_mode(legs.list.region[[3]], "pie.ms.counts.legs.carfree.area.region", "large car free area")
+  modal_split_legs_mode(legs.list.city[[3]], "pie.ms.counts.legs.carfree.area.city", "large car free area")
+  modal_split_legs_mode(legs.list.carfree.area[[3]], "pie.ms.counts.legs.carfree.area.carfree.area", "large car free area")
 }
 
 if(x_modal_split_trips_distance == 1){
   
-  modal_split_trips_distance(trips.list.region$base, "pie.ms.distance.trips.base.region")
-  modal_split_trips_distance(trips.list.city$base, "pie.ms.distance.trips.base.city")
-  modal_split_trips_distance(trips.list.carfree.area$base, "pie.ms.distance.trips.base.carfree.area")
-  modal_split_trips_distance(trips.list.TFW.carfree.area$base, "pie.ms.distance.trips.base.TFW.carfree.area")
-  modal_split_trips_distance(trips.list.residents.carfree.area$base, "pie.ms.distance.trips.base.residetns.carfree.area")
-  modal_split_trips_distance(trips.list.workers.carfree.area$base, "pie.ms.distance.trips.base.workers.carfree.area")
+  modal_split_trips_distance(trips.list.region[[1]], "pie.ms.distance.trips.base.region", "base")
+  modal_split_trips_distance(trips.list.city[[1]], "pie.ms.distance.trips.base.city", "base")
+  modal_split_trips_distance(trips.list.carfree.area[[1]], "pie.ms.distance.trips.base.carfree.area", "base")
+  modal_split_trips_distance(trips.list.TFW.carfree.area[[1]], "pie.ms.distance.trips.base.TFW.carfree.area", "base")
+  modal_split_trips_distance(trips.list.residents.carfree.area[[1]], "pie.ms.distance.trips.base.residetns.carfree.area", "base")
+  modal_split_trips_distance(trips.list.workers.carfree.area[[1]], "pie.ms.distance.trips.base.workers.carfree.area", "base")
   
-  modal_split_trips_distance(trips.list.region$policy, "pie.ms.distance.trips.policy.region")
-  modal_split_trips_distance(trips.list.city$policy, "pie.ms.distance.trips.policy.city")
-  modal_split_trips_distance(trips.list.carfree.area$policy, "pie.ms.distance.trips.policy.carfree.area")
-  modal_split_trips_distance(trips.list.TFW.carfree.area$policy, "pie.ms.distance.trips.policy.TFW.carfree.area")
-  modal_split_trips_distance(trips.list.residents.carfree.area$policy, "pie.ms.distance.trips.policy.residetns.carfree.area")
-  modal_split_trips_distance(trips.list.workers.carfree.area$policy, "pie.ms.distance.trips.policy.workers.carfree.area")
+  modal_split_trips_distance(trips.list.region[[2]], "pie.ms.distance.trips.base.parking.region", "base parking")
+  modal_split_trips_distance(trips.list.city[[2]], "pie.ms.distance.trips.base.parking.city", "base parking")
+  modal_split_trips_distance(trips.list.carfree.area[[2]], "pie.ms.distance.trips.base.parking.carfree.area", "base parking")
+  modal_split_trips_distance(trips.list.TFW.carfree.area[[2]], "pie.ms.distance.trips.base.parking.TFW.carfree.area", "base parking")
+  modal_split_trips_distance(trips.list.residents.carfree.area[[2]], "pie.ms.distance.trips.base.parking.residetns.carfree.area", "base parking")
+  modal_split_trips_distance(trips.list.workers.carfree.area[[2]], "pie.ms.distance.trips.base.parking.workers.carfree.area", "base parking")
+  
+  modal_split_trips_distance(trips.list.region[[3]], "pie.ms.distance.trips.carfree.area.region", "large car free area")
+  modal_split_trips_distance(trips.list.city[[3]], "pie.ms.distance.trips.carfree.area..city", "large car free area")
+  modal_split_trips_distance(trips.list.carfree.area[[3]], "pie.ms.distance.trips.carfree.area..carfree.area", "large car free area")
+  modal_split_trips_distance(trips.list.TFW.carfree.area[[3]], "pie.ms.distance.trips.carfree.area..TFW.carfree.area", "large car free area")
+  modal_split_trips_distance(trips.list.residents.carfree.area[[3]], "pie.ms.distance.trips.carfree.area..residetns.carfree.area", "large car free area")
+  modal_split_trips_distance(trips.list.workers.carfree.area[[3]], "pie.ms.distance.trips.carfree.area..workers.carfree.area", "large car free area")
 }
 
 if(x_modal_split_legs_distance == 1){
   
-  modal_split_legs_distance(legs.list.region$base, "pie.ms.distance.legs.base.region")
-  modal_split_legs_distance(legs.list.city$base, "pie.ms.distance.legs.base.city")
-  modal_split_legs_distance(legs.list.carfree.area$base, "pie.ms.distance.legs.base.carfree.area")
+  modal_split_legs_distance(legs.list.region[[1]], "pie.ms.distance.legs.base.region", "base")
+  modal_split_legs_distance(legs.list.city[[1]], "pie.ms.distance.legs.base.city", "base")
+  modal_split_legs_distance(legs.list.carfree.area[[1]], "pie.ms.distance.legs.base.carfree.area", "base")
   
-  modal_split_legs_distance(legs.list.region$policy, "pie.ms.distance.legs.policy.region")
-  modal_split_legs_distance(legs.list.city$policy, "pie.ms.distance.legs.policy.city")
-  modal_split_legs_distance(legs.list.carfree.area$policy, "pie.ms.distance.legs.policy.carfree.area")
+  modal_split_legs_distance(legs.list.region[[2]], "pie.ms.distance.legs.base.parking.region", "base parking")
+  modal_split_legs_distance(legs.list.city[[2]], "pie.ms.distance.legs.base.parking.city", "base parking")
+  modal_split_legs_distance(legs.list.carfree.area[[2]], "pie.ms.distance.legs.base.parking.carfree.area", "base parking")
+  
+  modal_split_legs_distance(legs.list.region[[3]], "pie.ms.distance.legs.carfree.area.region", "large car free area")
+  modal_split_legs_distance(legs.list.city[[3]], "pie.ms.distance.legs.carfree.area.city", "large car free area")
+  modal_split_legs_distance(legs.list.carfree.area[[3]], "pie.ms.distance.legs.carfree.area.carfree.area", "large car free area")
 }
 
 if(x_trips_number_barchart == 1){
