@@ -45,11 +45,11 @@ public class ParkingLeipzigTest {
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controler().setOutputDirectory(output.toString());
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
-		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
+		config.plans().setInputFile("/Users/gregorr/Documents/work/respos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/testParkingPopulation.xml");
 
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
-				"--parking-cost-area", "input/v" + "1.2" + "/parkingCostArea/Bewohnerparken_2020.shp",
-				"--intermodality", "drtAsAccessEgressForPt", "--parking" );
+				"--parking-cost-area", "input/v" + "1.3" + "/parkingCostArea/Bewohnerparken_2020.shp",
+				"--intermodality", "drtAsAccessEgressForPt", "--parking");
 
 		//new ParkingLocation().execute("--directory", output.toString());
 
@@ -74,11 +74,11 @@ public class ParkingLeipzigTest {
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controler().setOutputDirectory(output.toString());
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
-		config.plans().setInputFile(URL + "leipzig-v1.2-0.1pct.plans-initial.xml.gz");
+		config.plans().setInputFile("/Users/gregorr/Documents/work/respos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/testParkingPopulation.xml");
 
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
-				"--parking-cost-area", "input/v" + "1.2" + "/parkingCostArea/Bewohnerparken_2020.shp",
-				"--intermodality", "drtAsAccessEgressForPt", "--parking", "--car-free-area", exampleShp );
+				"--parking-cost-area", "input/v" + "1.3" + "/parkingCostArea/Bewohnerparken_2020.shp",
+				"--intermodality", "drtAsAccessEgressForPt", "--parking", "--car-free-area", "/Users/gregorr/Documents/work/respos/shared-svn/projects/NaMAV/data/shapefiles/leipzig_carfree_area_small/Zonen99_update.shp");
 
 		EventsManager eventsManager = EventsUtils.createEventsManager();
 		eventsManager.addHandler(new ParkingActivityStartEventHandler());
