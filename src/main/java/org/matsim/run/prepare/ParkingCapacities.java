@@ -28,17 +28,19 @@ public class ParkingCapacities {
 
 		for (Link l: network.getLinks().values()) {
 
-			//skip motorways and nn car links
-			if (l.getAllowedModes().contains(TransportMode.car) && l.getFreespeed()> 55/3.6) {
+			//skip motorways and non car links
+			if (l.getAllowedModes().contains(TransportMode.car) && l.getFreespeed() < 55/3.6) {
 				double usableLength = (l.getLength() - 10) * 0.9;
-
-				double capacity =0;
+				double maxCapacity = 0;
+				double minCapacity = 0;
 				if (usableLength > 0) {
-					capacity = usableLength / 6;
+					maxCapacity = usableLength / 6;
+					minCapacity = usableLength /50;
 				}
 
-				l.getAttributes().putAttribute("parkingCapacity", (int) Math.floor(capacity));
-				listOfParkingCapacities.add(new ParkingCapacityRecord(l.getId().toString(), (int) Math.floor(capacity)));
+				l.getAttributes().putAttribute("maxParkingCapacity", Math.floor(maxCapacity));
+				l.getAttributes().putAttribute("minParkingCapacity", Math.floor(minCapacity));
+				listOfParkingCapacities.add(new ParkingCapacityRecord(l.getId().toString(), (int) Math.floor(maxCapacity), (int) Math.floor(minCapacity)));
 			}
 		}
 		writeResults(Path.of("../"), listOfParkingCapacities);
@@ -48,16 +50,16 @@ public class ParkingCapacities {
 
 	private static void writeResults(Path outputFolder, List<ParkingCapacities.ParkingCapacityRecord> listOfParkingCapacities) throws IOException {
 		BufferedWriter writer = IOUtils.getBufferedWriter(outputFolder.resolve("parkingCapacities.tsv").toString());
-		writer.write("linkId\tcapacity");
+		writer.write("linkId\tmaxCapacity\tminCapacity");
 		writer.newLine();
 
 		for (ParkingCapacities.ParkingCapacityRecord pd : listOfParkingCapacities) {
-			writer.write(pd.linkId + "\t" + pd.capacity);
+			writer.write(pd.linkId + "\t" + pd.maxCapacity + "\t" + pd.minCapacity);
 			writer.newLine();
 		}
 		writer.close();
 
 	}
 
-	 private record ParkingCapacityRecord(String linkId, int capacity) { }
+	 private record ParkingCapacityRecord(String linkId, int maxCapacity, int minCapacity) { }
 }
