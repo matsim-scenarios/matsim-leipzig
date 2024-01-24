@@ -12,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 /**
  * This class writes out a network and a tsv file with the parking capacites of Leipzig according to a simplified calculation based on the RASt.
- *
- *
  */
 
 public final class ParkingCapacities {
@@ -24,11 +22,8 @@ public final class ParkingCapacities {
 		throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
 	}
 
-
-
 	public static void main(String[] args) throws IOException {
 		for (Link l: network.getLinks().values()) {
-
 			//skip motorways and non car links
 			if (l.getAllowedModes().contains(TransportMode.car) && l.getFreespeed() < 55/3.6) {
 				double usableLength = (l.getLength() - 10) * 0.9;
