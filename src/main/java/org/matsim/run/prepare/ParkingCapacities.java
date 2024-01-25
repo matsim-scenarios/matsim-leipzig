@@ -34,7 +34,7 @@ public final class ParkingCapacities {
 					minCapacity = (int) Math.floor(usableLength /50);
 				}
 
-				l.getAttributes().putAttribute("maxParkingCapacity",maxCapacity);
+				l.getAttributes().putAttribute("maxParkingCapacity", maxCapacity);
 				l.getAttributes().putAttribute("minParkingCapacity", minCapacity);
 				listOfParkingCapacities.add(new ParkingCapacityRecord(l.getId().toString(), maxCapacity, minCapacity));
 			}
@@ -42,7 +42,6 @@ public final class ParkingCapacities {
 		writeResults(Path.of("../"), listOfParkingCapacities);
 		NetworkUtils.writeNetwork(network, "networkWithParkingCap.xml.gz");
 	}
-
 
 	private static void writeResults(Path outputFolder, List<ParkingCapacities.ParkingCapacityRecord> listOfParkingCapacities) throws IOException {
 		BufferedWriter writer = IOUtils.getBufferedWriter(outputFolder.resolve("parkingCapacities.tsv").toString());
