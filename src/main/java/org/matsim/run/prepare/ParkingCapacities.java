@@ -27,16 +27,16 @@ public final class ParkingCapacities {
 			//skip motorways and non car links
 			if (l.getAllowedModes().contains(TransportMode.car) && l.getFreespeed() < 55/3.6) {
 				double usableLength = (l.getLength() - 10) * 0.9;
-				double maxCapacity = 0;
-				double minCapacity = 0;
+				int maxCapacity = 0;
+				int minCapacity = 0;
 				if (usableLength > 0) {
-					maxCapacity = usableLength / 6;
-					minCapacity = usableLength /50;
+					maxCapacity = (int) Math.floor(usableLength / 6);
+					minCapacity = (int) Math.floor(usableLength /50);
 				}
 
-				l.getAttributes().putAttribute("maxParkingCapacity", Math.floor(maxCapacity));
-				l.getAttributes().putAttribute("minParkingCapacity", Math.floor(minCapacity));
-				listOfParkingCapacities.add(new ParkingCapacityRecord(l.getId().toString(), (int) Math.floor(maxCapacity), (int) Math.floor(minCapacity)));
+				l.getAttributes().putAttribute("maxParkingCapacity",maxCapacity);
+				l.getAttributes().putAttribute("minParkingCapacity", minCapacity);
+				listOfParkingCapacities.add(new ParkingCapacityRecord(l.getId().toString(), maxCapacity, minCapacity));
 			}
 		}
 		writeResults(Path.of("../"), listOfParkingCapacities);
@@ -56,6 +56,4 @@ public final class ParkingCapacities {
 	}
 
 	 private record ParkingCapacityRecord(String linkId, int maxCapacity, int minCapacity) { }
-
-
 }
