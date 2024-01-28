@@ -83,7 +83,12 @@ public class ParkingLeipzigTest {
 		EventsManager eventsManager = EventsUtils.createEventsManager();
 		eventsManager.addHandler(new ParkingActivityStartEventHandler());
 		EventsUtils.readEvents(eventsManager , output +"/" + "/leipzig-1pct.output_events.xml.gz");
-		Assert.assertTrue(ParkingActivityStartEventHandler.parkingEvents.size() == 0);
+
+		for (ActivityStartEvent event: ParkingActivityStartEventHandler.parkingEvents) {
+			if (event.getPersonId().equals("parkingAgentCarFreeLeisureCloseToResParkingZone")) {
+				Assert.assertTrue(event.getLinkId().equals("11827009#2"));
+			}
+		}
 	}
 
 	class ParkingActivityStartEventHandler implements ActivityStartEventHandler {

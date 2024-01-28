@@ -8,6 +8,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.controler.PersonPrepareForSimAlgorithm;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.filter.NetworkFilterManager;
 import org.matsim.core.population.algorithms.PlanAlgorithm;
 import org.matsim.core.population.algorithms.XY2Links;
@@ -74,7 +75,11 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 
 			// check if non-home activity (since otherwise we assume that there is no parking restriction):
 			//link might be null if inside car free zone (i.e. not in modal network)
-			if (link == null || isParkingRelevantActivity(activity)) {
+			if (isParkingRelevantActivity(activity)) {
+
+				if (link==null) {
+					link = NetworkUtils.getNearestLink(fullModalNetwork, activity.getCoord());
+				}
 
 				if (isLinkParkingTypeInsideResidentialArea(link)) {
 					parkingBehaviour = LeipzigUtils.PersonParkingBehaviour.parkingSearchLogicLeipzig;
