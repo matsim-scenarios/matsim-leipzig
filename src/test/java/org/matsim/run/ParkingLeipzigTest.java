@@ -74,6 +74,9 @@ public class ParkingLeipzigTest {
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controler().setOutputDirectory(output.toString());
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
+
+		//TODO maybe write the test population
+		// for the test case combination look at the ChessboardParkingTest
 		config.plans().setInputFile("/Users/gregorr/Documents/work/respos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/testParkingPopulation.xml");
 
 		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
