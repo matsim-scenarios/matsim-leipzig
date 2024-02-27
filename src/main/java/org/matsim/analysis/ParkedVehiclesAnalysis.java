@@ -114,12 +114,12 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 
 		Map<Id<Vehicle>, List<VehicleParkingData>> parkingTracker = new HashMap<>();
 
-		for (Id<Vehicle> vehicleId : vehicles.getVehicles().keySet()) {
-			if (vehicleId.toString().contains("bike")) {
-				continue;
+		for (Vehicle vehicle : vehicles.getVehicles().values()) {
+			//only count car vehicles, i.e. do not count bikes, freight vehicles or ride vehicles.
+			if (vehicle.getType().getId().toString().equals("car")){
+				List<VehicleParkingData> dummyList = new ArrayList<>();
+				parkingTracker.put(vehicle.getId(), dummyList);
 			}
-			List<VehicleParkingData> dummyList = new ArrayList<>();
-			parkingTracker.put(vehicleId, dummyList);
 		}
 
 

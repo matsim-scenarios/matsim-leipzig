@@ -114,6 +114,7 @@ public final class CreateDrtStopsFromNetwork implements MATSimAppCommand {
 
 		for (Node node : network.getNodes().values()) {
 			//we dont want pt nodes included as pt has a separate network + no dead ends
+			//ts feb' 24: why more than 2 links and not >=2 links?? also, the spatial lookup is made before in the network preprocessing...
 			if (MGC.coord2Point(node.getCoord()).within(drtServiceArea) && (node.getInLinks().size() + node.getOutLinks().size() > 2)
 					&& !node.getId().toString().contains("pt_")) {
 

@@ -58,11 +58,11 @@ public final class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 	@CommandLine.Option(names = "--no-vehicles", description = "no of vehicles per service area to create", required = true)
 	private int noVehiclesPerArea;
 
-	@CommandLine.Option(names = "--service-start-time", description = "start of vehicle service time in seconds", defaultValue = "18000")
-	private double serviceStartTime;
+	@CommandLine.Option(names = "--service-start-time", description = "start of vehicle service time in seconds. default is 18000.")
+	private double serviceStartTime = 18000;
 
-	@CommandLine.Option(names = "--service-end-time", description = "end of vehicle service time in seconds", defaultValue = "86400")
-	private double serviceEndTime;
+	@CommandLine.Option(names = "--service-end-time", description = "end of vehicle service time in seconds. default is 864000.")
+	private double serviceEndTime = 86400;
 
 	public static void main(String[] args) throws IOException {
 		new LeipzigDrtVehicleCreator().execute(args);
@@ -151,11 +151,7 @@ public final class LeipzigDrtVehicleCreator implements MATSimAppCommand {
 			}
 		}
 
-		Network filteredNetwork = NetworkUtils.createNetwork();
-		TransportModeNetworkFilter filter = new TransportModeNetworkFilter(network);
-		filter.filter(filteredNetwork, Sets.newHashSet(drtMode));
-
-		createVehiclesByRandomPointInShape(feature, filteredNetwork, noVehiclesPerArea, serviceStartTime,
+		createVehiclesByRandomPointInShape(feature, network, noVehiclesPerArea, serviceStartTime,
 				serviceEndTime, 1, drtType, drtMode, vehicles);
 	}
 

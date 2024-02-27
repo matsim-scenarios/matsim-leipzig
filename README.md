@@ -37,22 +37,24 @@ The Leipzig scenario has a command line interface providing the following option
 
 It can be used by using either of these methods:
 
-##### ... using an IDE, e.g. Eclipse, IntelliJ - Alternative 1: use cloned/downloaded matsim-leipzig repository
+##### ... using an IDE, e.g. Eclipse, IntelliJ
 (Requires either cloning or downloading the repository.)
 
 1. Set up the project in your IDE.
-1. Make sure the project is configured as maven project.
-1. Run the JAVA class `src/main/java/org/matsim/run/RunLeipzigScenario.java`.
-1. "Open" the output directory.  You can drag files into VIA as was already done above.
-1. Edit the config file or adjust the run class. Re-run MATSim.
+2. Make sure the project is configured as maven project.
+3. Run the Java class `src/main/java/org/matsim/run/RunLeipzigScenario.java`.
+   1. Edit Run Configurations to change the command line arguments.
+   2. Add `run` into "Programm Argument".
+   3. Save and run again.
+4. "Open" the output directory.  You can drag files into VIA as was already done above.
+5. Edit the config file or adjust the run class. Re-run MATSim.
 
 ##### ... using a runnable jar file
 (Requires either cloning or downloading the repository and java)
 
 1. Open the cmd and go to your project directory
 2. Build the scenario using `mvnw package` 
-3. There should be a file directly in the `matsim-leipzig` directory with name approximately as `matsim-leipzig-1.0.jar`.
-4. Run this file from the command line using `java -jar matsim-leipzig-1.0.jar --help` to see all possible options.
-    1. For example, one can disable lanes or run the 25pct scenario using the available options
-5. Start this scenario using the default config by running `java -jar matsim-leipzig-1.0.jar`
-6. "Open" the output directory.  You can drag files into VIA as was already done above.
+3. There should be a file directly in the `matsim-leipzig` directory with name approximately as `matsim-leipzig-1.*.jar`.
+4. Run this file from the command line using the exact file name, e.g. `java -jar matsim-leipzig-1.3-0263af8.jar --help` to see all possible options.
+5. Start this scenario using the default config by running `java -jar matsim-leipzig-1.3-0263af8.jar run`
+6. "Open" the output directory. You can drag files into VIA as was already done above.

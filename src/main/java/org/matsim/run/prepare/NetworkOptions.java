@@ -21,8 +21,6 @@ public class NetworkOptions {
 
 	@CommandLine.Option(names = "--drt-area", description = "Path to SHP file specifying where DRT mode is allowed")
 	private Path drtArea;
-	@CommandLine.Option(names = "--drt-modes", description = "List of modes to add. Use comma as delimiter", defaultValue = TransportMode.drt)
-	private String drtModes;
 	@CommandLine.Option(names = "--car-free-area", description = "Path to SHP file specifying car-free area")
 	private Path carFreeArea;
 	@CommandLine.Option(names = "--car-free-modes-to-delete", description = "List of modes to remove. Use comma as delimiter", defaultValue = TransportMode.car + "," + TransportMode.ride)
@@ -68,7 +66,7 @@ public class NetworkOptions {
 			if (!Files.exists(drtArea)) {
 				throw new IllegalArgumentException("Path to drt area not found: " + drtArea);
 			} else {
-				PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null), drtModes);
+				PrepareNetwork.prepareDRT(network, new ShpOptions(drtArea, null, null));
 			}
 		}
 

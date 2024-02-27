@@ -24,6 +24,7 @@ import org.matsim.application.prepare.population.*;
 import org.matsim.application.prepare.pt.CreateTransitScheduleFromGtfs;
 import org.matsim.contrib.bicycle.BicycleConfigGroup;
 import org.matsim.contrib.bicycle.BicycleModule;
+import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
 import org.matsim.contrib.vsp.scenario.SnzActivities;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -45,7 +46,6 @@ import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParamete
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
 
 import javax.annotation.Nullable;
-import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -91,9 +91,6 @@ public class RunLeipzigScenario extends MATSimApplication {
 	private Double parkingCostTimePeriodStart;
 	@CommandLine.Option(names = "--parking-cost-time-period-end", defaultValue = "0", description = "End of time period for which parking cost will be charged.")
 	private Double parkingCostTimePeriodEnd;
-
-	@CommandLine.Option(names = "--drt-case", defaultValue = "oneServiceArea", description = "Defines how drt is modelled. For a more detailed description see class DrtCaseSetup.")
-	private DrtCaseSetup.DrtCase drtCase;
 
 	@CommandLine.Option(names = "--intermodality", defaultValue = "drtAndPtSeparateFromEachOther", description = "Define if drt should be used as access and egress mode for pt.")
 	private DrtCaseSetup.PtDrtIntermodality ptDrtIntermodality;
@@ -189,11 +186,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 
 		if (networkOpt.hasDrtArea()) {
 			//drt
-			try {
-				DrtCaseSetup.prepareConfig(config, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null));
-			} catch (URISyntaxException e) {
-				log.fatal(e);
-			}
+			DrtCaseSetup.prepareConfig(config, /* drtCase, */ new ShpOptions(networkOpt.getDrtArea(), null, null), ptDrtIntermodality);
 		}
 
 		config.qsim().setUsingTravelTimeCheckInTeleportation(true);
@@ -279,7 +272,7 @@ public class RunLeipzigScenario extends MATSimApplication {
 		// (passt das Netz an aus den mitgegebenen shape files, z.B. parking area, car-free area, ...)
 
 		if (networkOpt.hasDrtArea()) {
-			DrtCaseSetup.prepareScenario(scenario, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION);
+			DrtCaseSetup.prepareScenario(scenario, new ShpOptions(networkOpt.getDrtArea(), null, null), VERSION, ptDrtIntermodality);
 		}
 		if (networkOpt.hasCarFreeArea()){
 			PreparePopulation.deleteCarAndRideRoutesThatHaveForbiddenLinks(scenario.getPopulation(), networkOpt.getNonPtLinksInCarFreeArea(scenario.getNetwork()));
@@ -324,8 +317,17 @@ public class RunLeipzigScenario extends MATSimApplication {
 			}
 		});
 
-		if (networkOpt.hasDrtArea()) {
-			DrtCaseSetup.prepareControler(controler, drtCase, new ShpOptions(networkOpt.getDrtArea(), null, null), ptDrtIntermodality);
+		/*
+		 * i changed this from networkOpt.hasDrtArea() which relies on command line input to an automatic check of the config
+		 * so that we _can_ run Drt simulations without calling DrtCaseSetup, i.e. without creating and configuring drt input in the code
+		 * but rather by configuring it at the cml level.
+		 * In this case, the modeller has to assure that the input (including the (allowed modes in the) network!!) is well prepared for drt, themselves!
+		 * As the following checks whether the MultiModeDrtConfigGroup is configured, it still works with the DrtCaseSetup
+		 * tschlenther feb'24.
+		 */
+		//if (networkOpt.hasDrtArea()) {
+		if (ConfigUtils.hasModule(controler.getConfig(), MultiModeDrtConfigGroup.class)) {
+			DrtCaseSetup.prepareControler(controler, ptDrtIntermodality);
 		}
 
 		if (bike == BicycleHandling.onNetworkWithBicycleContrib) {

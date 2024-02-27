@@ -59,33 +59,18 @@ public class PrepareNetwork implements MATSimAppCommand {
 	 * Adapt network to one or more drt service areas. Therefore, a shape file of the wished service area + a list
 	 * of drt modes are needed.
 	 */
-	static void prepareDRT(Network network, ShpOptions shp, String modes) {
-
-		Set<String> modesToAdd = new HashSet<>(Arrays.asList(modes.split(",")));
-		Geometry drtOperationArea = null;
-		Geometry avOperationArea = null;
+	static void prepareDRT(Network network, ShpOptions shp) {
 
 		List<SimpleFeature> features = shp.readFeatures();
+		Map<String, Geometry> modeGeoms = new HashMap<>();
 		for (SimpleFeature feature : features) {
-			if (feature.getAttribute("mode").equals("drt")) {
-				if (drtOperationArea == null) {
-					drtOperationArea = (Geometry) feature.getDefaultGeometry();
-				} else {
-					drtOperationArea = drtOperationArea.union((Geometry) feature.getDefaultGeometry());
-				}
-			} else {
-				drtOperationArea = avOperationArea.getFactory().createPoint();
-			}
 
-			if (feature.getAttribute("mode").equals("av")) {
-				if (avOperationArea == null) {
-					avOperationArea = (Geometry) feature.getDefaultGeometry();
-				} else {
-					avOperationArea = avOperationArea.union((Geometry) feature.getDefaultGeometry());
-				}
-			} else {
-				avOperationArea = drtOperationArea.getFactory().createPoint();
+			String mode = String.valueOf( feature.getAttribute("mode") );
+			if (mode.equals("null")) {
+				throw new IllegalArgumentException("could not find 'mode' attribute in the given shape file at " + shp.getShapeFile().toString());
 			}
+			modeGeoms.compute(mode, (m, geom) -> geom == null ? ((Geometry) feature.getDefaultGeometry()) : geom.union((Geometry) feature.getDefaultGeometry()));
+
 		}
 
 		for (Link link : network.getLinks().values()) {
@@ -93,27 +78,23 @@ public class PrepareNetwork implements MATSimAppCommand {
 				continue;
 			}
 
-			boolean isDrtAllowed = MGC.coord2Point(link.getFromNode().getCoord()).within(drtOperationArea) &&
-					MGC.coord2Point(link.getToNode().getCoord()).within(drtOperationArea);
-			boolean isAvAllowed = MGC.coord2Point(link.getFromNode().getCoord()).within(avOperationArea) &&
-					MGC.coord2Point(link.getToNode().getCoord()).within(avOperationArea);
-
-			if (isDrtAllowed) {
-				Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
-				allowedModes.addAll(modesToAdd);
-				link.setAllowedModes(allowedModes);
-			}
-
-			if (isAvAllowed) {
-				Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
-				allowedModes.addAll(modesToAdd);
-				link.setAllowedModes(allowedModes);
+			for (Map.Entry<String, Geometry> modeGeometryEntry : modeGeoms.entrySet()) {
+				if (MGC.coord2Point(link.getFromNode().getCoord()).within(modeGeometryEntry.getValue()) &&
+					MGC.coord2Point(link.getToNode().getCoord()).within(modeGeometryEntry.getValue())){
+					Set<String> allowedModes = new HashSet<>(link.getAllowedModes());
+					allowedModes.add(modeGeometryEntry.getKey());
+					link.setAllowedModes(allowedModes);
+				}
 			}
 		}
-		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
-		multimodalNetworkCleaner.run(modesToAdd);
 
-		log.log(Level.INFO, "The following modes have been added to the network: {}", modes);
+		//we have to call the MultiModalNetworkCleaner for each mode individually, because otherwise the individual subnetworks might not get cleaned
+		MultimodalNetworkCleaner multimodalNetworkCleaner = new MultimodalNetworkCleaner(network);
+		for (String mode : modeGeoms.keySet()) {
+			multimodalNetworkCleaner.run(Set.of(mode));
+		}
+
+		log.log(Level.INFO, "The following modes have been added to the network: {}", modeGeoms.keySet());
 	}
 
 	/**

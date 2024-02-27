@@ -112,6 +112,7 @@ input/plans-completeSmallScaleCommercialTraffic.xml.gz:
 	mv output/commercialTraffic/$(notdir $@) $@
 
 input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.gz input/plans-completeSmallScaleCommercialTraffic.xml.gz
+# remove modes etc. from the SNZ plans.  max-typ-dur=0 means activity types are kept.  sample size is _input_ sample size.
 	$(sc) prepare trajectory-to-plans\
 	 --name prepare --sample-size 0.25\
 	 --max-typical-duration 0\
@@ -123,12 +124,14 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.
  	 --shp $(shared)/matsim-input-files/senozon/20210520_leipzig/dilutionArea.shp --shp-crs $(CRS)\
 	 --output input/prepare-25pct.plans.xml.gz
 
+# everything from SNZ comes on grid.  we randomize into the grid cells:
 	$(sc) prepare resolve-grid-coords input/prepare-25pct.plans.xml.gz\
 	 --input-crs $(CRS)\
 	 --grid-resolution 300\
 	 --landuse $(germany)/landuse/landuse.shp\
 	 --output input/prepare-25pct.plans.xml.gz
 
+# SNZ has problems with short trips since cells are too small.  This generations additional trips in some (yyyy which one???) distance class.  The number of short trips comes from yyyy ???.
 	$(sc) prepare generate-short-distance-trips\
  	 --population input/prepare-25pct.plans.xml.gz\
  	 --input-crs $(CRS)\
