@@ -15,10 +15,13 @@ library(geosphere)
 ####################################################
 ### INPUT DEFINITIONS ###
 
-# set working directory
-setwd("C:/Users/Simon/Documents/shared-svn/projects/NaMAV/data/flexa-scenario/")
 
-# read data
+##TODO: distance between stops and average waiting time
+
+# set working directory
+setwd("/Users/gregorr/Desktop/Test/NAMAV/flexaDaten/")
+
+# read data, to create thise file, you first have to run the FLEXA-filter-data.R script
 allRidesFileName = "Flexa_Rides_allServiceAreas_2021"
 allRides <- read.csv2(paste0(allRidesFileName,".csv"), stringsAsFactors = FALSE, header = TRUE, encoding = "UTF-8")
 
@@ -28,6 +31,8 @@ analyzedArea = unlist(str_split(allRidesFileName, "Flexa_Rides_"))[2]
 # Therefore the rows will get joined (otherwise it will lead to errors)
 allRides <- allRides %>%
   mutate(request_time = ymd_hms(request_time, tz="Europe/Berlin"),
+         desired_pickup_time = ymd_hms(request_time, tz="Europe/Berlin"),
+         promised_departure_time = ymd_hms(request_time, tz="Europe/Berlin"),
          actual_departure_time = ymd_hms(actual_departure_time, tz="Europe/Berlin"),
          actual_arrival_time = ymd_hms(actual_arrival_time, tz="Europe/Berlin"),
          date_ride = date(actual_departure_time),
@@ -87,6 +92,17 @@ ridesToConsider <- ridesToConsider  %>%
                                               c(as.double(requested_destination_lon), as.double(requested_destination_lat)))))
 
 ############################################################################################################################################################
+
+
+
+## calculating the average waiting time, we assume that the waiting time is the time difference between the promised and the actual departure time
+ridesToConsider <- ridesToConsider %>%
+  mutate(waiting_time_s = actual_departure_time - promised_departure_time)
+
+
+k <- ridesToConsider %>% mutate(waiting_time_s = seconds(waiting_time_s))
+
+hist(k$waiting_time_s, plot = TRUE)
 
 j <- ridesToConsider %>%
   mutate(travelTime_s = seconds(travelTime_s))

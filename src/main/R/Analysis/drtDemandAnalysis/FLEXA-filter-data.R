@@ -3,18 +3,19 @@ library(tidyverse)
 library(dplyr)
 
 # set working directory
-setwd("C:/Users/Simon/Documents/shared-svn/projects/NaMAV/data/Flexa/")
+setwd("/Users/gregorr/Desktop/Test/NAMAV/flexaDaten")
 
 # read data
-FlexaData2021 <- read.csv2("Nachfragedaten_LVB_2021/Nachfragedaten_Flexa2021_anonymisiert/anonymisierteDatenNeu.csv", stringsAsFactors = FALSE, header = TRUE, sep=",",encoding = "UTF-8")
+FlexaData2021 <- read.csv2("anonymisierteDatenNeu.csv", stringsAsFactors = FALSE, header = TRUE, sep=",",encoding = "UTF-8")
 
+## gr i needed to add more colums here, as we defined the waiting time diffrently 
 #filter
 FlexaData2021 <- FlexaData2021 %>%
-  select(request_time, actual_departure_time, actual_arrival_time, requested_origin_lat, requested_origin_lon, requested_destination_lat,
+  select(request_time, desired_pickup_time, promised_departure_time, actual_departure_time, actual_arrival_time, requested_origin_lat, requested_origin_lon, requested_destination_lat,
          requested_destination_lon, requested_origin_assigned_flexa_stop, requested_destination_assigned_flexa_stop, requested_origin_flexa_area,
          requested_destination_flexa_area, number_of_passengers)
 
-write.csv2(FlexaData2021, "Nachfragedaten_LVB_2021/Nachfragedaten_Flexa_2021_anonymisiert_filtered.csv", quote = FALSE)
+write.csv2(FlexaData2021, "Nachfragedaten_Flexa_2021_anonymisiert_filtered.csv", quote = FALSE)
 
 #filter only realized rides
 #there are some 43 rides, which have an arrival time but do not have a departure time
