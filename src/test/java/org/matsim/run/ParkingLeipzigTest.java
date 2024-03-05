@@ -40,22 +40,24 @@ import static org.junit.Assert.assertEquals;
 public class ParkingLeipzigTest {
 
 	private static final String URL = "https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.2/input/";
-	private static final String exampleShp = "input/v1.2/drtServiceArea/Leipzig_stadt.shp";
+	private static final String exampleShp = String.format("input/v%s/testInput/Zonen99_update.shp", RunLeipzigScenario.VERSION);
 	private static final List<String> agents = new ArrayList<>(List.of("residentLeisureInOA", "outsiderLeisureInOA", "parkingAgentCarFreeLeisureCloseToResParkingZone"));
+	private static final String flexaShp = String.format("input/v%s/drtServiceArea/leipzig_flexa_service_area_2021.shp", RunLeipzigScenario.VERSION);
+
 
 	@Test
 	public final void runPoint1pctIntegrationTestWithParking() {
 		Path output = Path.of("output-parking-test/it-1pct");
-		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-10pct.config.xml");
+		Config config = ConfigUtils.loadConfig("input/v1.3/leipzig-v1.3-10pct.config.xml");
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
 		config.controler().setLastIteration(0);
 		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
 		config.controler().setOutputDirectory(output.toString());
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
-		config.plans().setInputFile("testParkingPopulation.xml");
+		config.plans().setInputFile("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/test/testParkingPopulation.xml");
 
-		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", flexaShp, "--post-processing", "disabled",
 				"--parking-cost-area", "input/v" + "1.3" + "/parkingCostArea/Bewohnerparken_2020.shp",
 				"--intermodality", "drtAsAccessEgressForPt", "--parking");
 
@@ -75,7 +77,7 @@ public class ParkingLeipzigTest {
 	@Test
 	public final void runPoint1pctIntegrationTestWithParkingWithCarFreeArea() throws IOException {
 		Path output = Path.of("output-parking-test-withCarFreeArea/it-1pct");
-		Config config = ConfigUtils.loadConfig("input/v1.2/leipzig-v1.2-10pct.config.xml");
+		Config config = ConfigUtils.loadConfig("input/v1.3/leipzig-v1.3-10pct.config.xml");
 		config.global().setNumberOfThreads(1);
 		config.qsim().setNumberOfThreads(1);
 		config.controler().setLastIteration(0);
@@ -83,13 +85,11 @@ public class ParkingLeipzigTest {
 		config.controler().setOutputDirectory(output.toString());
 		ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class).defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 
-		//TODO maybe write the test population
-		// for the test case combination look at the ChessboardParkingTest
-		config.plans().setInputFile("testParkingPopulation.xml");
+		config.plans().setInputFile("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/test/testParkingPopulation.xml");
 
-		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", exampleShp, "--post-processing", "disabled",
+		MATSimApplication.execute(RunLeipzigScenario.class, config, "run", "--1pct","--drt-area", flexaShp, "--post-processing", "disabled",
 				"--parking-cost-area", "input/v" + "1.3" + "/parkingCostArea/Bewohnerparken_2020.shp",
-				"--intermodality", "drtAsAccessEgressForPt", "--parking", "--car-free-area", "input/v1.2/carfree/leipzig_carfree_area_small/Zonen99_update.shp");
+				"--intermodality", "drtAsAccessEgressForPt", "--parking", "--car-free-area", exampleShp.toString());
 
 		EventsManager eventsManager = EventsUtils.createEventsManager();
 		eventsManager.addHandler(new ParkingActivityStartEventHandler());
