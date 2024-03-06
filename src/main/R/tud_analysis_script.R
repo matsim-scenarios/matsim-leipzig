@@ -354,7 +354,7 @@ trips_number_by_mode_and_distance_barchart <- function(trips_list, output_filena
       group_by(main_mode, distance_class) %>%
       summarise(trips_number = n(), .groups = 'drop') %>%
       filter(!is.na(main_mode) & main_mode != "drtNorth" & main_mode != "drtSoutheast") %>%
-      pivot_wider(names_from = main_mode, values_from = trips_number, names_prefix = scenario_name)
+      pivot_wider(names_from = main_mode, values_from = trips_number, names_prefix = paste0(scenario_name, "_"))
   }
   
   
@@ -372,8 +372,7 @@ trips_number_by_mode_and_distance_barchart <- function(trips_list, output_filena
   }
   
   combined_data <- combined_data %>%
-    pivot_longer(cols = -distance_class, names_to = c(".value", "scenario"), names_sep = "(?<=base|policy)")
-  
+    pivot_longer(cols = -distance_class, names_to = c(".value", "scenario"),  names_sep = "_")
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   
   if(plot_creation == 1){
