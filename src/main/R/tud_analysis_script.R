@@ -224,21 +224,21 @@ plot_sankey <- function(trip_table,output_filename) {
 
 ## Population segment filter 
 ## Concept for filtering residents: considering agents have home activity at the start or end of trip. Same approach for workers 
-population_filtering_function <- function(trips_table, population_type) {
+population_filtering_function <- function(scope_trips, Region_trips_table , population_type) {
   if (population_type == "resident") {
     filtered_trips <- filter(
-      trips_table,
+      scope_trips,
       grepl('home', start_activity_type) | grepl('home', end_activity_type)
     )
   } else if (population_type == "worker") {
     filtered_trips <- filter(
-      trips_table,
+      scope_trips,
       grepl('work', start_activity_type) | grepl('work', end_activity_type)
     )
   } else {
     stop("Invalid trip type. Please enter either 'resident' or 'worker'.")
   }
-  relevant_trips <- trips_table %>% 
+  relevant_trips <- Region_trips_table %>% 
     filter(person %in% filtered_trips$person)
   return(relevant_trips)
 }
@@ -945,28 +945,23 @@ if (x_emissions_barchart == 1){
 
 if(x_population_seg_filter == 1){
   
-  residents.base.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[1]],"resident")
-  residents.TFW.base.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[1]],"resident")
+  residents.base.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[1]], trips.list.region[[1]],"resident")
+  residents.TFW.base.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[1]],trips.list.region[[1]],"resident")
   
-  residents.base.parking.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[2]], "resident")
-  residents.TFW.base.parking.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[2]], "resident")
+  residents.scenario.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[2]],trips.list.region[[2]], "resident")
+  residents.TFW.scenario.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[2]],trips.list.region[[2]], "resident")
   
-  residents.car.free.area.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[3]],"resident")
-  residents.TFW.car.free.area.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[3]],"resident")
+  worker.base.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[1]],trips.list.region[[1]],"worker")
+  worker.TFW.base.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[1]],trips.list.region[[1]],"worker")
   
-  worker.base.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[1]],"worker")
-  worker.TFW.base.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[1]],"worker")
+  worker.scenario.tirps.carfree.area <- population_filtering_function(trips.list.carfree.area[[2]],trips.list.region[[2]],"worker")
+  worker.TFW.scenario.tirps.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[2]],trips.list.region[[2]],"worker")
   
-  worker.base.parking.tirps.carfree.area <- population_filtering_function(trips.list.carfree.area[[2]],"worker")
-  worker.TFW.base.parking.tirps.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[2]],"worker")
-  
-  worker.car.free.area.trips.carfree.area <- population_filtering_function(trips.list.carfree.area[[3]],"worker")
-  worker.TFW.car.free.area.trips.carfree.area <- population_filtering_function(trips.list.TFW.carfree.area[[3]],"worker")
-  
-  trips.list.residents.TFW.carfree.area <- list(base = residents.TFW.base.trips.carfree.area, base.parking = residents.TFW.base.parking.trips.carfree.area , Large.car.free.area.with.parking = residents.TFW.car.free.area.trips.carfree.area)
-  trips.list.workers.TFW.carfree.area <- list(base = worker.TFW.base.trips.carfree.area, base.parking = worker.TFW.base.parking.tirps.carfree.area, Large.car.free.area.with.parking = worker.TFW.car.free.area.trips.carfree.area)
-  trips.list.residents.carfree.area <- list(base = residents.base.trips.carfree.area, base.parking = residents.base.parking.trips.carfree.area, Large.car.free.area.with.parking = residents.car.free.area.trips.carfree.area)
-  trips.list.workers.carfree.area <- list(base = worker.base.trips.carfree.area, base.parking = worker.base.parking.tirps.carfree.area, Large.car.free.area.with.parking = worker.car.free.area.trips.carfree.area)
+
+  trips.list.residents.TFW.carfree.area <- list(base = residents.TFW.base.trips.carfree.area, policy = residents.TFW.scenario.trips.carfree.area)
+  trips.list.workers.TFW.carfree.area <- list(base = worker.TFW.base.trips.carfree.area, policy = worker.TFW.scenario.tirps.carfree.area )
+  trips.list.residents.carfree.area <- list(base = residents.base.trips.carfree.area, policy = residents.scenario.trips.carfree.area)
+  trips.list.workers.carfree.area <- list(base = worker.base.trips.carfree.area, policy = worker.scenario.tirps.carfree.area)
   # there is no difference regarding legs, and one of the legs defined previously can be used
 }
 
