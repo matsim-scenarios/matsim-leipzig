@@ -169,7 +169,8 @@ public class PreparePopulation implements MATSimAppCommand {
 	}
 
 	/**
-	 * This step runs at the very end.
+	 * This step runs at the very end. We need this to define outside persons to calculate the scores separately as agents far outside the study area tend to have very negative scores.
+	 * This can only run after every other step is completed.
 	 */
 	private void postPhase(Population population, ShpOptions.Index index) {
 

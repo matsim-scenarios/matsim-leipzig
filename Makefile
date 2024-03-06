@@ -30,21 +30,22 @@ input/gtfs-lvb.zip:
 	  -o $@
 
 input/network.osm: $(germany)/maps/$(NETWORK)
-
+#osmosisi is an osm tool, that allows to cut out the detailed network, there are 3 levels of detail
+# detailed inside the study area, this is only Leipzig with a small buffer
 	$(osmosis) --rb file=$<\
 	 --tf accept-ways bicycle=yes highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction,residential,unclassified,living_street\
 	 --bounding-box top=51.457 left=12.137 bottom=51.168 right=12.703\
 	 --used-node --wb network-detailed.osm.pbf
-
+# coarse outside the study area
 	$(osmosis) --rb file=$<\
 	 --tf accept-ways highway=motorway,motorway_link,trunk,trunk_link,primary,primary_link,secondary_link,secondary,tertiary,motorway_junction\
 	 --bounding-box top=51.92 left=11.45 bottom=50.83 right=13.36\
 	 --used-node --wb network-coarse.osm.pbf
-
+# rest of germany
 	$(osmosis) --rb file=$<\
 	 --tf accept-ways highway=motorway,motorway_link,motorway_junction,trunk,trunk_link,primary,primary_link\
 	 --used-node --wb network-germany.osm.pbf
-
+# remove railways as this causes problems with the SUMO converter
 	$(osmosis) --rb file=network-germany.osm.pbf --rb file=network-coarse.osm.pbf --rb file=network-detailed.osm.pbf\
   	 --merge --merge\
   	 --tag-transform file=input/remove-railway.xml\
@@ -54,7 +55,7 @@ input/network.osm: $(germany)/maps/$(NETWORK)
 	rm network-coarse.osm.pbf
 	rm network-germany.osm.pbf
 
-
+# here a sumo network is created, the default options from Sumo are used or advised
 input/sumo.net.xml: input/network.osm
 
 	$(SUMO_HOME)/bin/netconvert --geometry.remove --ramps.guess --ramps.no-split\
@@ -68,12 +69,13 @@ input/sumo.net.xml: input/network.osm
 	 --proj "+proj=utm +zone=32 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"\
 	 --osm-files $< -o=$@
 
-
+#create a masim network based on the sumo network, free speed factor is based on experiments derived from a paper:
+#Christan Rakow ABMTrans Road network free flow speed estimation using microscopic
 input/$V/leipzig-$V-network.xml.gz: input/sumo.net.xml
 	$(sc) prepare network-from-sumo $< --output $@ --free-speed-factor 0.75
 	$(sc) prepare fix-network $@ --output $@
 	$(sc) prepare clean-network $@ --output $@ --modes bike
-
+# create transit schedule from gtfs dataset
 input/$V/leipzig-$V-network-with-pt.xml.gz: input/$V/leipzig-$V-network.xml.gz input/gtfs-lvb.zip
 	$(sc) prepare transit-from-gtfs --network $< $(filter-out $<,$^)\
 	 --name leipzig-$V --date "2023-04-19" --target-crs $(CRS)\
@@ -137,25 +139,25 @@ input/$V/leipzig-$V-25pct.plans-initial.xml.gz: input/plans-longHaulFreight.xml.
  	 --input-crs $(CRS)\
  	 --shp $(shared)/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
  	 --num-trips 67395
-
+# this is needed as we have a very coarse network outside the study area and agents should not have very long access or egress walks
 	$(sc) prepare adjust-activity-to-link-distances input/prepare-25pct.plans-with-trips.xml.gz\
 	 --shp $(shared)/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp --shp-crs $(CRS)\
 	 --scale 1.15\
 	 --input-crs $(CRS)\
 	 --network input/$V/leipzig-$V-network.xml.gz\
 	 --output input/prepare-25pct.plans-adj.xml.gz
-
+# as the call of this in prepare trajectory-to-plans is deprecated we call this explity here
 	$(sc) prepare split-activity-types-duration\
 		--input input/prepare-25pct.plans-with-trips.xml.gz\
 		--exclude commercial_start,commercial_end,freight_start,freight_end\
 		--output $@
 
 	$(sc) prepare merge-populations $@ $^ --output $@
-
+# see class comment
 	$(sc) prepare population $@ --phase post\
  	 --shp $(shared)/matsim-input-files/senozon/20210520_leipzig/dilutionArea.shp --shp-crs $(CRS)\
 	 --output $@
-
+# we added trips and so on so we need to ensure plans are consisten with subTourModeChoice
 	$(sc) prepare fix-subtour-modes --input $@ --coord-dist 100 --output $@
 
 	$(sc) prepare extract-home-coordinates $@ --csv input/$V/leipzig-$V-homes.csv
