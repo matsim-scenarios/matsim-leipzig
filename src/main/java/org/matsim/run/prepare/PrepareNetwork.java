@@ -105,7 +105,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 		//get all links in shp that allow at least one of modesToRemove
 		Set<Id<Link>> modeLinksInArea = getFilteredLinksInArea(network, shp,
-			link -> link.getAllowedModes().stream().anyMatch(mode -> modesToRemove.contains(mode)));
+			link -> link.getAllowedModes().stream().anyMatch(modesToRemove::contains));
 		deleteModesFromLinks(network, modeLinksInArea, modesToRemove);
 
 		log.info("Car free areas have been added to network.");

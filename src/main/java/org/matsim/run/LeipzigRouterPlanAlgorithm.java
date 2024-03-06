@@ -285,8 +285,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			networkToSearchIn = reducedNetwork;
 		}
 
-		final Link parkingLink = linkChooser.decideOnLink(facility, networkToSearchIn);
-		return parkingLink;
+        return linkChooser.decideOnLink(facility, networkToSearchIn);
 	}
 
 	/**

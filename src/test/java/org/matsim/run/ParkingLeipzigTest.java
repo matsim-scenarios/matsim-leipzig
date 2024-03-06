@@ -101,7 +101,7 @@ public class ParkingLeipzigTest {
 				var link = event.getAttributes().get("link");
 				var time = event.getAttributes().get("time");
 				if(time.equals("3888.0")){
-					Assert.assertTrue(link.equals("206552443"));
+                    assertEquals("206552443", link);
 				}
 
 				//Assert.assertTrue(event.getLinkId().equals("11827009#2"));
@@ -110,14 +110,14 @@ public class ParkingLeipzigTest {
 				var link = event.getAttributes().get("link");
 				var time = event.getAttributes().get("time");
 				if(time.equals("4113.0")){
-					Assert.assertTrue(link.equals("-56064787#1"));
+                    assertEquals("-56064787#1", link);
 				}
 			}
 			if (event.getAttributes().get("person").equals("parkingAgentCarFreeLeisureCloseToResParkingZone")) {
 				var link = event.getAttributes().get("link");
 				var time = event.getAttributes().get("time");
 				if(time.equals("3889.0")){
-					Assert.assertTrue(link.equals("11827009#2"));
+                    assertEquals("11827009#2", link);
 				}
 
 			}
@@ -127,7 +127,7 @@ public class ParkingLeipzigTest {
 
 	}
 
-	class ParkingActivityStartEventHandler implements ActivityStartEventHandler {
+	static final class ParkingActivityStartEventHandler implements ActivityStartEventHandler {
 		static List<ActivityStartEvent> parkingEvents = new ArrayList<>();
 		@Override
 		public void handleEvent(ActivityStartEvent event) {

@@ -224,18 +224,16 @@ public class PreparePopulation implements MATSimAppCommand {
 	/**
 	 * deletes all car and ride routes from the population that contain at least one of the given links.
 	 */
-	//TODO remove hardcoding of the transport modes??
 	public static void deleteCarAndRideRoutesThatHaveForbiddenLinks(Population population, Set<Id<Link>> forbiddenLinks) {
-//		log.info("start deleting every car route that travels one or more links within car-free-zone");
 
-		population.getPersons().values().stream()
+		population.getPersons().values()
 			.forEach(person -> person.getPlans().stream().flatMap(plan ->
 					TripStructureUtils.getLegs(plan).stream())
 				.forEach(leg -> {
 					if (leg.getMode().equals(TransportMode.car) || leg.getMode().equals(TransportMode.ride)){
 						Route route = leg.getRoute();
 						if (route != null){
-							boolean routeTouchesZone = (route instanceof NetworkRoute && ((NetworkRoute) route).getLinkIds().stream().filter(l -> forbiddenLinks.contains(l)).findAny().isPresent() );
+							boolean routeTouchesZone = (route instanceof NetworkRoute nr && nr.getLinkIds().stream().anyMatch(forbiddenLinks::contains));
 							if (routeTouchesZone || forbiddenLinks.contains(route.getStartLinkId()) || forbiddenLinks.contains(route.getEndLinkId()) ){
 								leg.setRoute(null);
 							}
@@ -243,7 +241,6 @@ public class PreparePopulation implements MATSimAppCommand {
 					}
 				}));
 
-//		log.info(".... finished deleting every car route that travels one or more links within car-free-zone");
 	}
 
 }
