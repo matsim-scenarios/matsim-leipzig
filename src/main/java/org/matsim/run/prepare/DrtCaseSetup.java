@@ -73,7 +73,7 @@ public final class DrtCaseSetup {
 	 */
 	public static void prepareConfig(Config config, ShpOptions drtAreas, PtDrtIntermodality ptDrtIntermodality) {
 
-		log.info(String.format("reading %s", drtAreas.getShapeFile().toString()));
+		log.info("reading {}", drtAreas.getShapeFile().toString());
 		for (SimpleFeature feature : drtAreas.readFeatures()) {
 
 			String drtMode = String.valueOf(feature.getAttribute("mode"));
@@ -144,7 +144,7 @@ public final class DrtCaseSetup {
 		CreateDrtStopsFromNetwork drtStopsCreator = new CreateDrtStopsFromNetwork();
 		MultiModeDrtConfigGroup multiModeDrtConfigGroup = ConfigUtils.addOrGetModule(scenario.getConfig(), MultiModeDrtConfigGroup.class);
 
-		log.info(String.format("reading %s", drtAreas.getShapeFile()));
+		log.info("reading {}", drtAreas.getShapeFile());
 		for (SimpleFeature feature : drtAreas.readFeatures()) {
 			String drtMode = String.valueOf(feature.getAttribute("mode"));
 			if (drtMode.equals("null")) {
@@ -155,13 +155,13 @@ public final class DrtCaseSetup {
 				throw new IllegalArgumentException(String.format("could not find 'noVehicles' attribute in the given shape file at %s", drtAreas.getShapeFile().toString()));
 			}
 
-			log.info(String.format("filtering network for mode %s. Before, the number of links equals %d.", drtMode, scenario.getNetwork().getLinks().size()));
+			log.info("filtering network for mode {}. Before, the number of links equals {}.", drtMode, scenario.getNetwork().getLinks().size());
 			Network filteredNetwork = NetworkUtils.createNetwork();
 			TransportModeNetworkFilter filter = new TransportModeNetworkFilter(scenario.getNetwork());
 			filter.filter(filteredNetwork, Sets.newHashSet(drtMode));
-			log.info(String.format("filtered network contains %d links", filteredNetwork.getLinks().size()));
+			log.info("filtered network contains {} links", filteredNetwork.getLinks().size());
 
-			log.info(String.format("attempting to create %s drt vehicles for mode ", drtMode));
+			log.info("attempting to create {} drt vehicles for mode ", drtMode);
 			new LeipzigDrtVehicleCreator().createDrtVehiclesForSingleArea(scenario.getVehicles(), filteredNetwork,
 					feature, noVehicles, drtMode);
 
@@ -174,13 +174,12 @@ public final class DrtCaseSetup {
 				{
 					//path, tho which stops.xml is saved
 					URL path = IOUtils.extendUrl(scenario.getConfig().getContext(), "leipzig-v" + version + "-" + drtMode + "-stops.xml");
-					File file = null;
+					File file;
 					try {
 						file = new File(path.toURI());
 					} catch (URISyntaxException e) {
-						log.fatal(e);
+						throw new IllegalArgumentException(e);
 					}
-
 
 					//create drt stops and save them next to config -> put it as input stops file.
 					//unfortunately there is no scenario.setDrtStops, so we have to do this workaround. -sme0723
