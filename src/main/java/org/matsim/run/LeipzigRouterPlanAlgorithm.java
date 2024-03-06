@@ -77,7 +77,7 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			//link might be null if inside car free zone (i.e. not in modal network)
 			if (isParkingRelevantActivity(activity)) {
 
-				if (link==null) {
+				if (link == null) {
 					link = NetworkUtils.getNearestLink(fullModalNetwork, activity.getCoord());
 				}
 
@@ -87,6 +87,16 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 			}
 		}
 		return parkingBehaviour;
+	}
+
+	/**
+	 * check if activity type is relevant for residential parking zones.
+	 */
+	private static boolean isParkingRelevantActivity(Activity activity) {
+		// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
+		return !activity.getType().startsWith(SnzActivities.home.name()) &&
+			!activity.getType().startsWith(SnzActivities.shop_daily.name()) &&
+			!activity.getType().startsWith(SnzActivities.shop_other.name());
 	}
 
 	@Override
@@ -274,28 +284,17 @@ final class LeipzigRouterPlanAlgorithm implements PlanAlgorithm, PersonPrepareFo
 	 * is not in the modal network (i.e. activity is in car-free are) and the nearest car link is in
 	 * residential zone. But if the activity is non-residential (or shopping), we want the linkChooser
 	 * to choose the nearest link from outside the residential zone.
-	 *
 	 */
 	private Link chooseParkingLink(Activity activity, Facility facility) {
 		Network networkToSearchIn;
 		//parking at destination
-		if (!isParkingRelevantActivity(activity)){
+		if (!isParkingRelevantActivity(activity)) {
 			networkToSearchIn = fullModalNetwork;
 		} else {
 			networkToSearchIn = reducedNetwork;
 		}
 
-        return linkChooser.decideOnLink(facility, networkToSearchIn);
-	}
-
-	/**
-	 * check if activity type is relevant for residential parking zones.
-	 */
-	private static boolean isParkingRelevantActivity(Activity activity) {
-		// an dieser stelle waere es besser abzufragen, ob die person in der naehe wohnt anstatt nur die home act -> residential parking zuzuordnen
-		return !activity.getType().startsWith(SnzActivities.home.name()) &&
-			!activity.getType().startsWith(SnzActivities.shop_daily.name()) &&
-			!activity.getType().startsWith(SnzActivities.shop_other.name());
+		return linkChooser.decideOnLink(facility, networkToSearchIn);
 	}
 
 }
