@@ -1124,14 +1124,14 @@ if(x_trips_number_by_distance_barchart == 1){
   
 if(x_modal_shift == 1){
   
-  modal_shift(trips.list.region[[1]], trips.list.region[[3]],"sankey.region")
-  modal_shift(trips.list.city[[1]], trips.list.city[[3]],"sankey.city")
-  modal_shift(trips.list.carfree.area[[1]], trips.list.carfree.area[[3]],"sankey.carfree.area")
-  modal_shift(trips.list.TFW.carfree.area[[1]],trips.list.TFW.carfree.area[[3]],"sankey.TFW.carfree.area")
-  modal_shift(trips.list.residents.TFW.carfree.area[[1]],trips.list.residents.TFW.carfree.area[[3]] ,"sankey.residents.TFW.carfree.area")
-  modal_shift(trips.list.workers.TFW.carfree.area[[1]],trips.list.workers.TFW.carfree.area[[3]],"sankey.workers.TFW.carfree.area")
-  modal_shift(trips.list.residents.carfree.area[[1]],trips.list.residents.carfree.area[[3]] ,"sankey.residents.carfree.area")
-  modal_shift(trips.list.workers.carfree.area[[1]],trips.list.workers.carfree.area[[3]] ,"sankey.workers.carfree.area")
+  modal_shift(trips.list.region[[1]], trips.list.region[[2]],"sankey.region")
+  modal_shift(trips.list.city[[1]], trips.list.city[[2]],"sankey.city")
+  modal_shift(trips.list.carfree.area[[1]], trips.list.carfree.area[[2]],"sankey.carfree.area")
+  modal_shift(trips.list.TFW.carfree.area[[1]],trips.list.TFW.carfree.area[[2]],"sankey.TFW.carfree.area")
+  modal_shift(trips.list.residents.TFW.carfree.area[[1]],trips.list.residents.TFW.carfree.area[[2]] ,"sankey.residents.TFW.carfree.area")
+  modal_shift(trips.list.workers.TFW.carfree.area[[1]],trips.list.workers.TFW.carfree.area[[2]],"sankey.workers.TFW.carfree.area")
+  modal_shift(trips.list.residents.carfree.area[[1]],trips.list.residents.carfree.area[[2]] ,"sankey.residents.carfree.area")
+  modal_shift(trips.list.workers.carfree.area[[1]],trips.list.workers.carfree.area[[2]] ,"sankey.workers.carfree.area")
 }
 
 if(x_shifted_trips_average_distance_bar_chart == 1){
