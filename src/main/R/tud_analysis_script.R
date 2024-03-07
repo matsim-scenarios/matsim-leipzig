@@ -22,6 +22,7 @@ x_average_travel_time_by_mode_trips_based_barchart= 1
 x_average_travel_time_by_mode_legs_based_barchart= 1
 x_average_speed_by_mode_trip_based_barchart= 1
 x_average_speed_by_mode_leg_based_barchart= 1
+x_peak_hour_parking_demand = 1
 x_emissions_barchart = 1
 X_winner_loser_analysis = 0 # Note: A more extensive analysis is performed by TUB.
 
@@ -57,6 +58,15 @@ base.legs.carfree.area <- filterByRegion(base.legs.table, carfree.area.shape, cr
 # emission reading
 emission_base  <- read_delim(paste0(base.run.path,"/",list.files(path = base.run.path, pattern = "emission")), delim= ";")
 emission_scenario <- read_delim(paste0(scenario.run.path,"/",list.files(path = scenario.run.path, pattern = "emission")), delim= ";")
+
+# parking demand and capacity reading
+
+# capacity
+network_capacity <- read_delim(paste0(base.run.path,"/",list.files(path = base.run.path, pattern = "parkingCapacities")))
+
+# demand folder path
+parkings_demand_in_fringes_folder_path_base <- paste0(base.run.path, "parking_analysis/parking_demand_fringes_base")
+parkings_demand_in_fringes_folder_path_LCFA <- paste0(base.run.path, "parking_analysis/parking_demand_fringes_LCFA")
 
 ## List of scenarios: Define the scenarios to be included in the same plot.
 ## In view of structure of the functions, region legs list should be used for all analysis; therefore, for the analysis same leg table is used
@@ -910,6 +920,61 @@ average_speed_by_mode_leg_based_barchart <- function(legs_list, output_filename)
   }
 }
 
+## peak hour parking demand
+peak_hour_parking_demand <- function(folder_path, desired_time) {
+  
+  file_paths <- list.files(folder_path, pattern = "vehicles", full.names = TRUE)
+  
+  process_file <- function(file_path) {
+    
+    print(paste("Processing file:", file_path))
+    
+    df <- read_delim(file_path, delim = "\t")
+    
+    cols_to_sum <- c(desired_time)
+    df[cols_to_sum] <- sapply(df[cols_to_sum], function(x) as.numeric(as.character(x)))
+    
+    # Sum up the values for each row and then get the total
+    row_sums <- rowSums(df[cols_to_sum], na.rm = TRUE)
+    total_peak_vehicles <- sum(row_sums, na.rm = TRUE)
+    
+    file_name <- basename(file_path)
+    zone_name <- paste(strsplit(file_name, "_")[[1]][1:2], collapse = "_")
+    
+    data.frame(zone = zone_name, peakParkedVehicles = total_peak_vehicles)
+  }
+  
+  result_df <- do.call(rbind, lapply(file_paths, process_file))
+  
+  return(result_df)
+}
+
+## parking demand comparison 
+
+compare_parking_demand <- function(peak_hour_parking_demand_base, peak_hour_parking_demand_LCFA, output_filename) {
+  # Scaling the second column of each data frame by 10
+  peak_hour_parking_demand_base_10x <- peak_hour_parking_demand_base
+  peak_hour_parking_demand_base_10x[,2] <- peak_hour_parking_demand_base_10x[,2] * 10
+  
+  peak_hour_parking_demand_LCFA_10x <- peak_hour_parking_demand_LCFA
+  peak_hour_parking_demand_LCFA_10x[,2] <- peak_hour_parking_demand_LCFA_10x[,2] * 10
+  
+  parking_demand_comparison <- left_join(peak_hour_parking_demand_base_10x, peak_hour_parking_demand_LCFA_10x, by = "zone")
+  
+  # Renaming columns for clarity
+  parking_demand_comparison <- parking_demand_comparison %>%
+    rename(parked_vehicle_base = peakParkedVehicles.x,
+           parked_vehicle_LCFA = peakParkedVehicles.y)
+  
+  parking_demand_comparison <- parking_demand_comparison %>%
+    mutate(LCFA_to_base_relative_change_in_percent = sprintf("%.3f", round((parked_vehicle_LCFA / parked_vehicle_base - 1)*100, 3))) %>%
+    mutate(LCFA_to_base_absolute_change = parked_vehicle_LCFA - parked_vehicle_base)
+  
+  write.csv(parking_demand_comparison, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+
+  return(parking_demand_comparison)
+}
+
 ## emission bar chart
 if (x_emissions_barchart == 1){
   # Load network 
@@ -1173,6 +1238,17 @@ if(x_average_speed_by_mode_leg_based_barchart== 1){
   average_speed_by_mode_leg_based_barchart(legs.list.region,"average.speed.by.mode.leg.based.region")
   average_speed_by_mode_leg_based_barchart(legs.list.city,"average.speed.by.mode.leg.based.city")
   average_speed_by_mode_leg_based_barchart(legs.list.carfree.area,"average.speed.by.mode.leg.based.carfree.area")
+}
+
+if(x_peak_hour_parking_demand ==1){
+  
+  eleven_peak_hour_parking_demand_base <- peak_hour_parking_demand(parkings_demand_in_fringes_folder_path_base, "11:00:00")
+  eleven_peak_hour_parking_demand_LCFA <- peak_hour_parking_demand(parkings_demand_in_fringes_folder_path_LCFA, "11:00:00")
+  four_peak_hour_parking_demand_base <- peak_hour_parking_demand(parkings_demand_in_fringes_folder_path_base, "04:00:00")
+  four_peak_hour_parking_demand_LCFA <- peak_hour_parking_demand(parkings_demand_in_fringes_folder_path_LCFA, "04:00:00")
+  
+  Parking_demand_comparison_eleven <- compare_parking_demand(eleven_peak_hour_parking_demand_base,eleven_peak_hour_parking_demand_LCFA, "parking.demand.comparison.eleven")
+  Parking_demand_comparison_four <- compare_parking_demand(four_peak_hour_parking_demand_base,four_peak_hour_parking_demand_LCFA, "parking.demand.comparison.four")
 }
 
 if (x_emissions_barchart == 1){
