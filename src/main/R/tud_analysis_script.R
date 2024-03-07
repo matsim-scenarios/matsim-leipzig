@@ -23,6 +23,7 @@ x_average_travel_time_by_mode_legs_based_barchart= 1
 x_average_speed_by_mode_trip_based_barchart= 1
 x_average_speed_by_mode_leg_based_barchart= 1
 x_peak_hour_parking_demand = 1
+x_parking_capacity = 1
 x_emissions_barchart = 1
 X_winner_loser_analysis = 0 # Note: A more extensive analysis is performed by TUB.
 
@@ -975,6 +976,49 @@ compare_parking_demand <- function(peak_hour_parking_demand_base, peak_hour_park
   return(parking_demand_comparison)
 }
 
+## parking_capacity_of_fringes
+parking_capacity_analysis <- function(folder_path, network_capacity) {
+  
+  file_paths <- list.files(folder_path, pattern = "vehicles", full.names = TRUE)
+  
+  
+  process_file <- function(file_path) {
+    df <- read.delim(file_path)
+    df[-1] <- lapply(df[-1], function(x) as.numeric(as.character(x)))
+    df_capacity <- network_capacity %>% 
+      filter(linkId %in% df$linkId)
+    
+    max_capacity <- colSums(df_capacity[2], na.rm = TRUE)
+    min_capacity <- colSums(df_capacity[3], na.rm = TRUE)
+    
+    file_name <- basename(file_path)
+    zone_name <- paste(strsplit(file_name, "_")[[1]][1:2], collapse = "_")
+    
+    data.frame(zone = zone_name, max_fringe_capacity = max_capacity, min_fringe_capacity = min_capacity )
+  }
+  
+  result_df <- do.call(rbind, lapply(file_paths, process_file))
+  
+  return(result_df)
+}
+
+## parking demand and capacity analysis
+parking_demand_and_capacity <- function(fringes_parking_capacity, fringes_parking_demand, output_filename){
+
+  capacity_demand_comparison <- left_join(fringes_parking_demand, fringes_parking_capacity, by = "zone") 
+
+  capacity_demand_comparison <- capacity_demand_comparison %>%
+    mutate(Parking_demand_to_on_street_parking_capacity_relative_change_base = (parked_vehicle_base/max_fringe_capacity) -1)%>%
+    mutate(Parking_demand_to_on_street_parking_capacity_relative_change_LCFA = (parked_vehicle_LCFA/max_fringe_capacity) -1)%>%
+    mutate(Parking_demand_to_on_street_parking_capacity_absolute_change_base = parked_vehicle_base-max_fringe_capacity)%>%
+    mutate(Parking_demand_to_on_street_parking_capacity_absolute_change_LCFA = parked_vehicle_LCFA-max_fringe_capacity)
+  
+  write.csv(capacity_demand_comparison, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  return(capacity_demand_comparison)
+}
+
+
 ## emission bar chart
 if (x_emissions_barchart == 1){
   # Load network 
@@ -1249,6 +1293,13 @@ if(x_peak_hour_parking_demand ==1){
   
   Parking_demand_comparison_eleven <- compare_parking_demand(eleven_peak_hour_parking_demand_base,eleven_peak_hour_parking_demand_LCFA, "parking.demand.comparison.eleven")
   Parking_demand_comparison_four <- compare_parking_demand(four_peak_hour_parking_demand_base,four_peak_hour_parking_demand_LCFA, "parking.demand.comparison.four")
+}
+
+if(x_parking_capacity == 1){
+  
+  parking_capacity <- parking_capacity_analysis(parkings_demand_in_fringes_folder_path_base, network_capacity)
+  
+  demand_capacity_comparison <- parking_demand_and_capacity(parking_capacity, Parking_demand_comparison_eleven, "demand.capacity.parking")
 }
 
 if (x_emissions_barchart == 1){
