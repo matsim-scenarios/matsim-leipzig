@@ -1299,7 +1299,8 @@ if(x_parking_capacity == 1){
   
   parking_capacity <- parking_capacity_analysis(parkings_demand_in_fringes_folder_path_base, network_capacity)
   
-  demand_capacity_comparison <- parking_demand_and_capacity(parking_capacity, Parking_demand_comparison_eleven, "demand.capacity.parking")
+  demand_capacity_comparison_eleven <- parking_demand_and_capacity(parking_capacity, Parking_demand_comparison_eleven, "demand.capacity.parking_eleven")
+  demand_capacity_comparison_four <- parking_demand_and_capacity(parking_capacity, Parking_demand_comparison_four, "demand.capacity.parking_four")
 }
 
 if (x_emissions_barchart == 1){
