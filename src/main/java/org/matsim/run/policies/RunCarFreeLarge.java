@@ -3,7 +3,10 @@ package org.matsim.run.policies;
 import org.matsim.application.MATSimApplication;
 import org.matsim.run.LeipzigScenario;
 
-public class RunCarFreeLarge {
+/**
+ * Main class to run the Leipzig car free scenario.
+ */
+public final class RunCarFreeLarge {
 
 		private RunCarFreeLarge() {
 		}
