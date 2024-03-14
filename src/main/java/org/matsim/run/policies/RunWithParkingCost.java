@@ -6,7 +6,7 @@ import org.matsim.run.LeipzigScenario;
 /**
  * Main class to run the Leipzig with parking cost scenario.
  */
-public class RunWithParkingCost {
+public final class RunWithParkingCost {
 
 	private RunWithParkingCost() {
 	}
