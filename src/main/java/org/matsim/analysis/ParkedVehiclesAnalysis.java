@@ -71,7 +71,7 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 		Path vehiclesPath = globFile(directory, "*output_vehicles.*");
 		Path outputFolder = Path.of(directory.toString() + "/analysis-parking");
 
-		int timeBins = 86400 / timeBinSize;
+		int timeBins = 129600 / timeBinSize;
 
 		if (!Files.exists(outputFolder)) {
 			Files.createDirectory(outputFolder);
@@ -158,8 +158,8 @@ public class ParkedVehiclesAnalysis implements MATSimAppCommand {
 			for (VehicleParkingData vehicleParkingData : parkingTracker.get(vehicleId)) {
 				int timeBin;
 				int previousTimeBin;
-				if (vehicleParkingData.time >= 86400.) {
-					timeBin = (int) (86400. / timeBinSize - 1);
+				if (vehicleParkingData.time >= 129600.) {
+					timeBin = (int) (129600. / timeBinSize - 1);
 				} else {
 					timeBin = (int) (vehicleParkingData.time / timeBinSize);
 				}
