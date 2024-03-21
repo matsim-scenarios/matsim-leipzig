@@ -16,10 +16,10 @@ library(geosphere)
 ### INPUT DEFINITIONS ###
 
 # set working directory
-setwd("C:/Users/Simon/Documents/shared-svn/projects/NaMAV/data/flexa-scenario/")
+setwd("/Users/luchengqi/Desktop/namav")
 
 # read data
-allRidesFileName = "Flexa_Rides_allServiceAreas_2021"
+allRidesFileName = "Flexa_Rides_ServiceAreaSouthEast_2021"
 allRides <- read.csv2(paste0(allRidesFileName,".csv"), stringsAsFactors = FALSE, header = TRUE, encoding = "UTF-8")
 
 analyzedArea = unlist(str_split(allRidesFileName, "Flexa_Rides_"))[2]
