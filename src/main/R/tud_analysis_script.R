@@ -7,6 +7,7 @@ x_modal_split_trips_main_mode = 1
 x_modal_split_legs_mode = 1
 x_modal_split_trips_distance = 1
 x_modal_split_legs_distance =1
+x_modal_split_stacked_barchart = 1
 x_trips_number_barchart = 1
 x_trips_number_by_mode_and_distance_barchart = 1
 x_trips_number_by_distance_barchart = 1
@@ -231,6 +232,85 @@ plot_sankey <- function(trip_table,output_filename) {
   return(sankey_chart)
 }
 
+# multiple stacked bar chart; this function is used in modal_split_stacked_bar_chart function which handles multiple scenarios
+plot_multi_stacked_bar_chart <- function(df, plot_title, output_filename) {
+  
+  
+  long_df <- pivot_longer(df, cols = everything(), names_to = "mode", values_to = "Value")
+  
+
+  long_df$group <- rep(1:nrow(df), each = ncol(df))
+  
+  long_df <- long_df %>%
+    filter(mode != "drtNorth" & mode != "drtSoutheast")
+  
+  long_df$mode <- recode(long_df$mode,
+                         bike = "Bicycle",
+                         car = "Car",
+                         pt = "Public transport",
+                         ride = "Car as passenger",
+                         walk = "Walk")
+  
+  long_df <- long_df %>%
+    group_by(group) %>%
+    mutate(cumulative = cumsum(Value))
+  
+  bar_chart <- ggplot(long_df, aes(x = group, y = Value, fill = mode)) +
+    geom_bar(stat = "identity", position = "stack") +
+    geom_text(aes(label = ifelse(Value > 5, sprintf("%0.1f%%", Value), "")), 
+              position = position_stack(vjust = 0.5), color = "black", size = 3.5) +
+    scale_y_continuous(labels = function(x) paste0(x, "%"), limits = c(0, 100)) +
+    labs(x = NULL, y = "Share", fill = "Mode", title = plot_title) +
+    theme_minimal() +
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size = 14),
+          plot.title = element_text(size = 18, hjust = 0.5),
+          axis.text.x = element_blank(),
+          axis.title.y = element_text(size = 16)) 
+  
+  ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), 
+         plot = bar_chart, device = "pdf", width = 10, height = 7)
+  
+  return(bar_chart)
+}
+
+## this function generate just one stacked bar chart and could be used instead of plot_pie_chart 
+##in modal_split_trips_main_mode or similar  modal split functions
+plot_stacked_bar_chart <- function(df, plot_title, output_filename) {
+  
+  labels <- as.character(unlist(df[1, ]))
+  values <- as.numeric(unlist(df[3, ]))
+  
+  bar_data <- data.frame(mode = labels, Value = values) %>%
+    filter(mode != "drtNorth" & mode != "drtSoutheast")
+  
+  if ("mode" %in% names(bar_data)) {
+    bar_data$mode <- ifelse(bar_data$mode == "bike", "Bicycle",
+                            ifelse(bar_data$mode == "car", "Car",
+                                   ifelse(bar_data$mode == "pt", "Public transport",
+                                          ifelse(bar_data$mode == "ride", "Car as passenger",
+                                                 ifelse(bar_data$mode == "walk", "Walk", bar_data$mode)))))
+  }
+  
+  bar_data$mode <- factor(bar_data$mode, levels = unique(bar_data$mode))
+  
+  bar_data <- bar_data[order(match(bar_data$mode, rev(levels(bar_data$mode)))), ]
+  
+  bar_chart <- ggplot(bar_data, aes(x = factor(1), y = Value, fill = mode)) +
+    geom_bar(stat = "identity", position = "stack") +
+    geom_text(aes(label = sprintf("%0.1f%%", Value), y = cumsum(Value) - 0.5 * Value), vjust = 0.5, color = "black") +
+    labs(x = NULL, y = "Share", fill = "Mode", title = plot_title) +
+    theme_minimal() +
+    theme(legend.title = element_blank(),
+          legend.text = element_text(size = 12),
+          plot.title = element_text(size = 14, hjust = 0.5))
+  
+  ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), 
+         plot = bar_chart, device = "pdf", width = 10, height = 7)
+  
+  return(bar_chart)
+}
+
 ############### Analysis functions ###################
 
 ## Population segment filter 
@@ -317,6 +397,35 @@ modal_split_legs_distance <- function(legs_table, output_filename ,plot_title){
   
   if(plot_creation ==1){
     plot_pie_chart(df_t,plot_title, output_filename)
+  }
+}
+
+## modal split in stacked bar chart
+modal_split_stacked_barchart <- function(trips_tables_list, output_filename_prefix, plot_title) {
+  
+  all_dfs <- list() 
+  
+  for (i in seq_along(trips_tables_list)) {
+    trips_table <- trips_tables_list[[i]]
+    
+    
+    df <- trips_table %>%
+      count(main_mode) %>%
+      mutate(percent = 100 * n / sum(n))
+    
+    df_t <- as.data.frame(t(df$percent))
+    colnames(df_t) <- df$main_mode
+    
+    all_dfs[[i]] <- df_t
+  }
+  
+  combined_df_t <- bind_rows(all_dfs)
+  
+  output_filename <- output_filename_prefix
+  write.csv(combined_df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1) {
+    plot_multi_stacked_bar_chart(combined_df_t,plot_title, output_filename_prefix)
   }
 }
 
@@ -1128,6 +1237,18 @@ if(x_modal_split_legs_distance == 1){
   modal_split_legs_distance(legs.list.region[[2]], "pie.ms.distance.legs.policy.region", "large car free area")
   modal_split_legs_distance(legs.list.city[[2]], "pie.ms.distance.legs.policy.city", "large car free area")
   modal_split_legs_distance(legs.list.carfree.area[[2]], "pie.ms.distance.legs.policy.carfree.area", "large car free area")
+}
+
+if(x_modal_split_stacked_barchart ==1){
+  
+  modal_split_stacked_barchart(trips.list.region, "stacked.bar.chart.region" , "Scope of anlaysis = Region")
+  modal_split_stacked_barchart(trips.list.city, "stacked.bar.chart.city" , "Scope of anlaysis = City")
+  modal_split_stacked_barchart(trips.list.carfree.area, "stacked.bar.chart.carfree.area" , "Scope of anlaysis = Car-free area")
+  modal_split_stacked_barchart(trips.list.TFW.carfree.area, "stacked.bar.chart.TFW.carfree.area" , "Scope of anlaysis = TFW car-free area")
+  modal_split_stacked_barchart(trips.list.residents.TFW.carfree.area, "stacked.bar.chart.residents.TFW.carfree.area" , "Scope of anlaysis = Residents of TFW car-free area")
+  modal_split_stacked_barchart(trips.list.workers.TFW.carfree.area, "stacked.bar.chart.TFW.carfree.area" , "Scope of anlaysis = Workers of TFW car-free area")
+  modal_split_stacked_barchart(trips.list.residents.carfree.area, "stacked.bar.chart.residents.carfree.area" , "Scope of anlaysis = Residents of car-free area")
+  modal_split_stacked_barchart(trips.list.workers.carfree.area, "stacked.bar.chart.workers.carfree.area" , "Scope of anlaysis = Workers of car-free area")
 }
 
 if(x_trips_number_barchart == 1){
