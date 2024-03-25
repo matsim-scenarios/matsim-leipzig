@@ -89,48 +89,39 @@ print(" TUD data is read and filtered")
 
 ## plot functions ##
 
-plot_bar_chart_two_dimensional <- function(analyzed_data, main_title, x_label, y_label, output_filename) {
+plot_bar_chart_two_dimensional <- function(data, output_filename, plot_title) {
+
+  data <- data %>%
+    mutate(main_mode = recode(main_mode,
+                              "bike" = "Bicycle",
+                              "car" = "Car",
+                              "pt" = "Public Transport",
+                              "ride" = "Car as Passenger",
+                              "walk" = "Walk"))
   
-  library(RColorBrewer)
-  # Convert data to long format for ggplot, excluding the first two columns
-  long_data <- analyzed_data %>%
-    pivot_longer(cols = -c(distance_class, scenario), names_to = "Data_Type", values_to = "Value") %>%
-    mutate(DistanceClass = factor(distance_class, levels = unique(distance_class)),
-           Scenario = factor(scenario, levels = unique(scenario)),
-           Interaction = interaction(Scenario, DistanceClass, sep = " - "),
-           Fill = interaction(DistanceClass, Data_Type, sep = " - ")) 
+  base_colors <- c("Bicycle" = "green", 
+                   "Car" = "red", 
+                   "Public Transport" = "blue", 
+                   "Car as Passenger" = "orange", 
+                   "Walk" = "purple")
   
-  number_of_fills <- length(unique(long_data$Fill))
-  color_palette <- brewer.pal(min(9, number_of_fills), "Set1")
-  if (number_of_fills > 9) {
-    color_palette <- c(color_palette, grDevices::rainbow(number_of_fills - 9))
-  }
-  colors <- setNames(color_palette, levels(long_data$Fill))
+  colors <- c(sapply(base_colors, alpha, 0.5), base_colors) # Lighter for Base, original for Policy
+  names(colors) <- with(data, unique(interaction(main_mode, scenario)))
   
-  gg <- ggplot(long_data, aes(x = Interaction, y = Value, fill = Fill)) +
-    geom_bar(stat = "identity", position = position_dodge(width = 0.75)) +
+  gg <- ggplot(data, aes(x = main_mode, y = trips_number, fill = interaction(main_mode, scenario))) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.7)) +
     scale_fill_manual(values = colors) +
-    labs(
-      title = main_title,
-      x = x_label,
-      y = y_label,
-      fill = "Scenario and Data Type"
-    ) +
+    labs(title = plot_title,
+         x = "Main mode of the trip",
+         y = "Number of Trips",
+         fill = "Scenario") +
     theme_minimal() +
-    theme(
-      plot.title = element_text(size = 16),
-      axis.title.x = element_text(size = 14),
-      axis.title.y = element_text(size = 14),
-      axis.text.x = element_text(size = 11, angle = 45, hjust = 1),
-      axis.text.y = element_text(size = 11),
-      legend.position = "bottom",
-      legend.title = element_text(size = 12),
-      legend.text = element_text(size = 12)
-    )
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8), # Adjust angle and text size
+          axis.ticks.x = element_blank(), 
+          axis.title.x = element_text(size = 11)) + 
+    facet_grid(. ~ distance_class, scales = "free_y", space = "free_x")
   
   ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), plot = gg, device = "pdf", width = 10, height = 7)
-  
-  return(gg)
 }
 
 plot_bar_chart <- function(analyzed_data, main_title, x_label, y_label, mode_col, output_filename) {
@@ -458,7 +449,7 @@ trips_number_by_mode_barchart <- function(trips_list, output_filename){
 }
 
 ## trips number by mode and distance class bar chart
-trips_number_by_mode_and_distance_barchart <- function(trips_list, output_filename) {
+trips_number_by_mode_and_distance_barchart<- function(trips_list, output_filename, plot_title) {
   
   calculation <- function(trips, scenario_name) {
     trips %>%
@@ -474,29 +465,18 @@ trips_number_by_mode_and_distance_barchart <- function(trips_list, output_filena
       group_by(main_mode, distance_class) %>%
       summarise(trips_number = n(), .groups = 'drop') %>%
       filter(!is.na(main_mode) & main_mode != "drtNorth" & main_mode != "drtSoutheast") %>%
-      pivot_wider(names_from = main_mode, values_from = trips_number, names_prefix = paste0(scenario_name, "_"))
+      mutate(scenario = scenario_name)
   }
   
+  combined_data <- bind_rows(lapply(names(trips_list), function(scenario_name) {
+    calculation(trips_list[[scenario_name]], scenario_name)
+  })) %>%
+    select(distance_class, main_mode, scenario, trips_number)
   
-  combined_data <- NULL
-  
-  for (i in seq_along(trips_list)) {
-    scenario_name <- names(trips_list)[i]
-    trips_number_by_mode_distance <- calculation(trips_list[[i]], scenario_name)
-    
-    if (is.null(combined_data)) {
-      combined_data <- trips_number_by_mode_distance
-    } else {
-      combined_data <- full_join(combined_data, trips_number_by_mode_distance, by = "distance_class")
-    }
-  }
-  
-  combined_data <- combined_data %>%
-    pivot_longer(cols = -distance_class, names_to = c(".value", "scenario"),  names_sep = "_")
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
   
-  if(plot_creation == 1){
-    plot_bar_chart_two_dimensional(combined_data, "Number of trips by mode and distance", "Main trip mode and Distance class", "Number of trips", output_filename)
+  if(plot_creation) {
+    plot_bar_chart_two_dimensional(combined_data, output_filename, plot_title)
   }
 }
 
@@ -1265,14 +1245,14 @@ if(x_trips_number_barchart == 1){
 
 if(x_trips_number_by_mode_and_distance_barchart == 1){
   
-  trips_number_by_mode_and_distance_barchart(trips.list.region, "trips.number.by.mode.and.distance.region")
-  trips_number_by_mode_and_distance_barchart(trips.list.city, "trips.number.by.mode.and.distance.city")
-  trips_number_by_mode_and_distance_barchart(trips.list.carfree.area, "trips.number.by.mode.and.distance.carfree.area")
-  trips_number_by_mode_and_distance_barchart(trips.list.TFW.carfree.area, "trips.number.by.mode.and.distance.TFW.carfree.area")
-  trips_number_by_mode_and_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.mode.and.distance.residents.TFW.carfree.area")
-  trips_number_by_mode_and_distance_barchart(trips.list.workers.TFW.carfree.area, "trips.number.by.mode.and.distance.workers.TFW.carfree.area")
-  trips_number_by_mode_and_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.mode.and.distance.residents.carfree.area")
-  trips_number_by_mode_and_distance_barchart(trips.list.workers.carfree.area, "trips.number.by.mode.and.distance.workers.carfree.area")
+  trips_number_by_mode_and_distance_barchart(trips.list.region, "trips.number.by.mode.and.distance.region", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.city, "trips.number.by.mode.and.distance.city", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.carfree.area, "trips.number.by.mode.and.distance.carfree.area", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.TFW.carfree.area, "trips.number.by.mode.and.distance.TFW.carfree.area", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.mode.and.distance.residents.TFW.carfree.area", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.workers.TFW.carfree.area, "trips.number.by.mode.and.distance.workers.TFW.carfree.area", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.residents.carfree.area, "trips.number.by.mode.and.distance.residents.carfree.area", "Number of trips by mode and distance")
+  trips_number_by_mode_and_distance_barchart(trips.list.workers.carfree.area, "trips.number.by.mode.and.distance.workers.carfree.area", "Number of trips by mode and distance")
 }
 
 if(x_trips_number_by_distance_barchart == 1){
