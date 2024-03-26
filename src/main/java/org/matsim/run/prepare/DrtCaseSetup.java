@@ -13,6 +13,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.contrib.drt.estimator.DrtEstimator;
 import org.matsim.contrib.drt.estimator.impl.DetourBasedDrtEstimator;
+import org.matsim.contrib.drt.estimator.impl.EuclideanDistanceBasedDrtEstimator;
 import org.matsim.contrib.drt.fare.DrtFareParams;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
 import org.matsim.contrib.drt.routing.DrtRoute;
@@ -237,8 +238,11 @@ public final class DrtCaseSetup {
 			controler.addOverridingModule(new AbstractDvrpModeModule(drtCfg.mode) {
 				@Override
 				public void install() {
-					bindModal(DrtEstimator.class).toInstance(DetourBasedDrtEstimator.normalDistributed(1.2, 32,
-						0.3, 120, 0.4));
+//					bindModal(DrtEstimator.class).toInstance(DetourBasedDrtEstimator.normalDistributed(1.2, 32,
+//						0.3, 120, 0.4));
+					bindModal(DrtEstimator.class).toProvider(modalProvider(getter -> new
+						EuclideanDistanceBasedDrtEstimator(getter.getModal(Network.class), 2.0, 0.1577493,
+						103.0972273, 120, 0.4, -0.1, 0.28)));
 				}
 			});
 		}
