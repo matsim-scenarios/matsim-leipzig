@@ -12,7 +12,6 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
 import org.matsim.contrib.drt.estimator.DrtEstimator;
-import org.matsim.contrib.drt.estimator.impl.DetourBasedDrtEstimator;
 import org.matsim.contrib.drt.estimator.impl.EuclideanDistanceBasedDrtEstimator;
 import org.matsim.contrib.drt.fare.DrtFareParams;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
