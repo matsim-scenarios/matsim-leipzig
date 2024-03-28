@@ -241,8 +241,8 @@ public final class DrtCaseSetup {
 //						0.3, 120, 0.4));
 					// The parameters used below are based on the analysis from the real world data
 					bindModal(DrtEstimator.class).toProvider(modalProvider(getter -> new
-						EuclideanDistanceBasedDrtEstimator(getter.getModal(Network.class), 2.0, 0.1577493 * 0.9,
-						103.0972273 * 0.9, 300, 0.4, -0.1, 0.28)));
+						EuclideanDistanceBasedDrtEstimator(getter.getModal(Network.class), 2.0, 0.1577493 / 0.9,
+						103.0972273 / 0.9, 300, 0.4, -0.1, 0.28)));
 				}
 			});
 		}
