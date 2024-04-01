@@ -59,7 +59,7 @@ public class PrepareNetwork implements MATSimAppCommand {
 	 * Adapt network to one or more drt service areas. Therefore, a shape file of the wished service area + a list
 	 * of drt modes are needed.
 	 */
-	static void prepareDRT(Network network, ShpOptions shp) {
+	public static void prepareDRT(Network network, ShpOptions shp) {
 
 		List<SimpleFeature> features = shp.readFeatures();
 		Map<String, Geometry> modeGeoms = new HashMap<>();
