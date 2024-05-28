@@ -58,3 +58,7 @@ It can be used by using either of these methods:
 4. Run this file from the command line using the exact file name, e.g. `java -jar matsim-leipzig-1.3-0263af8.jar --help` to see all possible options.
 5. Start this scenario using the default config by running `java -jar matsim-leipzig-1.3-0263af8.jar run`
 6. "Open" the output directory. You can drag files into VIA as was already done above.
+
+
+### Internal Documentation
+See [GoogleDoc](https://docs.google.com/document/d/1ypFhU0r_yca8hCFehRS6gEzBWwqoiGTIT21UFtYk3Rk/edit#heading=h.o1koupu6c302)
