@@ -246,18 +246,33 @@ plot_multi_stacked_bar_chart <- function(df, plot_title, output_filename) {
     group_by(group) %>%
     mutate(cumulative = cumsum(Value))
   
+  base_colors <- c("Bicycle" = "#00994C",  
+                   "Car" = "#CC0000",      
+                   "Public transport" = "#B266ff",  
+                   "Car as passenger" = "#FF8C00",  
+                   "Walk" = "#66b2ff")     
+  
+  label_data <- data.frame(group = c(1, 2), x_label = c("Base case", "Car-free area case"))
+  
+  
   bar_chart <- ggplot(long_df, aes(x = group, y = Value, fill = mode)) +
     geom_bar(stat = "identity", position = "stack") +
     geom_text(aes(label = ifelse(Value > 5, sprintf("%0.1f%%", Value), "")), 
-              position = position_stack(vjust = 0.5), color = "black", size = 3.5) +
+              position = position_stack(vjust = 0.5), color = "black", size = 7) +
+              geom_text(data = label_data, aes(x = group, y = 0, label = x_label), 
+              inherit.aes = FALSE,  
+              vjust = 2, color = "black", size = 5) +
     scale_y_continuous(labels = function(x) paste0(x, "%"), limits = c(0, 100)) +
     labs(x = NULL, y = "Share", fill = "Mode", title = plot_title) +
     theme_minimal() +
     theme(legend.title = element_blank(),
-          legend.text = element_text(size = 14),
+          legend.text = element_text(size = 18),
           plot.title = element_text(size = 18, hjust = 0.5),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(size = 16)) 
+          axis.title.y = element_text(size = 16),
+          axis.text.y = element_text(size = 16)) +
+          scale_fill_manual(values = base_colors)
+  
   
   ggsave(filename = paste0(outputDirectoryScenario, "/", output_filename, ".pdf"), 
          plot = bar_chart, device = "pdf", width = 10, height = 7)
