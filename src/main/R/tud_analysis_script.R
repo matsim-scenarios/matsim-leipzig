@@ -420,6 +420,37 @@ modal_split_stacked_barchart <- function(trips_tables_list, output_filename_pref
   }
 }
 
+## modal split in stacked bar chart
+modal_split_stacked_barchart_distance_leg_based <- function(legs_tables_list, output_filename_prefix, plot_title) {
+  
+  all_dfs <- list() 
+  
+  for (i in seq_along(legs_tables_list)) {
+    leg_table <- legs_tables_list[[i]]
+    
+    
+    df <- leg_table %>%
+      group_by(mode) %>%
+      summarise(distance = sum(distance)) %>%
+      mutate(percent = round(100*distance/sum(distance),2))
+    
+    df_t <- as.data.frame(t(df$percent))
+    colnames(df_t) <- df$mode
+    
+    all_dfs[[i]] <- df_t
+  }
+  
+  combined_df_t <- bind_rows(all_dfs)
+  
+  output_filename <- output_filename_prefix
+  write.csv(combined_df_t, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
+  
+  if(plot_creation == 1) {
+    plot_multi_stacked_bar_chart(combined_df_t,plot_title, output_filename_prefix)
+  }
+}
+
+
 ## trips number by mode barchart
 trips_number_by_mode_barchart <- function(trips_list, output_filename){
   
@@ -1243,6 +1274,13 @@ if(x_modal_split_stacked_barchart ==1){
   modal_split_stacked_barchart(trips.list.workers.TFW.carfree.area, "stacked.bar.chart.TFW.carfree.area" , "Scope of anlaysis = Workers of TFW car-free area")
   modal_split_stacked_barchart(trips.list.residents.carfree.area, "stacked.bar.chart.residents.carfree.area" , "Scope of anlaysis = Residents of car-free area")
   modal_split_stacked_barchart(trips.list.workers.carfree.area, "stacked.bar.chart.workers.carfree.area" , "Scope of anlaysis = Workers of car-free area")
+}
+
+if(x_modal_split_stacked_barchart_distance_leg_based ==1){
+  
+  modal_split_stacked_barchart_distance_leg_based(legs.list.region,"stacked.bar.chart.by.distance.region", "")
+  modal_split_stacked_barchart_distance_leg_based(legs.list.city,"stacked.bar.chart.by.distance.city", "")
+  modal_split_stacked_barchart_distance_leg_based(legs.list.carfree.area,"stacked.bar.chart.by.distance.car.free.area", "Scope of analysis = car free area")
 }
 
 if(x_trips_number_barchart == 1){
