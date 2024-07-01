@@ -887,9 +887,12 @@ travel_time_by_mode_trip_based_bar_chart <- function(trips_list, output_filename
   
   calculation <- function(trips){
     trips %>%
+      mutate(trav_time_seconds = as.numeric(substr(trav_time, 1, 2)) * 3600 +
+               as.numeric(substr(trav_time, 4, 5)) * 60 +
+               as.numeric(substr(trav_time, 7, 8))) %>%
       group_by(main_mode) %>%
       summarise(
-        total_travel_time = sum(hour(hms(trav_time))*3600 + minute(hms(trav_time)) *60 + second(hms(trav_time))),
+        total_travel_time = sum(trav_time_seconds, na.rm = TRUE),
         n_trip = n_distinct(trip_id),
         average_travel_time = (total_travel_time/60) / n_trip )%>%
       filter(!is.na(main_mode) & main_mode != "drtNorth" & main_mode != "drtSoutheast")
@@ -919,9 +922,12 @@ travel_time_by_mode_leg_based_bar_chart <- function(legs_list, output_filename){
   
   calculation <- function(legs){
     legs %>%
+      mutate(trav_time_seconds = as.numeric(substr(trav_time, 1, 2)) * 3600 +
+               as.numeric(substr(trav_time, 4, 5)) * 60 +
+               as.numeric(substr(trav_time, 7, 8))) %>%
       group_by(mode) %>%
       summarise(
-        total_travel_time = sum(hour(hms(trav_time))*3600 + minute(hms(trav_time)) *60 + second(hms(trav_time))),
+        total_travel_time = sum(trav_time_seconds, na.rm = TRUE),
         n_trip = n_distinct(trip_id),
         average_travel_time = (total_travel_time/60) / n_trip )%>%
       filter(!is.na(mode) & mode != "drtNorth" & mode != "drtSoutheast")
@@ -951,11 +957,16 @@ average_speed_by_mode_trip_based_barchart <- function(trips_list, output_filenam
   
   calculation <- function(trips){
     trips %>%
+      mutate(trav_time_seconds = as.numeric(substr(trav_time, 1, 2)) * 3600 +
+               as.numeric(substr(trav_time, 4, 5)) * 60 +
+               as.numeric(substr(trav_time, 7, 8))) %>%
       group_by(main_mode) %>%
       summarise(
-        total_travel_distance = sum(traveled_distance),
-        total_travel_time = sum(hour(hms(trav_time))*3600 + minute(hms(trav_time)) *60 + second(hms(trav_time))),
-        average_speed = total_travel_distance/total_travel_time)%>% # m/s
+        total_travel_distance = sum(traveled_distance, na.rm = TRUE),
+        total_travel_time = sum(trav_time_seconds, na.rm = TRUE),
+        average_speed = total_travel_distance / total_travel_time, # m/s
+        .groups = 'drop'
+      ) %>%
       filter(!is.na(main_mode) & main_mode != "drtNorth" & main_mode != "drtSoutheast")
   }
   
@@ -963,7 +974,7 @@ average_speed_by_mode_trip_based_barchart <- function(trips_list, output_filenam
     scenario_name <- names(trips_list)[i]
     average_speed_by_mode <- calculation(trips_list[[i]]) %>%
       select(main_mode, average_speed) %>%
-      rename(!!scenario_name := average_speed)
+      rename(!!rlang::sym(scenario_name) := average_speed)
     
     if (i == 1) {
       combined_data <- average_speed_by_mode
@@ -972,10 +983,10 @@ average_speed_by_mode_trip_based_barchart <- function(trips_list, output_filenam
     }
   }
   write.csv(combined_data, file = paste0(outputDirectoryScenario, "/", "df.", output_filename, ".TUD.csv"), row.names = FALSE, quote = FALSE)
-  
-  if(plot_creation == 1){
-    plot_bar_chart(combined_data, "Average speed (trip based)",  "Main trip mode",  "Average speed (m/s)", "main_mode" , output_filename )
-  }
+ 
+   if(plot_creation == 1){
+     plot_bar_chart(combined_data, "Average speed (trip based)",  "Main trip mode",  "Average speed (m/s)", "main_mode" , output_filename )
+   }
 }
 
 ## average speed by mode trip based bar chart
@@ -983,10 +994,13 @@ average_speed_by_mode_leg_based_barchart <- function(legs_list, output_filename)
   
   calculation <- function(trips){
     trips %>%
+      mutate(trav_time_seconds = as.numeric(substr(trav_time, 1, 2)) * 3600 +
+               as.numeric(substr(trav_time, 4, 5)) * 60 +
+               as.numeric(substr(trav_time, 7, 8))) %>%
       group_by(mode) %>%
       summarise(
         total_travel_distance = sum(distance),
-        total_travel_time = sum(hour(hms(trav_time))*3600 + minute(hms(trav_time)) *60 + second(hms(trav_time))),
+        total_travel_time = sum(trav_time_seconds, na.rm = TRUE),
         average_speed = total_travel_distance/total_travel_time)%>% # m/s
       filter(!is.na(mode) & mode != "drtNorth" & mode != "drtSoutheast")
   }
