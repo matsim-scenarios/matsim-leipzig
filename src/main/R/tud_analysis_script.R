@@ -8,6 +8,7 @@ x_modal_split_legs_mode = 1
 x_modal_split_trips_distance = 1
 x_modal_split_legs_distance =1
 x_modal_split_stacked_barchart = 1
+x_modal_split_stacked_barchart_distance_leg_based =1
 x_trips_number_barchart = 1
 x_trips_number_by_mode_and_distance_barchart = 1
 x_trips_number_by_distance_barchart = 1
