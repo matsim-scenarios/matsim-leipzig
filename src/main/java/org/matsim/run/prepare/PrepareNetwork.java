@@ -246,4 +246,40 @@ public class PrepareNetwork implements MATSimAppCommand {
 
 	}
 
+	static void	prepareEBikeCity(Network network, List<PreparedGeometry> geometries) {
+		Set<? extends Link> carLinksInArea = network.getLinks().values().stream()
+			//filter car links
+			.filter(link -> link.getAllowedModes().contains(TransportMode.car))
+			//spatial filter
+			.filter(link -> ShpGeometryUtils.isCoordInPreparedGeometries(link.getCoord(), geometries))
+			//we won't change motorways and motorway_links
+			.filter(link -> !((String) link.getAttributes().getAttribute("type")).contains("motorway"))
+			.filter(link -> !((String) link.getAttributes().getAttribute("type")).contains("trunk"))
+			.collect(Collectors.toSet());
+
+		carLinksInArea.forEach(link -> link.setCapacity(link.getCapacity() * 0.5));
+		carLinksInArea.forEach(link -> {
+				if (link.getNumberOfLanes() > 2.0) {
+					link.setNumberOfLanes(link.getNumberOfLanes() * 0.5);
+				}
+			});
+		carLinksInArea.forEach(link -> {
+			var id = link.getId().toString() + "_cyev";
+			var newLink = network.getFactory().createLink(Id.createLinkId(id), link.getFromNode(), link.getToNode());
+			newLink.getAttributes().putAttribute("type", "cycleway");
+			newLink.getAttributes().putAttribute("cycleway", "yes");
+			newLink.getAttributes().putAttribute("surface", "asphalt");
+			newLink.getAttributes().putAttribute("smoothness", "excellent");
+			//newLink.getAttributes().putAttribute(BicycleUtils.BICYCLE_INFRASTRUCTURE_SPEED_FACTOR, 1.0);
+			var origid = link.getAttributes().getAttribute("origid");
+			origid = origid == null ? "" : origid;
+			newLink.getAttributes().putAttribute("origid", origid);
+			newLink.setCapacity(10000);
+			//double the speed of cyclist
+			newLink.setFreespeed(8.32);
+			newLink.setAllowedModes(Collections.singleton(TransportMode.bike));
+			network.addLink(newLink);
+		});
+	}
+
 }
