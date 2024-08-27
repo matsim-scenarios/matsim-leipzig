@@ -41,6 +41,8 @@ import org.matsim.run.prepare.*;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.SimWrapperModule;
 import org.matsim.smallScaleCommercialTrafficGeneration.GenerateSmallScaleCommercialTrafficDemand;
+import org.matsim.vehicles.VehicleType;
+import org.matsim.vehicles.VehicleUtils;
 import picocli.CommandLine;
 import playground.vsp.scoring.IncomeDependentUtilityOfMoneyPersonScoringParameters;
 import playground.vsp.simpleParkingCostHandler.ParkingCostConfigGroup;
@@ -335,10 +337,6 @@ public class LeipzigScenario extends MATSimApplication {
 			controler.addOverridingModule(new BicycleModule());
 		}
 
-		if (networkOpt.hasEBikeCity()) {
-			controler.getScenario().getVehicles().getVehicleTypes().get(TransportMode.bike).setMaximumVelocity(8.32);
-
-		}
 	}
 
 	/**

@@ -35,10 +35,8 @@ public class NetworkOptions {
 	private Path slowSpeedArea;
 	@CommandLine.Option(names = "--slow-speed-relative-change", description = "provide a value that is bigger than 0.0 and smaller than 1.0")
 	private Double slowSpeedRelativeChange;
-	@CommandLine.Option(names = "--slow-speed-relative-change", description = "provide a value that is bigger than 0.0 and smaller than 1.0")
-	private Path eBikeCity;
 	@CommandLine.Option(names = "--eBikeCity", description = "simplified e-bike city")
-
+	private Path eBikeCity;
 
 
 	public boolean hasEBikeCity() {
