@@ -37,7 +37,13 @@ public class NetworkOptions {
 	private Double slowSpeedRelativeChange;
 	@CommandLine.Option(names = "--slow-speed-relative-change", description = "provide a value that is bigger than 0.0 and smaller than 1.0")
 	private Path eBikeCity;
-	@CommandLine.Option(names = "--eBikeCity", description = "provide a value that is bigger than 0.0 and smaller than 1.0")
+	@CommandLine.Option(names = "--eBikeCity", description = "simplified e-bike city")
+
+
+
+	public boolean hasEBikeCity() {
+		return isDefined(eBikeCity);
+	}
 
 
 	/**
@@ -112,12 +118,14 @@ public class NetworkOptions {
 			}
 		}
 
-		if (isDefined(eBikeCity)) {
-
-
+		if (hasEBikeCity()) {
+			if (!Files.exists(eBikeCity)) {
+				throw new IllegalArgumentException("Path to e-bike city not found: " + eBikeCity);
+			} else {
+				PrepareNetwork.prepareEBikeCity(network, ShpGeometryUtils.loadPreparedGeometries(IOUtils.resolveFileOrResource(new ShpOptions(eBikeCity, null, null).getShapeFile().toString())));
+			}
 		}
 	}
-
 
 
 	/**

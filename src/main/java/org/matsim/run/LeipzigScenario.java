@@ -184,6 +184,8 @@ public class LeipzigScenario extends MATSimApplication {
 		// walk probably is teleported.
 		// but we do not know where the facilities are.  (Facilities are not written to file.)
 
+
+
 		if (networkOpt.hasDrtArea()) {
 			//drt
 			DrtCaseSetup.prepareConfig(config, /* drtCase, */ new ShpOptions(networkOpt.getDrtArea(), null, null), ptDrtIntermodality);
@@ -277,7 +279,6 @@ public class LeipzigScenario extends MATSimApplication {
 		if (networkOpt.hasCarFreeArea()){
 			PreparePopulation.deleteCarAndRideRoutesThatHaveForbiddenLinks(scenario.getPopulation(), networkOpt.getNonPtLinksInCarFreeArea(scenario.getNetwork()));
 		}
-
 	}
 
 	@Override
@@ -332,6 +333,11 @@ public class LeipzigScenario extends MATSimApplication {
 
 		if (bike == BicycleHandling.onNetworkWithBicycleContrib) {
 			controler.addOverridingModule(new BicycleModule());
+		}
+
+		if (networkOpt.hasEBikeCity()) {
+			controler.getScenario().getVehicles().getVehicleTypes().get(TransportMode.bike).setMaximumVelocity(8.32);
+
 		}
 	}
 
