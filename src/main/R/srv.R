@@ -9,10 +9,13 @@ library(sf)
 
 # setwd("C:/Users/chris/Development/matsim-scenarios/matsim-leipzig/src/main/R")
 
+# sim output data
+# f <- "Y:/net/ils/matsim-leipzig/00-base-case/output_simwrapper"
+f <- "Y:/net/ils/meinhardt/leipzig-v1.1-cycle-highway-paper/output/base-case-cycle-highways-25pct"
+
 # Person data from srv
 ############################
-
-persons <- read_delim("../../../../../shared-svn/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_P2018.csv", delim = ";", 
+persons <- read_delim("../../shared-svn/projects/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_P2018.csv", delim = ";",
                       locale = locale(decimal_mark = ",")) %>%
   filter(ST_CODE_NAME=="Leipzig") %>%
   filter(STICHTAG_WTAG <= 5) %>%
@@ -29,7 +32,7 @@ tt <- per_day * 600000
 # Trip data from srV
 #############################
 
-trips <- read_delim("../../../../../shared-svn/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_W2018.csv", delim = ";", 
+trips <- read_delim("../../shared-svn/projects/NaMAV/data/SrV_2018/SrV2018_Einzeldaten_Leipzig_LE_SciUse_W2018.csv", delim = ";",
                     col_types = cols(
                       V_ZIEL_LAND = col_character(),
                       GIS_LAENGE = col_double(),
@@ -75,20 +78,19 @@ srv <- srv %>%
   mutate(scaled_trips=trips*(tt/st)) %>%
   mutate(share=trips / sum(srv$trips))
 
-#write_csv(srv, "srv.csv")
+write_csv(srv, paste0(f, "/srv.csv"))
 
 # agents in city 115209, younger population is missing
 # scale factor 5.2 instead of 4
 
 # Read from trips and persons directly
 
-f <- "\\\\sshfs.kr\\rakow@cluster.math.tu-berlin.de\\net\\ils\\matsim-leipzig\\calibration-25pct\\runs\\009"
 sim_scale <- 4
 
 # breaks in meter
 breaks = c(0, 1000, 2000, 5000, 10000, 20000, Inf)
 
-shape <- st_read("../../../../../shared-svn/NaMAV/data/leipzig-utm32n/leipzig-utm32n.shp", crs=25832)
+shape <- st_read("../../shared-svn/projects/NaMAV/data/shapefiles/leipzig-utm32n/leipzig-utm32n.shp", crs=25832)
 
 persons <- read_delim(list.files(f, pattern = "*.output_persons.csv.gz", full.names = T, include.dirs = F) , delim = ";", trim_ws = T, 
                       col_types = cols(
@@ -117,7 +119,7 @@ sim <- trips %>%
 sim <- sim %>%
       mutate(share=trips/sum(sim$trips))
 
-write_csv(sim, "sim.csv")
+write_csv(sim, paste0(f, "sim.csv"))
 
 ######
 # Total modal split
@@ -143,7 +145,7 @@ p1_aggr <- ggplot(data=srv_aggr, mapping =  aes(x=1, y=share, fill=mode)) +
   theme(legend.position="none")
 
 p2_aggr <- ggplot(data=aggr, mapping =  aes(x=1, y=share, fill=mode)) +
-  labs(subtitle = "Simulation") +
+  labs(subtitle = paste0("Simulation (", f, ")")) +
   geom_bar(position="fill", stat="identity") +
   coord_flip() +
   geom_text(aes(label=scales::percent(share, accuracy = 0.1)), size= 5, position=position_fill(vjust=0.5)) +
@@ -151,7 +153,7 @@ p2_aggr <- ggplot(data=aggr, mapping =  aes(x=1, y=share, fill=mode)) +
   theme_void()
 
 g <- arrangeGrob(p1_aggr, p2_aggr, ncol = 2)
-ggsave(filename = "modal-split.png", path = ".", g,
+ggsave(filename = "modal-split.png", path = f, g,
        width = 12, height = 2, device='png', dpi=300)
 
 
