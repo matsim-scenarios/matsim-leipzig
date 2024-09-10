@@ -111,7 +111,7 @@ public class RunOfflineAirPollutionAnalysisByVehicleCategory {
 		}
 	}
 
-	void run() throws IOException {
+	public void run() throws IOException {
 
 		Config config = ConfigUtils.createConfig();
 		config.vehicles().setVehiclesFile(String.valueOf(globFile(Path.of(runDirectory), runId, "vehicles")));
