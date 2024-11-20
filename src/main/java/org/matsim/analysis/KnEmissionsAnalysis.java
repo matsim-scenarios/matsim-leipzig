@@ -18,11 +18,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+
+//		[analysis-emissions]$ cat header.xml > warm2.xml
+//		[analysis-emissions]$ zgrep warmEmissionEvent emission.events.offline.xml.gz >> warm2.xml
+//		[analysis-emissions]$ cat tail.xml >> warm2.xml
+
 class KnEmissionsAnalysis{
 	private static final Logger log = LogManager.getLogger( KnEmissionsAnalysis.class );
 
 	public static void main( String[] args ){
-		final String file = "/Users/kainagel/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/v1.3.1/base-case/analysis/analysis-emissions/short.xml";
+		final String file = "../public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/v1.3.1/base-case/analysis/analysis-emissions/warm2.xml";
+//		final String file = "/Users/kainagel/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/v1.3.1/base-case/analysis/analysis-emissions/short.xml";
 //		final String file = "/Users/kainagel/public-svn/matsim/scenarios/countries/de/leipzig/projects/namav/v1.3.1/base-case/analysis/analysis-emissions/emission.events.offline.xml.gz";
 		// yy replace by relative file name
 
