@@ -25,11 +25,15 @@ public class LeipzigSimwrapperRunner implements MATSimAppCommand {
 	@CommandLine.Parameters(arity = "1..*", description = "Path to run output directories for which dashboards are to be generated.")
 	private List<Path> inputPaths;
 
-//	@CommandLine.Mixin
-//	private final ShpOptions shp = new ShpOptions();
+	@CommandLine.Mixin
+	private final ShpOptions shp = new ShpOptions();
 
 	@CommandLine.Option(names = "--cycle-highway-analysis", defaultValue = "DISABLED", description = "create cycle highway dashboard")
 	private CycleHighwayAnalysis cycleHighwayAnalysis;
+	@CommandLine.Option(names = "--base-dir", description = "dir of base run for cycle highway policy cases.")
+	private String baseDir;
+	@CommandLine.Option(names = "--highways-shp-path", description = "Path to run directory of base case.", required = true)
+	private String highwaysShpPath;
 
 	enum CycleHighwayAnalysis {ENABLED, DISABLED}
 
@@ -50,18 +54,24 @@ public class LeipzigSimwrapperRunner implements MATSimAppCommand {
 			renameExistingDashboardYAMLs(runDirectory);
 
 			String configPath = ApplicationUtils.matchInput("config.xml", runDirectory).toString();
-			Config config = ConfigUtils.loadConfig(configPath);
+//			Config config = ConfigUtils.loadConfig(configPath);
+
+			Config config = ConfigUtils.createConfig();
 
 			SimWrapper sw = SimWrapper.create(config);
 
 			SimWrapperConfigGroup simwrapperCfg = ConfigUtils.addOrGetModule(config, SimWrapperConfigGroup.class);
+			simwrapperCfg.defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
+			simwrapperCfg.sampleSize = 0.25;
+			simwrapperCfg.defaultParams().mapCenter = "12.38,51.34";
+			simwrapperCfg.defaultParams().mapZoomLevel = 6.8;
 
 			//skip default dashboards
 			simwrapperCfg.defaultDashboards = SimWrapperConfigGroup.Mode.disabled;
 
 			//add dashboards according to command line parameters
 			if (cycleHighwayAnalysis == CycleHighwayAnalysis.ENABLED) {
-				sw.addDashboard(Dashboard.customize(new CycleHighwayDashboard()).context("cycle-highway"));
+				sw.addDashboard(Dashboard.customize(new CycleHighwayDashboard(baseDir, shp.getShapeFile(), highwaysShpPath)).context("cycle-highway"));
 			}
 
 			try {
@@ -86,30 +96,36 @@ public class LeipzigSimwrapperRunner implements MATSimAppCommand {
 		// Loop through all files in the folder
 		if (files != null) {
 			for (File file : files) {
-				if (file.isFile()) {
-					// Check if the file name starts with "dashboard-" and ends with ".yaml"
-					if (file.getName().startsWith("dashboard-") && file.getName().endsWith(".yaml")) {
-						// Get the current file name
-						String oldName = file.getName();
+				// Check if the file name starts with "dashboard-" and ends with ".yaml"
+				if (file.isFile() && file.getName().startsWith("dashboard-") && file.getName().endsWith(".yaml")) {
+					// Get the current file name
+					String oldName = file.getName();
 
-						// Extract the number from the file name
-						String numberPart = oldName.substring(oldName.indexOf('-') + 1, oldName.lastIndexOf('.'));
+					// Extract the number from the file name
+					String numberPart = oldName.substring(oldName.indexOf('-') + 1, oldName.lastIndexOf('.'));
 
+					try {
 						// Increment the number by ten
 						int number = Integer.parseInt(numberPart) + 10;
 
-						// Create the new file name
-						String newName = "dashboard-" + number + ".yaml";
-
-						// Create the new File object with the new file name
-						File newFile = new File(file.getParent(), newName);
+						// Create the new file name and check for conflicts
+						File newFile;
+						do {
+							String newName = "dashboard-" + number + ".yaml";
+							newFile = new File(file.getParent(), newName);
+							number += 10; // Increment further if a conflict is found
+						} while (newFile.exists());
 
 						// Rename the file
 						if (file.renameTo(newFile)) {
-							log.info("File successfully renamed: " + newName);
+							log.info("File successfully renamed: {}", newFile.getName());
 						} else {
-							log.info("Error renaming file: " + file.getName());
+							log.error("Error renaming file: {}", file.getName());
+							throw new IllegalArgumentException();
 						}
+					} catch (NumberFormatException e) {
+						log.error("Invalid number format in file name: {}", oldName);
+						throw new NumberFormatException("");
 					}
 				}
 			}

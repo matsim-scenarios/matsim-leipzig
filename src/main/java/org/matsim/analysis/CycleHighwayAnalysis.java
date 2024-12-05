@@ -2,6 +2,8 @@ package org.matsim.analysis;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.Range;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +26,7 @@ import org.matsim.application.options.ShpOptions;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.MatsimEventsReader;
+import org.matsim.core.utils.gis.ShapeFileWriter;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.vehicles.Vehicle;
 import picocli.CommandLine;
@@ -32,7 +35,12 @@ import tech.tablesaw.io.csv.CsvReadOptions;
 import tech.tablesaw.joining.DataFrameJoiner;
 import tech.tablesaw.selection.Selection;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 import static org.matsim.application.ApplicationUtils.globFile;
@@ -40,9 +48,10 @@ import static tech.tablesaw.aggregate.AggregateFunctions.count;
 
 @CommandLine.Command(name = "cycle-highway", description = "Calculates various cycle highway related metrics.")
 @CommandSpec(
-	requires = {"trips.csv", "persons.csv"},
-//	TODO: define output csvs here
-	produces = {"mode_share.csv", "mode_share_per_dist.csv", "mode_users.csv", "trip_stats.csv", "population_trip_stats.csv", "trip_purposes_by_hour.csv"}
+	requireRunDirectory=true,
+	produces = {"mode_share.csv", "mode_share_base.csv", "mode_shift.csv", "bike_income_groups.csv", "bike_income_groups_base.csv", "allModes_income_groups_base_leipzig.csv",
+		"bike_income_groups_base_leipzig.csv", "car_income_groups_base_leipzig.csv", "walk_income_groups_base_leipzig.csv", "ride_income_groups_base_leipzig.csv",
+		"pt_income_groups_base_leipzig.csv", "cycle_highway_agents_trip_start_end.csv", "mean_travel_stats.csv", "cycle_highways.shp"}
 )
 public class CycleHighwayAnalysis implements MATSimAppCommand {
 	private static final Logger log = LogManager.getLogger(CycleHighwayAnalysis.class);
@@ -55,6 +64,10 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	private Path basePath;
 	@CommandLine.Mixin
 	private ShpOptions shp;
+	@CommandLine.Option(names = "--highways-shp-path", description = "Path to run directory of base case.", required = true)
+	private String highwaysShpPath;
+	@CommandLine.Option(names = "--crs", description = "CRS for shp files.", defaultValue = "EPSG:25832")
+	private String crs;
 	@CommandLine.Option(names = "--dist-groups", split = ",", description = "List of distances for binning", defaultValue = "0.,1000.,2000.,5000.,10000.,20000.")
 	private List<Double> distGroups;
 	@CommandLine.Option(names = "--income-groups", split = ",", description = "List of income for binning. Derived from SrV 2018.", defaultValue = "0.,500.,900.,1500.,2000.,2600.,3000.,3600.,4600.,5600.")
@@ -63,6 +76,15 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	List<String> modeOrder = null;
 //	cannot use the original String from class CreateBicycleHighwayNetwork because the class is on another branch. In the matsim version of this branch Simwrapper was not yet implemented
 	private static final String LINK_PREFIX = "cycle-highway-";
+	private static final String INCOME_SUFFIX = "_income_groups_base_leipzig.csv";
+	private static final String PERSON = "person";
+	private static final String INCOME = "income";
+	private static final String TRAV_TIME = "trav_time";
+	private static final String TRAV_DIST = "traveled_distance";
+	private static final String MAIN_MODE = "main_mode";
+	private static final String LONG_MODE = "longest_distance_mode";
+	private static final String TRIP_ID = "trip_id";
+//	private static final String COUNT_PERSON = "Count [person]";
 	private final Map<Id<Vehicle>, String> bikers = new HashMap<>();
 	private final Map<String, List<Integer>> highwayPersons = new HashMap<>();
 
@@ -90,15 +112,14 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 
 //		read necessary tables
 		Table persons = Table.read().csv(CsvReadOptions.builder(IOUtils.getBufferedReader(personsPath))
-			.columnTypesPartial(Map.of("person", ColumnType.TEXT, "income", ColumnType.DOUBLE, "subpopulation", ColumnType.TEXT))
+			.columnTypesPartial(Map.of(PERSON, ColumnType.TEXT, INCOME, ColumnType.DOUBLE, "subpopulation", ColumnType.TEXT))
 			.sample(false)
 			.separator(CsvOptions.detectDelimiter(personsPath)).build());
 
-		Map<String, ColumnType> columnTypes = new HashMap<>(Map.of("person", ColumnType.TEXT,
-			"trav_time", ColumnType.STRING, "dep_time", ColumnType.STRING,
-			"longest_distance_mode", ColumnType.STRING, "main_mode", ColumnType.STRING,
-			"start_activity_type", ColumnType.TEXT, "end_activity_type", ColumnType.TEXT, "traveled_distance", ColumnType.DOUBLE,
-			"first_act_x", ColumnType.DOUBLE, "first_act_y", ColumnType.DOUBLE));
+		Map<String, ColumnType> columnTypes = new HashMap<>(Map.of(PERSON, ColumnType.TEXT,
+			TRAV_TIME, ColumnType.STRING, "dep_time", ColumnType.STRING,
+			LONG_MODE, ColumnType.STRING, MAIN_MODE, ColumnType.STRING, TRAV_DIST, ColumnType.DOUBLE,
+			"first_act_x", ColumnType.DOUBLE, "first_act_y", ColumnType.DOUBLE, TRIP_ID, ColumnType.TEXT));
 
 		Table trips = Table.read().csv(CsvReadOptions.builder(IOUtils.getBufferedReader(tripsPath))
 			.columnTypesPartial(columnTypes)
@@ -106,7 +127,7 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 			.separator(CsvOptions.detectDelimiter(tripsPath)).build());
 
 		Table basePersons = Table.read().csv(CsvReadOptions.builder(IOUtils.getBufferedReader(basePersonsPath))
-			.columnTypesPartial(Map.of("person", ColumnType.TEXT, "income", ColumnType.DOUBLE))
+			.columnTypesPartial(Map.of(PERSON, ColumnType.TEXT, INCOME, ColumnType.DOUBLE))
 			.sample(false)
 			.separator(CsvOptions.detectDelimiter(basePersonsPath)).build());
 
@@ -124,10 +145,9 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		List<String> distLabels = getLabels(distGroups);
 		List<String> incomeLabels = getLabels(incomeGroups);
 
-//		TODO: test if this works with addGroupColumn as void
-//		add group columns fro dist and income
-		basePersons = addGroupColumn(basePersons, "income", incomeGroups, incomeLabels);
-		persons = addGroupColumn(persons, "income", incomeGroups, incomeLabels);
+//		add group columns for dist and income
+		addGroupColumn(basePersons, INCOME, incomeGroups, incomeLabels);
+		addGroupColumn(persons, INCOME, incomeGroups, incomeLabels);
 
 //		filter Leipzig agents
 		Table basePersonsLeipzig = filterLeipzigAgents(basePersons);
@@ -140,12 +160,12 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		}
 
 		// Use longest_distance_mode where main_mode is not present
-		trips.stringColumn("main_mode")
-			.set(trips.stringColumn("main_mode").isMissing(),
-				trips.stringColumn("longest_distance_mode"));
-		baseTrips.stringColumn("main_mode")
-			.set(baseTrips.stringColumn("main_mode").isMissing(),
-				baseTrips.stringColumn("longest_distance_mode"));
+		trips.stringColumn(MAIN_MODE)
+			.set(trips.stringColumn(MAIN_MODE).isMissing(),
+				trips.stringColumn(LONG_MODE));
+		baseTrips.stringColumn(MAIN_MODE)
+			.set(baseTrips.stringColumn(MAIN_MODE).isMissing(),
+				baseTrips.stringColumn(LONG_MODE));
 
 
 //		calc modal split for base and policy
@@ -156,28 +176,25 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		writeModeShift(trips, baseTrips);
 
 //		join persons and trips
-		Table joined = new DataFrameJoiner(trips, "person").inner(persons);
-		Table baseJoined = new DataFrameJoiner(baseTrips, "person").inner(basePersons);
+		Table joined = new DataFrameJoiner(trips, PERSON).inner(persons);
+		Table baseJoined = new DataFrameJoiner(baseTrips, PERSON).inner(basePersons);
 
 //		write income group distr for mode bike in policy and base
 		writeIncomeGroups(joined, incomeLabels, TransportMode.bike, "_income_groups.csv");
 		writeIncomeGroups(baseJoined, incomeLabels, TransportMode.bike, "_income_groups_base.csv");
 
 //		write income group distr for every mode in base (Leipzig)
-		Table baseJoinedLeipzig = new DataFrameJoiner(baseTrips, "person").inner(basePersonsLeipzig);
+		Table baseJoinedLeipzig = new DataFrameJoiner(baseTrips, PERSON).inner(basePersonsLeipzig);
 
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, "allModes", "_income_groups_base_leipzig.csv");
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.bike, "_income_groups_base_leipzig.csv");
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.car, "_income_groups_base_leipzig.csv");
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.walk, "_income_groups_base_leipzig.csv");
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.pt, "_income_groups_base_leipzig.csv");
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.ride, "_income_groups_base_leipzig.csv");
+		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, "allModes", INCOME_SUFFIX);
+		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.bike, INCOME_SUFFIX);
+		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.car, INCOME_SUFFIX);
+		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.walk, INCOME_SUFFIX);
+		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.pt, INCOME_SUFFIX);
+		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.ride, INCOME_SUFFIX);
 
-//		TODO for cycle highway agents end and start points
 //		filter for bike trips
 		Table bikeJoined = filterModeAgents(joined, TransportMode.bike);
-
-
 
 //		filter for trips "cycleHighwayAgents" map
 		IntList idx = new IntArrayList();
@@ -187,10 +204,11 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 
 			int tripStart = durationToSeconds(row.getString("dep_time"));
 //			waiting time already included in travel time
-			int travelTime = durationToSeconds(row.getString("trav_time"));
+			int travelTime = durationToSeconds(row.getString(TRAV_TIME));
 
-			List<Integer> enterTimes = highwayPersons.get(row.getString("person"));
+			List<Integer> enterTimes = highwayPersons.get(row.getString(PERSON));
 
+//			TODO: enterTimes is null, fix this
 			for (int enterTime : enterTimes) {
 				if (Range.of(tripStart, tripStart + travelTime).contains(enterTime)) {
 					idx.add(i);
@@ -198,19 +216,72 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 			}
 		}
 //		write trip start and end of every trip using cycle highway to csv
-		bikeJoined = bikeJoined.where(Selection.with(idx.toIntArray())).selectColumns("person", "start_x", "start_y", "end_x", "end_y");
-		bikeJoined.write().csv(output.getPath("cycle-highway-agents-trip-start-end.csv").toFile());
+		bikeJoined = bikeJoined.where(Selection.with(idx.toIntArray())).selectColumns(PERSON, "start_x", "start_y", "end_x", "end_y");
+		bikeJoined.write().csv(output.getPath("cycle_highway_agents_trip_start_end.csv").toFile());
 
-//		TODO: mean travel dist / time before / after policy
-//		here: filter base trip ids for trip ids of bikeJoined and calc mean / median before / after
-//		TODO: median ""
-//		TODO: bike traffic volumes -> comparison to Machbarkeitsstudie Halle-Leipzig. probably use code from OverviewDashboard or CarTrafficAnalysis?!
+//		here: filter base trip ids for trip ids of bikeJoined
+//		TODO: check if this filter works properly
+		TextColumn tripIdCol = baseJoined.textColumn(TRIP_ID);
+		baseJoined = baseJoined.where(tripIdCol.isIn(bikeJoined.textColumn(TRIP_ID)));
+
+		calcAndWriteMeanStats(bikeJoined, baseJoined);
+
+		writeHighwaysShpFile();
 
 
-
-
-
+//		TODO: figure like plot 4.5 MA thesis?
 		return 0;
+	}
+
+	private void calcAndWriteMeanStats(Table bikeJoined, Table baseJoined) throws IOException {
+		DoubleColumn distanceCol = bikeJoined.doubleColumn(TRAV_DIST);
+		DoubleColumn timeCol = bikeJoined.doubleColumn(TRAV_TIME);
+
+//		calc mean / median distances / times
+		double meanDist = distanceCol.mean();
+		double medianDist = distanceCol.median();
+		double meanTravTime = timeCol.mean();
+		double medianTravTime = timeCol.median();
+
+		DoubleColumn baseDistanceCol = baseJoined.doubleColumn(TRAV_DIST);
+		DoubleColumn baseTimeCol = baseJoined.doubleColumn(TRAV_TIME);
+
+		double baseMeanDist = baseDistanceCol.mean();
+		double baseMedianDist = baseDistanceCol.median();
+		double baseMeanTravTime = baseTimeCol.mean();
+		double baseMedianTravTime = baseTimeCol.median();
+
+		//		write mean stats to csv
+		DecimalFormat f = new DecimalFormat("0.00", new DecimalFormatSymbols(Locale.ENGLISH));
+
+		try (CSVPrinter printer = new CSVPrinter(new FileWriter(output.getPath("mean_travel_stats.csv").toString()),
+			CSVFormat.DEFAULT.builder()
+			.setQuote(null)
+			.setDelimiter(',')
+			.setRecordSeparator("\r\n")
+			.build())) {
+			printer.printRecord("\"mean travel distance policy case\"", f.format(meanDist));
+			printer.printRecord("\"mean travel distance base case\"", f.format(baseMeanDist));
+			printer.printRecord("\"median travel distance policy case\"", f.format(medianDist));
+			printer.printRecord("\"median travel distance base case\"", f.format(baseMedianDist));
+			printer.printRecord("\"mean travel time policy case\"", f.format(meanTravTime));
+			printer.printRecord("\"mean travel time base case\"", f.format(baseMeanTravTime));
+			printer.printRecord("\"median travel time policy case\"", f.format(medianTravTime));
+			printer.printRecord("\"median travel time base case\"", f.format(baseMedianTravTime));
+		}
+	}
+
+	private void writeHighwaysShpFile() throws IOException {
+
+		ShapeFileWriter.writeGeometries(new ShpOptions(highwaysShpPath, crs, null).readFeatures(), output.getPath("cycle_highways.shp").toString());
+
+//		We cannot use the same output option for 2 different files, so the string has to be manipulated
+		String prj = output.getPath("cycle_highways.shp").toString().replace(".shp", ".prj");
+
+//		.prj file needs to be simplified to make it readable for simwrapper
+		try (BufferedWriter writer = IOUtils.getBufferedWriter(prj)) {
+			writer.write(crs);
+		}
 	}
 
 	private void writeIncomeGroups(Table joined, List<String> incomeLabels, String mode, String outputFile) {
@@ -220,10 +291,9 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 			joined = filterModeAgents(joined, mode);
 		}
 
-		Table aggr = joined.summarize("trip_id", count).by("income_group");
+		Table aggr = joined.summarize(TRIP_ID, count).by("income_group");
 
-//		TODO: column probably is not named "count"
-		DoubleColumn countColumn = aggr.doubleColumn("count");
+		DoubleColumn countColumn = aggr.doubleColumn("Count [trip_id]");
 		DoubleColumn share = countColumn.divide(countColumn.sum()).setName("share");
 		aggr.addColumns(share);
 
@@ -235,29 +305,32 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	}
 
 	private void writeModeShift(Table trips, Table baseTrips) {
-		baseTrips.column("main_mode").setName("original_mode");
+		baseTrips.column(MAIN_MODE).setName("original_mode");
 
-		Table joined = new DataFrameJoiner(trips, "trip_id").inner(true, baseTrips);
-		Table aggr = joined.summarize("trip_id", count).by("original_mode", "main_mode");
+		Table joined = new DataFrameJoiner(trips, TRIP_ID).inner(true, baseTrips);
+		Table aggr = joined.summarize(TRIP_ID, count).by("original_mode", MAIN_MODE);
 
 		aggr.write().csv(output.getPath("mode_shift.csv").toFile());
+
+//		rename column again because we need the column as main_mode later
+		baseTrips.column("original_mode").setName(MAIN_MODE);
 	}
 
 	private void writeModeShare(Table trips, Table persons, List<String> labels, String outputFile) {
 
 //		join needed to filter for Leipzig agents only
-		Table joined = new DataFrameJoiner(trips, "person").inner(persons);
+		Table joined = new DataFrameJoiner(trips, PERSON).inner(persons);
 
-		joined = addGroupColumn(joined, "traveled_distance", distGroups, labels);
+		addGroupColumn(joined, TRAV_DIST, distGroups, labels);
 
-		Table aggr = joined.summarize("trip_id", count).by("dist_group", "main_mode");
+		Table aggr = joined.summarize(TRIP_ID, count).by(TRAV_DIST + "_group", MAIN_MODE);
 
 		DoubleColumn share = aggr.numberColumn(2).divide(aggr.numberColumn(2).sum()).setName("share");
 		aggr.replaceColumn(2, share);
 
 		// Sort by dist_group and mode
-		Comparator<Row> cmp = Comparator.comparingInt(row -> labels.indexOf(row.getString("dist_group")));
-		aggr = aggr.sortOn(cmp.thenComparing(row -> row.getString("main_mode")));
+		Comparator<Row> cmp = Comparator.comparingInt(row -> labels.indexOf(row.getString(TRAV_DIST + "_group")));
+		aggr = aggr.sortOn(cmp.thenComparing(row -> row.getString(MAIN_MODE)));
 
 		aggr.write().csv(output.getPath(outputFile).toFile());
 
@@ -265,7 +338,7 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		if (modeOrder == null) {
 			modeOrder = new ArrayList<>();
 			for (Row row : aggr) {
-				String mainMode = row.getString("main_mode");
+				String mainMode = row.getString(MAIN_MODE);
 				if (!modeOrder.contains(mainMode)) {
 					modeOrder.add(mainMode);
 				}
@@ -276,19 +349,17 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	private List<String> getLabels(List<Double> groups) {
 		List<String> labels = new ArrayList<>();
 		for (int i = 0; i < groups.size() - 1; i++) {
-			labels.add(String.format("%d - %d", groups.get(i), groups.get(i + 1)));
+			labels.add(String.format("%d - %d", groups.get(i).intValue(), groups.get(i + 1).intValue()));
 		}
 		labels.add(groups.get(groups.size() - 1) + "+");
 		groups.add(Double.MAX_VALUE);
 		return labels;
 	}
 
-	private Table addGroupColumn(Table table, String valueLabel, List<Double> groups, List<String> labels) {
+	private void addGroupColumn(Table table, String valueLabel, List<Double> groups, List<String> labels) {
 		StringColumn group = table.doubleColumn(valueLabel)
 			.map(dist -> cut(dist, groups, labels), ColumnType.STRING::create).setName(valueLabel + "_group");
 		table.addColumns(group);
-
-		return table;
 	}
 
 	private static String cut(double value, List<Double> groups, List<String> labels) {
@@ -322,7 +393,7 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 			Row row = persons.row(i);
 			String subPop = row.getText("subpopulation");
 
-			if (subPop.equals("person")) {
+			if (subPop.equals(PERSON)) {
 				idx.add(i);
 			}
 		}
@@ -333,7 +404,7 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		IntList idx = new IntArrayList();
 		for (int i = 0; i < trips.rowCount(); i++) {
 			Row row = trips.row(i);
-			String mainMode = row.getString("main_mode");
+			String mainMode = row.getString(MAIN_MODE);
 
 			if (mainMode.equals(mode)) {
 				idx.add(i);
