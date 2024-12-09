@@ -21,8 +21,8 @@ public class CycleHighwayDashboard implements Dashboard {
 	private final String shp;
 	private final String highwaysShp;
 	private static final String SHARE = "share";
-	private static final String ABSOLUTE = "Count [person]";
-	private static final String INCOME_GROUP = "incomeGroup";
+	private static final String ABSOLUTE = "Count [trip_id]";
+	private static final String INCOME_GROUP = "income_group";
 	private static final String CRS = "EPSG:25832";
 	private static final String SOURCE = "source";
 	private static final String MAIN_MODE = "main_mode";
@@ -120,8 +120,6 @@ public class CycleHighwayDashboard implements Dashboard {
 				viz.setShape(data.compute(CycleHighwayAnalysis.class, "cycle_highways.shp"), "id");
 			});
 
-		createIncomeLayouts(layout, args);
-
 		layout.row("volumes")
 			.el(MapPlot.class, (viz, data) -> {
 
@@ -130,8 +128,8 @@ public class CycleHighwayDashboard implements Dashboard {
 				viz.zoom = data.context().mapZoomLevel;
 				viz.height = 7.5;
 				viz.width = 2.0;
-				viz.setShape(data.compute(CreateGeoJsonNetwork.class, "network.geojson", "--with-properties"), "id");
-				viz.addDataset(TRAFFIC, data.compute(TrafficAnalysis.class, "traffic_stats_by_link_daily.csv"));
+				viz.setShape(data.compute(CreateGeoJsonNetwork.class, "network.geojson", "--with-properties", "--mode-filter", "car,freight,drt,bike"), "id");
+				viz.addDataset(TRAFFIC, data.compute(TrafficAnalysis.class, "traffic_stats_by_link_daily.csv", "--transport-modes" , "car,bike,freight"));
 
 				viz.display.lineColor.dataset = TRAFFIC;
 				viz.display.lineColor.columnName = "vol_bike";
@@ -144,6 +142,8 @@ public class CycleHighwayDashboard implements Dashboard {
 				viz.display.lineWidth.join = "link_id";
 
 			});
+
+		createIncomeLayouts(layout, args);
 
 	}
 

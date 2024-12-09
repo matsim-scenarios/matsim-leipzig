@@ -72,6 +72,8 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	private List<Double> distGroups;
 	@CommandLine.Option(names = "--income-groups", split = ",", description = "List of income for binning. Derived from SrV 2018.", defaultValue = "0.,500.,900.,1500.,2000.,2600.,3000.,3600.,4600.,5600.")
 	private List<Double> incomeGroups;
+	@CommandLine.Option(names = "--modes", split = ",", description = "List of transport modes for mode share and switch.", defaultValue = "car,bike,ride,walk,pt")
+	private Set<String> modes;
 
 	List<String> modeOrder = null;
 //	cannot use the original String from class CreateBicycleHighwayNetwork because the class is on another branch. In the matsim version of this branch Simwrapper was not yet implemented
@@ -84,7 +86,6 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	private static final String MAIN_MODE = "main_mode";
 	private static final String LONG_MODE = "longest_distance_mode";
 	private static final String TRIP_ID = "trip_id";
-//	private static final String COUNT_PERSON = "Count [person]";
 	private final Map<Id<Vehicle>, String> bikers = new HashMap<>();
 	private final Map<String, List<Integer>> highwayPersons = new HashMap<>();
 
@@ -186,15 +187,11 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 //		write income group distr for every mode in base (Leipzig)
 		Table baseJoinedLeipzig = new DataFrameJoiner(baseTrips, PERSON).inner(basePersonsLeipzig);
 
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, "allModes", INCOME_SUFFIX);
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.bike, INCOME_SUFFIX);
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.car, INCOME_SUFFIX);
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.walk, INCOME_SUFFIX);
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.pt, INCOME_SUFFIX);
-		writeIncomeGroups(baseJoinedLeipzig, incomeLabels, TransportMode.ride, INCOME_SUFFIX);
+		modes.add("allModes");
+		modes.forEach(m -> writeIncomeGroups(baseJoinedLeipzig, incomeLabels, m, INCOME_SUFFIX));
 
 //		filter for bike trips
-		Table bikeJoined = filterModeAgents(joined, TransportMode.bike);
+		Table bikeJoined = filterModeAgents(joined, Set.of(TransportMode.bike));
 
 //		filter for trips "cycleHighwayAgents" map
 		IntList idx = new IntArrayList();
@@ -206,9 +203,9 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 //			waiting time already included in travel time
 			int travelTime = durationToSeconds(row.getString(TRAV_TIME));
 
-			List<Integer> enterTimes = highwayPersons.get(row.getString(PERSON));
+//			if person is not using bike highway there will be an empty list -> id will not be added to idx list
+			List<Integer> enterTimes = new ArrayList<>(highwayPersons.getOrDefault(row.getString(PERSON), new ArrayList<>()));
 
-//			TODO: enterTimes is null, fix this
 			for (int enterTime : enterTimes) {
 				if (Range.of(tripStart, tripStart + travelTime).contains(enterTime)) {
 					idx.add(i);
@@ -216,11 +213,13 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 			}
 		}
 //		write trip start and end of every trip using cycle highway to csv
-		bikeJoined = bikeJoined.where(Selection.with(idx.toIntArray())).selectColumns(PERSON, "start_x", "start_y", "end_x", "end_y");
-		bikeJoined.write().csv(output.getPath("cycle_highway_agents_trip_start_end.csv").toFile());
+		bikeJoined = bikeJoined.where(Selection.with(idx.toIntArray()));
 
-//		here: filter base trip ids for trip ids of bikeJoined
-//		TODO: check if this filter works properly
+//		we need the trip_id column after writing the location to csv, but trip_id should notbe written to csv
+		Table bikeJoinedCsv = bikeJoined.selectColumns(PERSON, "start_x", "start_y", "end_x", "end_y");
+		bikeJoinedCsv.write().csv(output.getPath("cycle_highway_agents_trip_start_end.csv").toFile());
+
+//		filter base trip ids for trip ids of bikeJoined
 		TextColumn tripIdCol = baseJoined.textColumn(TRIP_ID);
 		baseJoined = baseJoined.where(tripIdCol.isIn(bikeJoined.textColumn(TRIP_ID)));
 
@@ -235,7 +234,14 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 
 	private void calcAndWriteMeanStats(Table bikeJoined, Table baseJoined) throws IOException {
 		DoubleColumn distanceCol = bikeJoined.doubleColumn(TRAV_DIST);
-		DoubleColumn timeCol = bikeJoined.doubleColumn(TRAV_TIME);
+
+//		Create int column out of time string values hh:mm:ss
+		IntColumn timeCol = IntColumn.create(TRAV_TIME + "_s", bikeJoined
+			.stringColumn(TRAV_TIME)
+			.asList()
+			.stream()
+			.mapToInt(CycleHighwayAnalysis::durationToSeconds)
+			.toArray());
 
 //		calc mean / median distances / times
 		double meanDist = distanceCol.mean();
@@ -244,7 +250,13 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		double medianTravTime = timeCol.median();
 
 		DoubleColumn baseDistanceCol = baseJoined.doubleColumn(TRAV_DIST);
-		DoubleColumn baseTimeCol = baseJoined.doubleColumn(TRAV_TIME);
+
+		IntColumn baseTimeCol = IntColumn.create(TRAV_TIME + "_s", baseJoined
+			.stringColumn(TRAV_TIME)
+			.asList()
+			.stream()
+			.mapToInt(CycleHighwayAnalysis::durationToSeconds)
+			.toArray());
 
 		double baseMeanDist = baseDistanceCol.mean();
 		double baseMedianDist = baseDistanceCol.median();
@@ -288,7 +300,7 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 
 //		only filter if specific mode is given
 		if (!mode.equals("allModes")){
-			joined = filterModeAgents(joined, mode);
+			joined = filterModeAgents(joined, Set.of(mode));
 		}
 
 		Table aggr = joined.summarize(TRIP_ID, count).by("income_group");
@@ -305,21 +317,22 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 	}
 
 	private void writeModeShift(Table trips, Table baseTrips) {
-		baseTrips.column(MAIN_MODE).setName("original_mode");
+		Table baseFiltered = filterModeAgents(baseTrips, modes);
+		Table filtered = filterModeAgents(trips, modes);
 
-		Table joined = new DataFrameJoiner(trips, TRIP_ID).inner(true, baseTrips);
+		baseFiltered.column(MAIN_MODE).setName("original_mode");
+
+		Table joined = new DataFrameJoiner(filtered, TRIP_ID).inner(true, baseFiltered);
 		Table aggr = joined.summarize(TRIP_ID, count).by("original_mode", MAIN_MODE);
 
 		aggr.write().csv(output.getPath("mode_shift.csv").toFile());
-
-//		rename column again because we need the column as main_mode later
-		baseTrips.column("original_mode").setName(MAIN_MODE);
 	}
 
 	private void writeModeShare(Table trips, Table persons, List<String> labels, String outputFile) {
 
 //		join needed to filter for Leipzig agents only
-		Table joined = new DataFrameJoiner(trips, PERSON).inner(persons);
+//		filter modes to exclude freight and drt modes
+		Table joined = filterModeAgents(new DataFrameJoiner(trips, PERSON).inner(persons), modes);
 
 		addGroupColumn(joined, TRAV_DIST, distGroups, labels);
 
@@ -400,20 +413,20 @@ public class CycleHighwayAnalysis implements MATSimAppCommand {
 		return persons.where(Selection.with(idx.toIntArray()));
 	}
 
-	private Table filterModeAgents(Table trips, String mode) {
+	private Table filterModeAgents(Table trips, Set<String> filterModes) {
 		IntList idx = new IntArrayList();
 		for (int i = 0; i < trips.rowCount(); i++) {
 			Row row = trips.row(i);
 			String mainMode = row.getString(MAIN_MODE);
 
-			if (mainMode.equals(mode)) {
+			if (filterModes.contains(mainMode)) {
 				idx.add(i);
 			}
 		}
 		return trips.where(Selection.with(idx.toIntArray()));
 	}
 
-	private int durationToSeconds(String d) {
+	private static int durationToSeconds(String d) {
 		String[] split = d.split(":");
 		return (Integer.parseInt(split[0]) * 60 * 60) + (Integer.parseInt(split[1]) * 60) + Integer.parseInt(split[2]);
 	}
