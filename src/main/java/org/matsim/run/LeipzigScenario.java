@@ -36,7 +36,9 @@ import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.strategies.DefaultPlanStrategiesModule;
 import org.matsim.core.router.AnalysisMainModeIdentifier;
 import org.matsim.core.router.TripStructureUtils;
+import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
+import org.matsim.project.scoring.AddScoringFunctionFactories;
 import org.matsim.run.prepare.*;
 import org.matsim.simwrapper.SimWrapperConfigGroup;
 import org.matsim.simwrapper.SimWrapperModule;
@@ -100,7 +102,7 @@ public class LeipzigScenario extends MATSimApplication {
 	}
 
 	public LeipzigScenario() {
-		super(String.format("input/v%s/leipzig-v1.3.1-10pct.config.xml", VERSION));
+		super(String.format("input/v%s/leipzig-v1.3.1-1pct.config.xml", VERSION));
 	}
 
 	public static void main(String[] args) {
@@ -128,9 +130,15 @@ public class LeipzigScenario extends MATSimApplication {
 		}
 	}
 
+	//Initialise for further use
+	Config config;
+
 	@Nullable
 	@Override
 	protected Config prepareConfig(Config config) {
+
+		//Setting the config
+		this.config = config;
 
 		// senozon activity types that are always the same.  Differentiated by typical duration.
 		SnzActivities.addScoringParams(config);
@@ -281,7 +289,7 @@ public class LeipzigScenario extends MATSimApplication {
 	}
 
 	@Override
-	protected void prepareControler(Controler controler) {
+	protected void prepareControler( Controler controler) {
 
 		controler.addOverridingModule(new SimWrapperModule());
 		controler.addOverridingModule(new PtStop2StopAnalysisModule());
@@ -318,10 +326,10 @@ public class LeipzigScenario extends MATSimApplication {
 		});
 
 		/*
-		 * i changed this from networkOpt.hasDrtArea() which relies on command line input to an automatic check of the config
+		 * I changed this from networkOpt.hasDrtArea() which relies on command line input to an automatic check of the config
 		 * so that we _can_ run Drt simulations without calling DrtCaseSetup, i.e. without creating and configuring drt input in the code
 		 * but rather by configuring it at the cml level.
-		 * In this case, the modeller has to assure that the input (including the (allowed modes in the) network!!) is well prepared for drt, themselves!
+		 * In this case, the modeller has to assure that the input (including the (allowed modes in the) network!!) is well-prepared for drt, themselves!
 		 * As the following checks whether the MultiModeDrtConfigGroup is configured, it still works with the DrtCaseSetup
 		 * tschlenther feb'24.
 		 */
@@ -333,6 +341,14 @@ public class LeipzigScenario extends MATSimApplication {
 		if (bike == BicycleHandling.onNetworkWithBicycleContrib) {
 			controler.addOverridingModule(new BicycleModule());
 		}
+
+		//adding our own scoringOverrideModule
+		controler.addOverridingModule(new AbstractModule() {
+			@Override
+			public void install() {
+				this.bindScoringFunctionFactory().toInstance(new AddScoringFunctionFactories(ScenarioUtils.loadScenario(config)));
+			}
+		});
 	}
 
 	/**
