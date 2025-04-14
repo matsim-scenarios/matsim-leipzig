@@ -18,6 +18,10 @@ import java.io.InterruptedIOException;
 import java.nio.file.Path;
 import java.util.List;
 
+@CommandLine.Command(
+	name = "simwrapper",
+	description = "Run additional analysis and create SimWrapper dashboard for existing run output."
+)
 public class LeipzigSimwrapperRunner implements MATSimAppCommand {
 
 	private static final Logger log = LogManager.getLogger(LeipzigSimwrapperRunner.class);
@@ -113,7 +117,8 @@ public class LeipzigSimwrapperRunner implements MATSimAppCommand {
 						do {
 							String newName = "dashboard-" + number + ".yaml";
 							newFile = new File(file.getParent(), newName);
-							number += 10; // Increment further if a conflict is found
+							// Increment further if a conflict is found
+							number += 10;
 						} while (newFile.exists());
 
 						// Rename the file

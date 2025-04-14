@@ -148,102 +148,35 @@ public class CycleHighwayDashboard implements Dashboard {
 	}
 
 	private static void createIncomeLayouts(Layout layout, String[] args) {
-		layout.row("income")
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Bike users per income group - Policy";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "bike_income_groups.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			})
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Bike users per income group - Policy";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "bike_income_groups.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = ABSOLUTE;
-				viz.columns = List.of(ABSOLUTE);
-			});
+		Layout.Row row1 = layout.row("income");
+		createBarChart(row1, "Bike users per income group - Policy", "bike_income_groups.csv", args, SHARE, List.of(SHARE));
+		createBarChart(row1, "Bike users per income group - Policy", "bike_income_groups.csv", args, ABSOLUTE, List.of(ABSOLUTE));
 
-		layout.row("incomeBase")
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Bike users per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "bike_income_groups_base.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			})
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Bike users per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "bike_income_groups_base.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = ABSOLUTE;
-				viz.columns = List.of(ABSOLUTE);
-			});
+		Layout.Row row2 = layout.row("incomeBase");
+		createBarChart(row2, "Bike users per income group - Base", "bike_income_groups_base.csv", args, SHARE, List.of(SHARE));
+		createBarChart(row2, "Bike users per income group - Base", "bike_income_groups_base.csv", args, ABSOLUTE, List.of(ABSOLUTE));
 
-		layout.row("incomeBaseLeipzig")
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Leipzig residents per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "allModes_income_groups_base_leipzig.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			})
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Leipzig residents (bike) per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "bike_income_groups_base_leipzig.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			})
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Leipzig residents (car) per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "car_income_groups_base_leipzig.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			});
+		Layout.Row row3 = layout.row("incomeBaseLeipzig");
+		createBarChart(row3, "Leipzig residents per income group - Base", "allModes_income_groups_base_leipzig.csv", args, SHARE, List.of(SHARE));
+		createBarChart(row3, "Leipzig residents (bike) per income group - Base", "bike_income_groups_base_leipzig.csv", args, SHARE, List.of(SHARE));
+		createBarChart(row3, "Leipzig residents (car) per income group - Base", "car_income_groups_base_leipzig.csv", args, SHARE, List.of(SHARE));
 
-		layout.row("incomeBaseLeipzig2")
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Leipzig residents (pt) per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "pt_income_groups_base_leipzig.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			})
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Leipzig residents (walk) per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "walk_income_groups_base_leipzig.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			})
-			.el(Bar.class, (viz, data) -> {
-				viz.title = "Leipzig residents (ride) per income group - Base";
-				viz.stacked = false;
-				viz.dataset = data.compute(CycleHighwayAnalysis.class, "ride_income_groups_base_leipzig.csv", args);
-				viz.x = INCOME_GROUP;
-				viz.xAxisName = INCOME_GROUP;
-				viz.yAxisName = SHARE;
-				viz.columns = List.of(SHARE);
-			});
+		Layout.Row row4 = layout.row("incomeBaseLeipzig2");
+		createBarChart(row4, "Leipzig residents (pt) per income group - Base", "pt_income_groups_base_leipzig.csv", args, SHARE, List.of(SHARE));
+		createBarChart(row4, "Leipzig residents (walk) per income group - Base", "walk_income_groups_base_leipzig.csv", args, SHARE, List.of(SHARE));
+		createBarChart(row4, "Leipzig residents (ride) per income group - Base", "ride_income_groups_base_leipzig.csv", args, SHARE, List.of(SHARE));
+	}
+
+	private static Layout.Row createBarChart(Layout.Row row, String title, String fileName, String[] args, String yAxisName, List<String> columns) {
+
+		return row.el(Bar.class, (viz, data) -> {
+			viz.title = title;
+			viz.stacked = false;
+			viz.dataset = data.compute(CycleHighwayAnalysis.class, fileName, args);
+			viz.x = INCOME_GROUP;
+			viz.xAxisName = INCOME_GROUP;
+			viz.yAxisName = yAxisName;
+			viz.columns = columns;
+		});
 	}
 }
