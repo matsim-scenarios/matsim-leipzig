@@ -215,6 +215,9 @@ public class CreateBicycleHighwayNetwork implements MATSimAppCommand {
                 case SPEED_1500:
                     l.getAttributes().putAttribute(BicycleUtils.BICYCLE_INFRASTRUCTURE_SPEED_FACTOR, 100);
                     break;
+                case SPEED_50:
+                    l.getAttributes().putAttribute(BicycleUtils.BICYCLE_INFRASTRUCTURE_SPEED_FACTOR, 3.33);
+                    break;
             }
         }
     }
@@ -232,6 +235,7 @@ public class CreateBicycleHighwayNetwork implements MATSimAppCommand {
     private enum PolicyCase {
         SPEED_25,
         SPEED_15,
-        SPEED_1500
+        SPEED_1500,
+        SPEED_50
     }
 }

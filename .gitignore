@@ -286,3 +286,4 @@ $RECYCLE.BIN/
 *.msp
 /Input/
 /.idea/
+.Rproj.user
