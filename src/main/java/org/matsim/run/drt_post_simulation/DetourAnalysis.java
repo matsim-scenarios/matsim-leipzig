@@ -1,6 +1,5 @@
 package org.matsim.run.drt_post_simulation;
 
-import org.apache.commons.collections.ArrayStack;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.matsim.api.core.v01.Id;
