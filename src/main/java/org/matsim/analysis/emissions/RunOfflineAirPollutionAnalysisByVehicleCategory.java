@@ -26,10 +26,7 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.application.MATSimAppCommand;
-import org.matsim.contrib.emissions.EmissionModule;
-import org.matsim.contrib.emissions.HbefaVehicleCategory;
-import org.matsim.contrib.emissions.Pollutant;
-import org.matsim.contrib.emissions.VspHbefaRoadTypeMapping;
+import org.matsim.contrib.emissions.*;
 import org.matsim.contrib.emissions.analysis.EmissionsOnLinkEventHandler;
 import org.matsim.contrib.emissions.utils.EmissionsConfigGroup;
 import org.matsim.contrib.emissions.utils.EmissionsConfigGroup.DetailedVsAverageLookupBehavior;
@@ -42,6 +39,7 @@ import org.matsim.core.controler.Injector;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.MatsimEventsReader;
 import org.matsim.core.events.algorithms.EventWriterXML;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.vehicles.EngineInformation;
 import org.matsim.vehicles.VehicleType;
@@ -149,8 +147,17 @@ public final class RunOfflineAirPollutionAnalysisByVehicleCategory implements MA
 
 		Scenario scenario = ScenarioUtils.loadScenario(config);
 
-		// network
-		new VspHbefaRoadTypeMapping().addHbefaMappings(scenario.getNetwork());
+		// Set correct link types for osm mapping
+		for (Link link : scenario.getNetwork().getLinks().values()) {
+			String type = NetworkUtils.getHighwayType(link);
+			if ("unclassified".equals(type)) {
+				link.getAttributes().removeAttribute("type");
+			} else {
+				link.getAttributes().putAttribute("type", type);
+			}
+		}
+
+		OsmHbefaMapping.build().addHbefaMappings(scenario.getNetwork());
 		log.info("Using integrated road types");
 
 		{
