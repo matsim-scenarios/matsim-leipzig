@@ -19,7 +19,7 @@
     <module name="global">
         <param name="coordinateSystem" value="EPSG:25832"/>
         <param name="insistingOnDeprecatedConfigVersion" value="false"/>
-        <param name="numberOfThreads" value="14"/>
+        <param name="numberOfThreads" value="6"/>
     </module>
 
     <module name="network">
@@ -29,7 +29,7 @@
 
     <module name="plans">
         <param name="inputPlansFile"
-               value="https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/leipzig-v1.3.1-10pct.plans.xml.gz"/>
+               value="https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/leipzig/leipzig-v1.3/input/leipzig-v1.3-10pct.plans-initial.xml.gz"/>
         <param name="removingUnnecessaryPlanAttributes" value="true"/>
     </module>
 

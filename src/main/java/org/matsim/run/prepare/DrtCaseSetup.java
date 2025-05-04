@@ -11,12 +11,16 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.application.options.ShpOptions;
+import org.matsim.contrib.drt.estimator.DrtEstimator;
+import org.matsim.contrib.drt.estimator.impl.EuclideanDistanceBasedDrtEstimator;
 import org.matsim.contrib.drt.fare.DrtFareParams;
 import org.matsim.contrib.drt.optimizer.insertion.extensive.ExtensiveInsertionSearchParams;
 import org.matsim.contrib.drt.routing.DrtRoute;
 import org.matsim.contrib.drt.routing.DrtRouteFactory;
-import org.matsim.contrib.drt.run.*;
-import org.matsim.contrib.drt.speedup.DrtSpeedUpParams;
+import org.matsim.contrib.drt.run.DrtConfigGroup;
+import org.matsim.contrib.drt.run.DrtConfigs;
+import org.matsim.contrib.drt.run.MultiModeDrtConfigGroup;
+import org.matsim.contrib.drt.run.MultiModeDrtModule;
 import org.matsim.contrib.dvrp.run.AbstractDvrpModeModule;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
 import org.matsim.contrib.dvrp.run.DvrpModule;
@@ -114,17 +118,22 @@ public final class DrtCaseSetup {
 			DrtConfigs.adjustDrtConfig(drtConfigGroup, config.scoring(), config.routing());
 
 			configureNecessaryConfigGroups(config, drtConfigGroup.getMode());
-			DrtSpeedUpParams drtSpeedUpParams = new DrtSpeedUpParams();
-			drtSpeedUpParams.fractionOfIterationsSwitchOn = 0.0;
-			drtSpeedUpParams.fractionOfIterationsSwitchOff = 1.0;
-			drtSpeedUpParams.firstSimulatedDrtIterationToReplaceInitialDrtPerformanceParams = 10000;
-			// update to real world data
-			drtSpeedUpParams.initialWaitingTime = 345.6;
-			// update to real world data
-			drtSpeedUpParams.initialInVehicleBeelineSpeed = 20/3.6;
-			drtSpeedUpParams.intervalDetailedIteration = 10000;
-			drtSpeedUpParams.waitingTimeUpdateDuringSpeedUp = DrtSpeedUpParams.WaitingTimeUpdateDuringSpeedUp.Disabled;
-			drtConfigGroup.addParameterSet(drtSpeedUpParams);
+
+			// Thd DRT speed-up param will no longer be used
+//			DrtSpeedUpParams drtSpeedUpParams = new DrtSpeedUpParams();
+//			drtSpeedUpParams.fractionOfIterationsSwitchOn = 0.0;
+//			drtSpeedUpParams.fractionOfIterationsSwitchOff = 1.0;
+//			drtSpeedUpParams.firstSimulatedDrtIterationToReplaceInitialDrtPerformanceParams = 10000;
+//			// update to real world data
+//			drtSpeedUpParams.initialWaitingTime = 345.6;
+//			// update to real world data
+//			drtSpeedUpParams.initialInVehicleBeelineSpeed = 20/3.6;
+//			drtSpeedUpParams.intervalDetailedIteration = 10000;
+//			drtSpeedUpParams.waitingTimeUpdateDuringSpeedUp = DrtSpeedUpParams.WaitingTimeUpdateDuringSpeedUp.Disabled;
+//			drtConfigGroup.addParameterSet(drtSpeedUpParams);
+
+			// use estimate and teleport model
+			drtConfigGroup.simulationType = DrtConfigGroup.SimulationType.estimateAndTeleport;
 		});
 
 		//drt modes have to be set as network modes in dvrp CfgGroup
@@ -223,6 +232,19 @@ public final class DrtCaseSetup {
 					}
 				});
 			}
+
+			// use estimate and teleport option
+			controler.addOverridingModule(new AbstractDvrpModeModule(drtCfg.mode) {
+				@Override
+				public void install() {
+//					bindModal(DrtEstimator.class).toInstance(DetourBasedDrtEstimator.normalDistributed(1.2, 32,
+//						0.3, 120, 0.4));
+					// The parameters used below are based on the analysis from the real world data
+					bindModal(DrtEstimator.class).toProvider(modalProvider(getter -> new
+						EuclideanDistanceBasedDrtEstimator(getter.getModal(Network.class), 2.0, 0.1577493 / 0.9,
+						103.0972273 / 0.9, 300, 0.4, -0.1, 0.28)));
+				}
+			});
 		}
 
 		if (ptDrtIntermodality.equals(PtDrtIntermodality.drtAsAccessEgressForPt)) {
